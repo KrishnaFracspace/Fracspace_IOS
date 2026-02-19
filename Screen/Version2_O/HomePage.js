@@ -1,0 +1,2107 @@
+let hasShownHomePopup = false;
+import {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  Linking,
+  Dimensions,
+  Animated,
+  Alert,
+  ImageBackground,
+  Modal,
+  StatusBar,
+  Easing,
+  PanResponder,
+  Pressable,
+} from 'react-native';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import Icon from 'react-native-vector-icons/Ionicons';
+import IconF from 'react-native-vector-icons/FontAwesome6';
+import IconI from 'react-native-vector-icons/AntDesign';
+import Iconn from 'react-native-vector-icons/Feather';
+import {
+  findFocusedRoute,
+  useFocusEffect,
+  useNavigation,
+} from '@react-navigation/native';
+import LinearGradient from 'react-native-linear-gradient';
+import Video, {VideoRef} from 'react-native-video';
+import {SafeAreaView, useSafeAreaInsets} from 'react-native-safe-area-context';
+import Svg, {Path} from 'react-native-svg';
+import {useDispatch, useSelector} from 'react-redux';
+import {
+  CallRecord,
+  DeleteAccount,
+  DisLike,
+  GetAllNotification,
+  GetCarousel,
+  Like,
+  LikeData,
+  PaymentUPI,
+  PopularDestination,
+  // ProfileDetails,
+  PropertyDetails,
+} from '../Services/UserApi';
+import {AppContext} from '../Context/AppContext';
+const {width, height} = Dimensions.get('window');
+import Swiper from 'react-native-swiper';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {fetchAllNotifications, fetchPopularHotels, fetchProperties, hidePopup, showPopup,} from '../redux/reducer/homeReducer';
+import HomeSkeleton from '../components/HomeSkeleton';
+import FastImage from 'react-native-fast-image';
+import EdgeFab from './altaira/FloatingButton';
+import CustomSwiper from '../components/CustomSwiper';
+import { profileDetails } from '../redux/reducer/profileReducer';
+
+export default function HomePage() {
+  //const [ExpoVideos, setExpoVideos] = useState(true);
+  const {globalState, setGlobalState} = useContext(AppContext);
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const navigation = useNavigation();
+  const [selectCountry, setSelectCountry] = useState('India');
+  const [Popular, setPopular] = useState([]);
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  const placeholders = ['Hyderabad', 'Goa', 'Delhi', 'Banglore'];
+  const [modalVisibleRS, setModalVisibleRS] = useState(false);
+  const [notification, setNotification] = useState([]);
+  const iconTranslateX = useRef(new Animated.Value(0)).current;
+  const iconOpacity = useRef(new Animated.Value(0.3)).current;
+  const dispatch = useDispatch();
+  const Offer = useSelector(state => state.home.offer);
+  const Properties = useSelector(state => state.home.Properties);
+  const loading = useSelector(state => state.home.loading);
+  const phoneNumber = useSelector(state => state.profile?.user?.phoneNumber);
+  const isFetched = useRef(false);
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const[carousel,setCarousel] = useState([])
+  const popUp = useSelector(state => state.home.isPopupVisible);
+  const isDeepLink = useSelector(state => state.home.isDepplinkNav);
+   //console.log( globalState?.userDetails?.phoneNumber," globalState?.userDetails?.phoneNumber?===",phoneNumber)
+//console.log(isDeepLink,"isDeepLink",popUp)
+  useEffect(() => {
+    dispatch(fetchProperties());
+    dispatch(fetchPopularHotels());
+    dispatch(profileDetails({email:globalState?.userDetails?.email}))
+  }, []);
+
+useEffect(() => {
+  dispatch(showPopup());
+}, []); 
+
+
+  useEffect(() => {
+    Animated.loop(
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(iconTranslateX, {
+            toValue: 8, // move right
+            duration: 500,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+          Animated.timing(iconTranslateX, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.sequence([
+          Animated.timing(iconOpacity, {
+            toValue: 1,
+            duration: 500,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+          Animated.timing(iconOpacity, {
+            toValue: 0.3,
+            duration: 500,
+            easing: Easing.ease,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]),
+    ).start();
+  }, []);
+
+const isValidUri = (uri) =>
+  typeof uri === 'string' && uri.trim().length > 0;
+
+  const fetchCarousel = async () => {
+      try{
+        let {data: res} = await GetCarousel();
+        // console.log("Carousel: ", res?.data);
+        setCarousel(res?.data);
+      }catch(error){
+        console.error("Error in fetching carousel: ",error?.response?.data || error?.response?.message);
+      }finally{
+      }
+    }
+
+  const cardsFromApi = carousel?.cards || [];
+  const offerCards = cardsFromApi.filter(card => {
+    if (!card.enabled) return false;
+    if (card.type === 'COUNTDOWN') {
+      const endTimeMs =
+        card?.endTime && !isNaN(new Date(card.endTime).getTime())
+          ? new Date(card.endTime).getTime()
+          : null;
+      const isExpired = endTimeMs ? Date.now() >= endTimeMs : true;
+      if (!isExpired) {
+        return isValidUri(card.image);
+      }
+      return isValidUri(card.watchLiveStreamImage);
+    }
+    return isValidUri(card.image);
+  });
+
+  const handleCallRecord = async () => {
+    let payload = JSON.stringify({
+      email: globalState?.userEmail,
+      ContactNumberOfFs: '+919880626111',
+      enquiryAbout: 'Home Page call',
+    });
+    try {
+      let {data: res} = await CallRecord(payload);
+      if (res?.success) {
+        handleCallNow();
+      }
+    } catch (error) {
+      if (error?.response) {
+        Alert.alert('Response Error', `${error?.response?.data?.message}`);
+      } else if (error?.request) {
+        //Alert.alert('Request error:', ${JSON.stringify(error?.request)});
+        // Alert.alert('Request Error:', 'Please Check Your Internet Connection');
+        // Alert.alert('Request error:', ${JSON.stringify(error?.request)});
+      } else {
+        Alert.alert('Error:', `${error}`);
+      }
+    }
+  };
+
+  const handleCallNow = () => {
+    const phoneNumber = '+919880626111';
+    const phoneUrl = `tel:${phoneNumber}`;
+
+    // Use the Linking API to initiate the phone call
+    Linking.openURL(phoneUrl)
+      .then(supported => {
+        if (!supported) {
+          Alert.alert('Error', 'Phone number is not supported');
+        }
+      })
+      .catch(error => console.log('Error making phone call:', error));
+  };
+
+  const handleRating = () => {
+    const appStoreUrl = 'https://apps.apple.com/in/app/fracspace/id6498551006';
+    Linking.openURL(appStoreUrl).catch(error =>
+      console.error('Error opening Play Store', error),
+    );
+  };
+
+  const openApp = async link => {
+    const url = link;
+    try {
+      const supported = await Linking.canOpenURL(url);
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        handlewhatsapplink(link);
+      }
+    } catch (error) {
+      handlewhatsapplink(link);
+    }
+  };
+
+  const handlewhatsapplink = async link => {
+    let payload = JSON.stringify({
+      message: `Enguire  Via whatsapp ${link}`,
+      phoneNumber: globalState?.userDetails?.phoneNumber,
+    });
+    try {
+      let {data: res} = await PaymentUPI(payload);
+      if (res?.success) {
+        Alert.alert(
+          'Congratulations!',
+          'The whatsapp link has been successfully sent to your message section.Kindly Enquire',
+        );
+      }
+    } catch (error) {
+      if (error?.response) {
+        Alert.alert('Response Error', `${error?.response?.data?.message}`);
+      } else if (error?.request) {
+      } else {
+        Alert.alert('Error:', `${error}`);
+      }
+    }
+  };
+
+  const FetchAllNotification = async () => {
+    let payload = JSON.stringify({
+      email: globalState?.userEmail,
+    });
+    try {
+      let {data: res} = await GetAllNotification(payload);
+      setNotification(res?.data);
+    } catch (error) {
+    }
+  };
+
+ const unreadNotifications = notification.some(
+    item =>
+      !item.buttonClicks.some(click => click.email === globalState?.userEmail),
+  );
+
+  useEffect(() => {
+    FetchAllNotification();
+    fetchCarousel();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      Animated.timing(animatedValue, {
+        toValue: 1, 
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        setPlaceholderIndex(prevIndex => (prevIndex + 1) % placeholders.length);
+        animatedValue.setValue(0); 
+      });
+    }, 2000); // Change every 2 seconds
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
+  }, [animatedValue]);
+  const {width} = Dimensions.get('window');
+  const [menuAnimation] = useState(new Animated.Value(-width * 0.8)); // Initially hidden off-screen
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const openMenu = () => {
+    setIsMenuOpen(true);
+    Animated.timing(menuAnimation, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeMenu = () => {
+    Animated.timing(menuAnimation, {
+      toValue: -MENU_WIDTH,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsMenuOpen(false);
+    });
+  };
+
+  const MENU_WIDTH = width * 0.8;
+  const insets = useSafeAreaInsets();
+
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) =>
+      isMenuOpen && Math.abs(gesture.dx) > Math.abs(gesture.dy),
+
+    onPanResponderMove: (_, gesture) => {
+      const translateX = Math.min(
+        0,
+        Math.max(gesture.dx, -MENU_WIDTH)
+      );
+      menuAnimation.setValue(translateX);
+    },
+    onPanResponderRelease: (_, gesture) => {
+      const shouldClose =
+        gesture.dx < -MENU_WIDTH / 3 || gesture.vx < -0.5;
+      if (shouldClose) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    },
+  });
+
+  const handleLogOut = async () => {
+    await AsyncStorage.setItem('mytoken', '');
+    await AsyncStorage.setItem('Email', '');
+    navigation.navigate('NewLogin');
+    //navigation.push('LoginPage', {country: '+91', phone: '', email: ''});
+  };
+
+  const handleDeleteAccount = async () => {
+    const emailId = await AsyncStorage.getItem('Email');
+    let payload = JSON.stringify({
+      email: emailId,
+    });
+    try {
+      let {data: res} = await DeleteAccount(payload);
+      // console.log('check',res?.data?.profilePicture);
+      if (res?.success) {
+        await AsyncStorage.setItem('mytoken', '');
+        await AsyncStorage.setItem('Email', '');
+        Alert.alert('success', `${res?.message}`);
+        setModalVisibleRS(false);
+        navigation.navigate('NewSigin');
+      
+      }
+    } catch (error) {
+      if (error?.response) {
+        // console.log('error',error);
+        Alert.alert('Response Error', `${error?.response?.data?.message}`);
+      } else if (error?.request) {
+        //Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
+        // Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
+      } else {
+        Alert.alert('Error:', `${error}`);
+      }
+    }
+  };
+
+  const scaleAnimation = useRef({}).current;
+  const triggerScaleAnimation = itemName => {
+    if (!scaleAnimation[itemName]) {
+      scaleAnimation[itemName] = new Animated.Value(1);
+    }
+    Animated.sequence([
+      Animated.timing(scaleAnimation[itemName], {
+        toValue: 1.5,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnimation[itemName], {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const testimonials = [
+    {
+      name: 'Abdul Basith',
+      video:
+        'https://d1nj26fz89n9xw.cloudfront.net/fracspace_properties_images/testimonials/testimonial2.mp4',
+      image:
+        'https://duixj37yn5405.cloudfront.net/appImages/testimonial1.png',
+      transcript: [
+        {
+          start: 0.0,
+          end: 11.0,
+          text: "Hi, this is Abdul Basit and that's my wife  Bushra Khan. Yeah, so I've invested in a Fracspace in the Goa property.",
+        },
+        {
+          start: 12.0,
+          end: 23.0,
+          text: 'This idea like actually came across in a reality expo and since then You know, it has been quite exciting and interesting to know about this opportunity.',
+        },
+        {
+          start: 26.0,
+          end: 34.0,
+          text: 'Talking about investment point of view, I see a good value proposition and at the same time what makes a difference is that the company culture,',
+        },
+        {
+          start: 35.0,
+          end: 43.0,
+          text: 'The people in this whole startup and I feel the staff has been really supportive and have been very patient in giving good information.',
+        },
+      ],
+    },
+    {
+      name: 'Srinivas',
+      video:
+        'https://d1nj26fz89n9xw.cloudfront.net/fracspace_properties_images/testimonials/testimonial3.mp4',
+      image:
+        'https://duixj37yn5405.cloudfront.net/appImages/testimonial2.png',
+      transcript: [
+        {
+          start: 0.0,
+          end: 7.0,
+          text: 'Hi, my name is Srinivas I am from Indusind Bank. I got to know about this Fracspace through an expo.',
+        },
+        {
+          start: 8.0,
+          end: 15.0,
+          text: 'I interested in  becoming a  part of this. Looks very interesting, the team is very good.',
+        },
+        {
+          start: 15.0,
+          end: 22.0,
+          text: 'And  like the concept When you get an opportunity to invest a small amount and get ownership',
+        },
+        {
+          start: 22.0,
+          end: 27.0,
+          text: 'with a good return I showed this thing, nothing like it so I went for it.',
+        },
+        {
+          start: 27.0,
+          end: 29.0,
+          text: "I request all of you to consider it. It's a good option.",
+        },
+        {
+          start: 30.0,
+          end: 37.0,
+          text: 'I find it interesting and getting to know a lot of people coming into this community. I am enjoying it a lot. Thanks.',
+        },
+      ],
+    },
+    {
+      name: 'Prashanth & Nikita',
+      video:
+        'https://d1nj26fz89n9xw.cloudfront.net/fracspace_properties_images/testimonials/testimonial1.mp4',
+      image:
+        'https://duixj37yn5405.cloudfront.net/appImages/testimonial3.png',
+      transcript: [
+        {
+          start: 0.0,
+          end: 5.0,
+          text: "Hi, I'm Prashant and this is Nikita.We're both software engineers.",
+        },
+        // { start: 3.0, end: 4.0, text: '' },
+        {
+          start: 6.0,
+          end: 13.0,
+          text: 'We like the idea of fractional ownership.We thought this was a good entry point.',
+        },
+        {
+          start: 14.0,
+          end: 21.0,
+          text: 'We found fracspace and then we found that the business model interesting and then the transparency.',
+        },
+        {
+          start: 21.0,
+          end: 24.0,
+          text: 'We asked them a lot of questions and they answered it very well. ',
+        },
+        {
+          start: 25.0,
+          end: 29.0,
+          text: 'We just started with one property investment.',
+        },
+        {
+          start: 30.0,
+          end: 35.0,
+          text: "Yeah, we're enjoying it so far and then we\re looking to do more business with them.",
+        },
+      ],
+    },
+  ];
+
+  const [like, setLike] = useState([]);
+  const [likedProperty, setLikedProperty] = useState([]);
+  const [playStates, setPlayStates] = useState(testimonials.map(() => false));
+  const [currentTimes, setCurrentTimes] = useState(testimonials.map(() => 0));
+  const [durations, setDurations] = useState(testimonials.map(() => 0));
+  const transcriptScrollRefs = useRef([]);
+  const videoRefs = useRef([]);
+  const [videoEnded, setVideoEnded] = useState(testimonials.map(() => false));
+  const [showControls, setShowControls] = useState(
+  testimonials.map(() => true)
+);
+  const [showThumbnails, setShowThumbnails] = useState(
+    testimonials.map(() => true),
+  );
+
+const togglePlay = index => {
+  const isNowPlaying = !playStates[index];
+
+  // 1️⃣ Stop all videos except current
+  const updatedPlayStates = playStates.map((_, i) =>
+    i === index ? isNowPlaying : false
+  );
+
+  setPlayStates(updatedPlayStates);
+
+  // 2️⃣ Show controls for all paused videos
+  const updatedControls = showControls.map((_, i) =>
+    i === index ? true : true
+  );
+
+  setShowControls(updatedControls);
+
+  // 3️⃣ Auto hide only for currently playing video
+  if (isNowPlaying) {
+    setTimeout(() => {
+      setShowControls(prev => {
+        const newControls = [...prev];
+        newControls[index] = false;
+        return newControls;
+      });
+    }, 5000);
+  }
+
+  // 4️⃣ Remove thumbnail if first time play
+  if (showThumbnails[index]) {
+    const updatedThumbnails = [...showThumbnails];
+    updatedThumbnails[index] = false;
+    setShowThumbnails(updatedThumbnails);
+  }
+
+  // 5️⃣ Restart if ended
+  if (videoEnded[index]) {
+    videoRefs.current[index]?.seek(0);
+    const updatedEnded = [...videoEnded];
+    updatedEnded[index] = false;
+    setVideoEnded(updatedEnded);
+  }
+};
+
+  const swiperRef = useRef(null);
+  const cardWidth = 250;
+  const wireHeight = 100;
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchLikedProperty();
+      return () => {
+        setPlayStates(prev => prev.map(() => false));
+        videoRefs.current.forEach(ref => {
+          if (ref) {
+            ref.pause && ref.pause();
+          }
+        });
+      };
+    }, []),
+  );
+
+  const videoLayouts = useRef([]);
+  const handleVerticalScroll = event => {
+    const scrollY = event.nativeEvent.contentOffset.y;
+    const windowHeight = event.nativeEvent.layoutMeasurement.height;
+
+    videoLayouts.current.forEach((layout, index) => {
+      if (!layout) return;
+      const isVisible = layout.y + layout.height > scrollY && layout.y < scrollY + windowHeight;
+      if (!isVisible && playStates[index]) {
+        const updatedPlayStates = [...playStates];
+        updatedPlayStates[index] = false;
+        setPlayStates(updatedPlayStates);
+      }
+    });
+  };
+//console.log( globalState?.userEmail," globalState?.userEmail")
+  const fetchLikedProperty = async () => {
+    let payload = JSON.stringify({
+      email: globalState?.userEmail,
+    });
+    try {
+      let {data: res} = await LikeData(payload);
+      if (res?.success) {
+        const likeProp = res?.properties.map(item => item._id);
+        console.log("Likes: ",likeProp);
+        setLikedProperty(likeProp);
+      } else {
+        console.log('Error in fetching liked property: ', res.message || res);
+      }
+    } catch (error) {
+      console.error(
+        'Error in Fetching Liked Hotels: ',
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const handleLike = async propId => {
+    let payload = JSON.stringify({
+      email: globalState?.userEmail,
+      propertyId: propId,
+    });
+    try {
+      let {data: res} = await Like(payload);
+      if (res?.success) {
+        console.log('Response: ', res);
+      } else {
+        console.log('Failed to handle like: ', res.message || res);
+      }
+    } catch (error) {
+      console.error(
+        'Error in Liking Property: ',
+        error.response?.data || error.message,
+      );
+    }
+  };
+
+  const handleRemoveLike = async propId => {
+    let payload = JSON.stringify({
+      email: globalState?.userEmail,
+      propertyId: propId,
+    });
+    try {
+      let {data: res} = await DisLike(payload);
+      if (res?.success) {
+        console.log('Response: ', res);
+      } else {
+        console.log('Failed to remove like: ', res.message || res);
+      }
+    } catch (error) {
+      console.error(
+        'Error in Removing Liked Prop: ',
+        error.response?.data || error.message,
+      );
+    }
+  };
+  
+  const Wire = ({cardCount, segmentWidth = 400, height = 70}) => {
+    const wavePath = generateWavePath(cardCount, segmentWidth);
+
+    return (
+      <Svg
+        width={cardCount * segmentWidth}
+        height={height}
+        style={{position: 'absolute', top: 20, left: 0}}>
+        <Path d={wavePath} stroke="#999" strokeWidth={1} fill="none" />
+      </Svg>
+    );
+  };
+
+  const generateWavePath = (
+    cardCount,
+    segmentWidth,
+    amplitude = 30,
+    midline = 30,
+  ) => {
+    let path = `M0,${midline}`;
+    for (let i = 0; i < cardCount; i++) {
+      const startX = i * segmentWidth;
+      const cp1X = startX + segmentWidth * 0.25;
+      const cp2X = startX + segmentWidth * 0.75;
+      const endX = startX + segmentWidth;
+      path += ` C${cp1X},${midline - amplitude} ${cp2X},${
+        midline + amplitude
+      } ${endX},${midline}`;
+    }
+    return path;
+  };
+
+  const toggleLike = item => {
+    setLike(prevSelected =>
+      prevSelected.includes(item)
+        ? prevSelected.filter(selected => selected !== item)
+        : [...prevSelected, item],
+    );
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchLikedProperty();
+    }, []),
+  );
+
+  const ui = [
+    {
+      head: 'Co-Own',
+      data: 'Invest Together. Own Better.',
+      img: 'https://duixj37yn5405.cloudfront.net/appImages/Co-Own.png',
+      navi: 'Home'
+    },
+    {
+      head: 'Packages',
+      data: 'Explore Exclusive Packages & Deals',
+      img: 'https://duixj37yn5405.cloudfront.net/appImages/Package.png',
+      navi: 'Packages'
+    },
+    {
+      head: 'Stays',
+      data: 'Experience Comfort, Book Your Stay',
+      img: 'https://duixj37yn5405.cloudfront.net/appImages/Stays.png',
+      navi: 'DreamscapeHome'
+    },
+    {
+      head: 'Interiors',
+      data: 'Discover Stylish Interior & Designs',
+      img: 'https://duixj37yn5405.cloudfront.net/appImages/Interior.png',
+      navi: 'InteriorForm'
+    }
+  ]
+
+  if (loading) {
+    return <HomeSkeleton />;
+  }
+
+  return (
+<SafeAreaView style={{flex:1,backgroundColor:'#021265'}}>
+        <View style={styles.container}>
+      <Animated.ScrollView
+      showsVerticalScrollIndicator={false}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}>
+
+
+      <ScrollView
+        onScroll={handleVerticalScroll}
+        scrollEventThrottle={16}
+        style={{backgroundColor: '#FFFFFF', flex: 1, width: '100%'}}>
+        <View
+          style={{
+            backgroundColor: '#021265',
+            width: '100%',
+            paddingHorizontal: 15,
+            paddingBottom: 10,
+            marginBottom: 20,
+          }}>
+          <View
+            style={{
+              width: '100%',
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+              }}>
+              <TouchableOpacity
+                style={{paddingTop: 8}}
+                onPress={() => {
+                  openMenu();
+                }}>
+                <IconF name="bars-staggered" size={18} color={'#FFFFFF'} />
+              </TouchableOpacity>
+              <Image
+                style={{width: 100, height: 60, marginLeft: 15}}
+                resizeMode="contain"
+                source={require('./assets/Fslogoapp.png')}
+              />
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                width: '30%',
+                justifyContent: 'flex-end',
+                alignItems: 'flex-end',
+              }}>
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate('NotificationsScreen');
+                }}>
+                  <Image source={{uri:"https://duixj37yn5405.cloudfront.net/appImages/notification-01.png"}} style={{height:23,width:23}}/>
+                {unreadNotifications && (
+                  <View
+                    style={{
+                      width: 9,
+                      height: 9,
+                      borderRadius: 9,
+                      backgroundColor: '#FF0000',
+                      position: 'absolute',
+                      top: 0,
+                      right: 0,
+                    }}></View>
+                )}
+              </TouchableOpacity>
+
+                <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate('Like');
+                }}
+                style={{alignItems: 'flex-end', width: '100%', flex: 1}}>
+                <Image source={{uri:"https://duixj37yn5405.cloudfront.net/appImages/favourite.png"}} style={{height:23,width:23}}/>
+              </TouchableOpacity> 
+
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate('WalletAmount');
+                }}
+                style={{alignItems: 'flex-end', width: '100%', flex: 1}}>
+                <Icon name={'wallet-outline'} size={22} color={'#FFFFFF'} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        <CustomSwiper
+          data={offerCards}
+          height={210}
+          autoplay={carousel?.autoplay}
+        />
+       
+        <View style={{backgroundColor:'#EBE9F6',paddingVertical:12,marginTop:20}}>
+          <Text style={styles.mostCommonFaqsTypo}>Categories</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{gap:10,paddingHorizontal:20}}>
+            {ui.map((item, index) => (
+              <TouchableOpacity onPress={() => {
+                if(item?.head === 'Co-Own'){
+                  navigation.navigate(item?.navi, {details: Properties});
+                }else{
+                  navigation.navigate(item?.navi)
+                }
+              }} key={index} style={{backgroundColor:'#FFF',padding:12,borderRadius:6,width:135,marginRight:20,elevation:5,marginVertical:10}}>
+                <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:15,color:'#021265'}}>{item?.head}</Text>
+                <View style={{width:60,marginTop:5}}>
+                  <Text style={{fontFamily:'WorkSans-Regular',fontSize:11,color:'#000'}}>{item?.data}</Text>
+                </View>
+                <View style={{position:'absolute',bottom:0,right:5}}>
+                  <Image resizeMode='cover' source={{uri: item?.img}} style={{width:60,height:60}}/>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        <TouchableOpacity onPress={() => {
+          navigation.navigate('LableProperty');
+        }} style={{paddingTop:20,paddingHorizontal:20}}>
+          <Image  resizeMode='cover' source={{uri:'https://d1nj26fz89n9xw.cloudfront.net/fracspace_properties_images/altaira/Alt_Banner.png'}} style={{width:'100%', height:100,borderRadius:10}}/>
+        </TouchableOpacity>
+
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginTop:20,
+          }}>
+          <Text style={[styles.mostCommonFaqsTypo, {paddingVertical: 15}]}>
+            Availabile Properties
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Home', {details: Properties});
+            }}>
+            <Text
+              style={[
+                styles.viewTypo11,
+                {paddingVertical: 0, marginTop: 5, paddingRight: 20},
+              ]}>
+              View More
+            </Text>
+          </TouchableOpacity>
+        </View>
+     
+        <ScrollView
+          horizontal={true}
+          style={{paddingHorizontal: 15, paddingVertical: 5}}
+          showsHorizontalScrollIndicator={false}>
+          {Properties.filter(item => item.AvailableFractions > 0).map(
+            (item, index) => {
+              const itemName = item?.name;
+              const propId = item?._id;
+              const isLiked = likedProperty.includes(propId);
+              if (!scaleAnimation[itemName]) {
+                scaleAnimation[itemName] = new Animated.Value(1);
+              }
+              return (
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate('Property', {
+                      details: item,
+                      Id: item._id,
+                      nav: 'HomePage',
+                    });
+                    // navigation.navigate('CoOwnPropDetail', { data: item })
+                  }}
+                  key={index}
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    borderColor: '#00000014',
+                    borderWidth: 1,
+                    padding: 10,
+                    borderRadius: 10,
+                    elevation: 5,
+                    width: width * 0.65,
+                    marginRight: 20,
+                  }}>
+                  <Image
+                    resizeMode="cover"
+                    source={{uri: item?.image?.Image1}}
+                    style={{width: '100%', height: 150}}
+                  />
+                  <View style={{position: 'absolute', top: 15, left: 15}}>
+                    <View>
+                      <Text
+                        style={{
+                          fontFamily: 'Poppins-SemiBold',
+                          fontSize: 20,
+                          color: '#FFFFFF',
+                        }}>
+                        {item?.city}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={{marginTop: 10}}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        flex: 1,
+                      }}>
+                      <View style={{flex: 1}}>
+                        <Text
+                          style={{
+                            fontFamily: 'Montserrat-SemiBold',
+                            fontSize: 13,
+                            color: '#000000',
+                          }}>
+                          {item?.name}
+                        </Text>
+                      </View>
+                      <TouchableOpacity
+                        onPress={() => {
+                          triggerScaleAnimation(itemName);
+                          toggleLike(itemName);
+                          if (isLiked) {
+                            handleRemoveLike(propId);
+                            setLikedProperty(prev =>
+                              prev.filter(id => id !== propId),
+                            );
+                          } else {
+                            handleLike(propId);
+                            setLikedProperty(prev => [...prev, propId]);
+                          }
+                        }}
+                        style={{}}>
+                        <LinearGradient
+                          colors={
+                            isLiked
+                              ? ['#FFFFFF', '#FFFFFF']
+                              : ['#FFFFFF', '#FFFFFF']
+                          }
+                          style={{
+                            width: 35,
+                            height: 35,
+                            borderRadius: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            elevation: 5,
+                            backgroundColor: '#FFFFFF',
+                          }}>
+                          <Animated.View
+                            style={{
+                              transform: [{scale: scaleAnimation[itemName]}],
+                            }}>
+                            {isLiked ? (
+                              <Icon name={'heart'} size={20} color="#ED1C24" />
+                            ) : (
+                              <Icon
+                                name={'heart-outline'}
+                                size={20}
+                                color="#ED1C24"
+                              />
+                            )}
+                          </Animated.View>
+                        </LinearGradient>
+                      </TouchableOpacity>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginTop: 10,
+                      }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-Meidum',
+                          fontSize: 11,
+                          color: '#00000099',
+                        }}>
+                        Total Frac Value:{' '}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-SemiBold',
+                          fontSize: 11,
+                          color: '#000000',
+                          marginLeft: 5,
+                        }}>
+                        ₹ {item?.Price}
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginVertical: 8,
+                      }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-Medium',
+                          fontSize: 11,
+                          color: '#00000099',
+                        }}>
+                        Frac Value:{' '}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-SemiBold',
+                          fontSize: 11,
+                          color: '#000000',
+                          marginLeft: 5,
+                        }}>
+                        ₹ {item?.FC_Price}
+                      </Text>
+                    </View>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-Medium',
+                          fontSize: 11,
+                          color: '#00000099',
+                        }}>
+                        Available Frac:{' '}
+                      </Text>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-SemiBold',
+                          fontSize: 11,
+                          color: '#000000',
+                          marginLeft: 5,
+                        }}>
+                        {item?.AvailableFractions}
+                      </Text>
+                    </View>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        marginTop: 10,
+                      }}>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          flex: 1,
+                        }}>
+                        <Image
+                          source={{
+                            uri: 'https://duixj37yn5405.cloudfront.net/appImages/square.png',
+                          }}
+                          style={{width: 15, height: 15}}
+                        />
+                        <Text
+                          style={{
+                            fontFamily: 'Montserrat-Medium',
+                            fontSize: 9,
+                            color: '#181D27',
+                            marginLeft: 10,
+                          }}>
+                          {item?.area}
+                        </Text>
+                      </View>
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          flex: 1,
+                        }}>
+                        <Image
+                          source={{
+                            uri: 'https://duixj37yn5405.cloudfront.net/appImages/building.png',
+                          }}
+                          style={{width: 15, height: 15}}
+                        />
+                        <Text
+                          style={{
+                            fontFamily: 'Montserrat-Medium',
+                            fontSize: 9,
+                            color: '#181D27',
+                            marginLeft: 7,
+                          }}>
+                          {item?.P_Type}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            },
+          )}
+        </ScrollView>
+
+        <View style={{paddingTop: 20, paddingBottom: 15}}>
+          <Text
+            style={{
+              fontFamily: 'WorkSans-SemiBold',
+              fontSize: 20,
+              color: '#000000',
+              paddingHorizontal: 15,
+            }}>
+            Postcards
+          </Text>
+        </View>
+
+        <View style={{paddingLeft: 20}}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('Blogs', {Blogfor: 'VaranasiBlog'});
+              }}
+              style={{marginRight: 20}}>
+              <Image
+                resizeMode="stretch"
+                source={{
+                 uri: 'https://duixj37yn5405.cloudfront.net/appImages/varanashiPosterImage.jpeg',
+                }}
+                style={{
+                  width: width * 0.91,
+                  height: height * 0.4,
+                  borderRadius: 15,
+                }}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('Blogs', {Blogfor: 'SrilankaBlog'});
+              }}
+              style={{marginRight: 20}}>
+              <Image
+                resizeMode='stretch'
+                source={{
+                  uri: 'https://duixj37yn5405.cloudfront.net/appImages/srilankaPosterImage.jpeg',
+                }}
+                style={{
+                  width: width * 0.91,
+                  height: height * 0.4,
+                  borderRadius: 15,
+                }}
+              />
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            paddingVertical: 20,
+            marginTop: 5,
+            alignItems: 'center',
+          }}>
+          <Text style={styles.mostCommonFaqsTypo}>
+            Wherever you go we've a stay
+          </Text>
+          <View
+            style={{
+              marginRight: 15,
+              alignItems: 'center',
+              borderBottomWidth: 0.5,
+              borderBottomColor: '#081F62',
+            }}>
+            {/* <Text style={styles.viewTypo11}>VIEW ALL</Text> */}
+          </View>
+        </View>
+
+        <View
+          // horizontal={true}
+          style={{flexDirection: 'row', paddingLeft: 15}}>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Ourstay', {location: 'Hyderabad'});
+            }}
+            style={{paddingRight: 18, alignItems: 'center'}}>
+            <Image
+              resizeMode="cover"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/Hyderabad.png',
+              }}
+              style={{width: 90, height: 90}}
+            />
+            <Text
+              style={{
+                fontFamily: 'Montserrat-Medium',
+                fontSize: 11,
+                color: '#000000',
+                marginTop: 10,
+              }}>
+              Hyderabad
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Ourstay', {location: 'Munnar'});
+            }}
+            style={{alignItems: 'center'}}>
+            <Image
+              resizeMode="contain"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/Munnar2.png',
+              }}
+              style={{width: 91, height: 91}}
+            />
+            <Text
+              style={{
+                fontFamily: 'Montserrat-Medium',
+                fontSize: 11,
+                color: '#000000',
+                marginTop: 9,
+              }}>
+              Munnar
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              navigation.navigate('Ourstay', {location: 'Varanasi'});
+            }}
+            style={{alignItems: 'center', paddingHorizontal: 18}}>
+            <Image
+              resizeMode="cover"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/Varanasi.png',
+              }}
+              style={{width: 90, height: 90}}
+            />
+            <Text
+              style={{
+                fontFamily: 'Montserrat-Medium',
+                fontSize: 11,
+                color: '#000000',
+                marginTop: 10,
+              }}>
+              Varanasi
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={{paddingTop: 30,
+        //  borderWidth:1
+          }}>
+          <Text style={styles.mostCommonFaqsTypo}>Testimonials</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{flexDirection: 'column', paddingBottom: 50,
+            //borderWidth:1
+
+            }}>
+              {/* Wire */}
+              <Wire
+                cardCount={3}
+                width={testimonials.length * (cardWidth + 200)}
+                height={wireHeight}
+              />
+
+              <View
+                style={{
+                  flexDirection: 'row',
+                  marginTop: 70,
+                  paddingHorizontal: 20,
+                  //borderWidth:1
+                }}>
+                {testimonials.map((item, index) => (
+                  <View
+                    key={index}
+                    style={{
+                      width: 230,
+                      marginRight: 100,
+                      alignItems: 'center',
+                    }}
+                    onLayout={event => {
+                      const {y, height} = event.nativeEvent.layout;
+                      videoLayouts.current[index] = {y, height};
+                    }}>
+                    {/* Clip */}
+                    <Image
+                      source={{
+                        uri: 'https://duixj37yn5405.cloudfront.net/appImages/clip.png',
+                      }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        position: 'absolute',
+                        top: -40,
+                        zIndex: 2,
+                        right: index % 2 === 0 ? 15 : undefined,
+                        left: index % 2 !== 0 ? 5 : undefined,
+                      }}
+                    />
+{showControls[index] && (
+  <View
+    style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: 150,
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 3,
+    }}
+  >
+    <TouchableOpacity
+      onPress={() => togglePlay(index)}
+      style={{
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        width: 55,
+        height: 55,
+        borderRadius: 30,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}
+    >
+      <Icon
+        name={
+          playStates[index]
+            ? 'pause-circle-outline'
+            : 'play-circle-outline'
+        }
+        size={35}
+        color="#fff"
+      />
+    </TouchableOpacity>
+  </View>
+)}
+
+
+                    <View
+                      style={{
+                        borderWidth: 1,
+                        borderColor: '#0000001A',
+                        backgroundColor: '#E6E6E670',
+                        width: '100%',
+                        padding: 10,
+                        height: 300,
+                        transform: [
+                          {rotate: index % 2 === 0 ? '-10deg' : '10deg'},
+                        ],
+                      }}>
+                      <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => togglePlay(index)}>
+                        <Video
+                          ref={ref => (videoRefs.current[index] = ref)}
+                          source={{uri: item?.video}}
+                          style={{width: '100%', height: 150, marginBottom: 8}}
+                          resizeMode="cover"
+                          paused={!playStates[index]}
+                          onEnd={() => {
+                            const updatedPlayStates = [...playStates];
+                            updatedPlayStates[index] = false;
+                            setPlayStates(updatedPlayStates);
+
+                            const updatedEnded = [...videoEnded];
+                            updatedEnded[index] = true;
+                            setVideoEnded(updatedEnded);
+                          }}
+                          onProgress={({currentTime}) => {
+                            const updatedTimes = [...currentTimes];
+                            updatedTimes[index] = currentTime;
+                            setCurrentTimes(updatedTimes);
+
+                            const activeLineIndex = item.transcript.findIndex(
+                              line =>
+                                currentTime >= line.start &&
+                                currentTime <= line.end,
+                            );
+                            if (
+                              activeLineIndex !== -1 &&
+                              transcriptScrollRefs.current[index]
+                            ) {
+                              transcriptScrollRefs.current[index].scrollTo({
+                                y: activeLineIndex * 32,
+                                animated: true,
+                              });
+                            }
+                          }}
+                          onLoad={({duration}) => {
+                            const updatedDurations = [...durations];
+                            updatedDurations[index] = duration;
+                            setDurations(updatedDurations);
+                          }}
+                        />
+
+                        {showThumbnails[index] && (
+                          <Image
+                            source={{uri: item.image}}
+                            style={{
+                              position: 'absolute',
+                              width: '100%',
+                              height: '100%',
+                              top: 0,
+                              left: 0,
+                              resizeMode: 'cover',
+                              zIndex: 1,
+                            }}
+                          />
+                        )}
+                      </TouchableOpacity>
+
+                      <Text
+                        style={{
+                          fontFamily: 'WorkSans-SemiBold',
+                          fontSize: 15,
+                          color: '#000000',
+                          marginBottom: 8,
+                        }}>
+                        {item.name}
+                      </Text>
+
+                      <ScrollView
+                        ref={ref => (transcriptScrollRefs.current[index] = ref)}
+                        style={{maxHeight: 150}}
+                        showsVerticalScrollIndicator={false}>
+                        {item.transcript.map((line, idx) => {
+                          const isActive =
+                            currentTimes[index] >= line.start &&
+                            currentTimes[index] <= line.end;
+                          return (
+                            <Text
+                              key={idx}
+                              style={{
+                                fontFamily: 'Montserrat-Medium',
+                                fontSize: 12,
+                                color: isActive ? '#1A73E8' : '#0000007A',
+                                fontWeight: isActive ? 'bold' : 'normal',
+                                lineHeight: 18,
+                              }}>
+                              {line.text}
+                            </Text>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
+        <Text style={[styles.mostCommonFaqsTypo, {paddingTop: 10}]}>
+          In the Media
+        </Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={{flexDirection: 'row', gap: 10, paddingLeft: 20}}>
+            <Image
+              style={{width: 120, height: 100}}
+              resizeMode="contain"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/news2.jpeg',
+              }}
+              //source={require('./assets/Rectangle3.png')}
+            />
+            <Image
+              style={{width: 120, height: 80}}
+              resizeMode="contain"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/news1.jpeg',
+              }}
+              //source={require('./assets/Rectangle3.png')}
+            />
+            <Image
+              style={{width: 120, height: 80}}
+              resizeMode="contain"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/news3.jpeg',
+              }}
+              //source={require('./assets/Rectangle3.png')}
+            />
+            <Image
+              style={{width: 120, height: 80}}
+              resizeMode="contain"
+              source={{
+                uri: 'https://duixj37yn5405.cloudfront.net/appImages/news4.jpeg',
+              }}
+            />
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity
+          onPress={() => {
+            handleRating();
+          }}
+          style={{alignItems: 'center', marginTop: 0}}>
+          <Image
+            style={styles.image}
+            resizeMode="contain"
+            source={{
+              uri: 'https://duixj37yn5405.cloudfront.net/appImages/Rate_us.jpeg',
+            }}
+          />
+        </TouchableOpacity>
+
+        <View style={{padding: 20}}>
+          <TouchableOpacity
+            onPress={() => {
+              // openApp('wa.me/919880626111')
+              {
+                console.log( globalState?.userDetails?.phoneNumber," globalState?.userDetails?.phoneNumber?===")
+                globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
+                globalState?.userDetails?.phoneNumber?.length == 13
+                  ? handleCallRecord()
+                  : openApp('wa.me/919880626111');
+              }
+              //handleCallNow();
+            }}
+            style={{
+              alignItems: 'center',
+              flexDirection: 'row',
+              justifyContent: 'center',
+              //  backgroundColor: '#56018A',
+              paddingHorizontal: 20,
+              paddingVertical: 15,
+              borderColor: '#021265',
+              borderWidth: 1,
+              borderRadius: 5,
+              width: '100%',
+              marginBottom: 80,
+            }}>
+            <Icon name="call" size={20} color="#2955D2" />
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: 'Montserrat-Bold',
+                color: '#2955D2',
+              }}>
+              {'  '}Enquire Now
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Modal
+          modalStyle={{width}}
+          visible={popUp}
+          transparent
+          animationType="fade">
+          <View style={{flex: 1, backgroundColor: '#000000b3'}}>
+            <TouchableOpacity
+              onPress={() => {
+               dispatch(hidePopup());
+              }}
+              style={{flex: 1}}
+            />
+            <View
+              style={{
+                width: '100%',
+                height: height * 0.53,
+                position: 'absolute',
+                bottom: 0,
+              }}>
+              <View
+                style={{
+                  position: 'absolute',
+                  top: -40,
+                  alignSelf: 'center',
+                  zIndex: 1,
+                }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    dispatch(hidePopup());
+                  }}
+                  style={{
+                    backgroundColor: '#0000005c',
+                    borderRadius: 20,
+                    padding: 5,
+                  }}>
+                  <Iconn name={'x'} size={25} color={'#fff'} />
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity
+                onPress={() => {
+                dispatch(hidePopup());
+                  navigation.navigate('LableProperty');
+                }}>
+                <Image
+                  resizeMode="contain"
+                  source={{
+                    uri: 'https://duixj37yn5405.cloudfront.net/appImages/AltairaPopUp.png',
+                  }}
+                  style={{width: '100%', height: '100%'}}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+               dispatch(hidePopup());
+                  navigation.navigate('LableProperty');
+                }}
+                style={{position: 'absolute', bottom: 40, alignSelf: 'center'}}>
+                <LinearGradient
+                  colors={['#FAD059', '#FFE7A2', '#EDC249']}
+                  start={{x: 0, y: 0}}
+                  end={{x: 1, y: 0}}
+                  style={{
+                    borderRadius: 50,
+                    padding: 15,
+                    paddingHorizontal: 50,
+                  }}>
+                  <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                    <Text
+                      style={{
+                        fontFamily: 'Montserrat-SemiBold',
+                        fontSize: 14,
+                        color: '#000',
+                      }}>
+                      Discover Altaira
+                    </Text>
+
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        marginLeft: 10,
+                      }}>
+                      {[...Array(3)].map((_, index) => (
+                        <Animated.View
+                          key={index}
+                          style={{
+                            marginLeft: index * -1,
+                            opacity: Animated.multiply(
+                              iconOpacity,
+                              1 - index * 0.3,
+                            ),
+                            transform: [
+                              {
+                                translateX: Animated.multiply(
+                                  iconTranslateX,
+                                  1 - index * 0.1,
+                                ),
+                              },
+                            ],
+                          }}>
+                          <IconF name="chevron-right" size={15} color="#000" />
+                        </Animated.View>
+                      ))}
+                    </View>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+     </Animated.ScrollView>
+      <EdgeFab scrollY={scrollY} />
+
+      {isMenuOpen && (
+        <Pressable
+          onPress={closeMenu}
+          style={{
+            position: 'absolute',
+            top: 0,
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: 'rgba(0,0,0,0.3)',
+            zIndex: 999,
+          }}
+        />
+      )}
+
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={[
+          {
+            transform: [{ translateX: menuAnimation }],
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: MENU_WIDTH,
+            backgroundColor: '#fff',
+          //  paddingHorizontal: 15,
+            // 👇 IMPORTANT
+            paddingBottom: insets.bottom,
+            zIndex: 1000,
+            elevation: 10,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.3,
+            shadowRadius: 4,
+          },
+        ]}
+      >
+        <ScrollView 
+          style={{ backgroundColor: '#FFFFFF', top: 60 }}
+          contentContainerStyle={{
+            paddingBottom: 90 + insets.bottom, // 👈 space for bottom nav
+          }}
+          showsVerticalScrollIndicator={false}
+        >
+
+          <View style={{paddingHorizontal:15}}>
+          <View style={{marginHorizontal: 10,borderRadius: 10,backgroundColor: '#021265E5',paddingHorizontal: 10,paddingVertical: 10,flexDirection: 'row',justifyContent: 'space-between',width: '100%'}}>
+            <View style={{ flexDirection: 'row', flex: 2 }}>
+              <View>
+                <Image resizeMode='cover' source={globalState?.userProfile ? { uri: globalState?.userProfile } : require('../assets/NewProfileimage.jpg')} style={{ width: 45, height: 45, borderRadius: 45, borderWidth: 1, borderColor: '#FFFFFF' }} />
+              </View>
+              <View style={{
+                flexDirection: 'column',
+                justifyContent: 'center', marginLeft: 10
+              }}>
+                <Text style={{
+                  fontFamily: 'Montserrat-SemiBold',
+                  fontSize: 14,
+                  color: '#FFFFFF'
+                }}>Hello {globalState?.userName}!</Text>
+                <Text style={{
+                  fontFamily: 'Montserrat-Medium',
+                  fontSize: 12, color: '#FFFFFF', marginTop: 5
+                }}>{globalState?.userEmail}</Text>
+
+              </View>
+            </View>
+            <View style={{ justifyContent: 'center', flex: 1, alignItems: 'flex-end', paddingRight: 20 }}>
+              {/* <IconI name={'right'} color={'#FFFFFF'} size={15} /> */}
+            </View>
+          </View>
+
+          <View style={{ marginHorizontal: 15, borderWidth: 1, borderColor: '#DCDCDC', borderRadius: 10, marginVertical: 20, padding: 15, flexDirection: 'row', backgroundColor: '#FFFFFF', justifyContent: 'space-between', elevation: 5 }}>
+            <TouchableOpacity onPress={() => {
+              handleCallRecord();
+            }} style={{ flexDirection: 'column', alignItems: 'center' }}>
+              <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico3.png' }} style={{ width: 50, height: 50 }} />
+              <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 10, color: '#1A1A1A', marginTop: 5 }}>Support</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              handleRating();
+            }} style={{ flexDirection: 'column', alignItems: 'center' }}>
+              <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico2.png' }} style={{ width: 50, height: 50 }} />
+              <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 10, color: '#1A1A1A', marginTop: 5 }}>Rate App</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('FeedbackForm');
+            }} style={{ flexDirection: 'column', alignItems: 'center' }}>
+              <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico1.png' }} style={{ width: 50, height: 50 }} />
+              <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 10, color: '#1A1A1A', marginTop: 5 }}>Feedback</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginHorizontal: 20 }}>
+            <View style={{ marginVertical: 10, }}>
+              <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#1A1A1A' }}>Explore</Text>
+            </View>
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('Home', { details: Properties });
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomColor: '#F6F6F6', borderBottomWidth: 1 }}>
+              <View style={{ flexDirection: 'row', }}>
+                {/* <Icoon name={'building-o'} size={20} color={'#000000'}/> */}
+                <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image4.jpeg' }} style={{ width: 20, height: 20 }} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Co-own</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => {
+              setGlobalState(prevState => ({
+                ...prevState,
+                userEvent: 'Interiors'
+              }));
+              navigation.navigate('InteriorForm');
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomColor: '#F6F6F6', borderBottomWidth: 1 }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image8.jpeg' }} style={{ width: 20, height: 20 }} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Interiors</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('DreamscapeHome');
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image10.jpeg' }} style={{ width: 20, height: 20 }} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Stays</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+          </View>
+
+          <View style={{ marginHorizontal: 20 }}>
+            <View style={{ marginVertical: 20 }}>
+              <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#1A1A1A' }}>Support</Text>
+            </View>
+
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('MyProfile', { screen: 'home' });
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomColor: '#F6F6F6', borderBottomWidth: 1 }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Iconn name={'headphones'} size={20} color={'#222222'} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Helpline</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('TermsAndCondition');
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomColor: '#F6F6F6', borderBottomWidth: 1 }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Iconn name={'info'} size={20} color={'#222222'} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Terms & Policies</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('Privacy');
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomColor: '#F6F6F6', borderBottomWidth: 1 }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Icon name={'shield-checkmark-outline'} size={20} color={'#222222'} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Privacy Policy</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => {
+              navigation.navigate('Aboutus');
+            }} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomColor: '#F6F6F6', borderBottomWidth: 1 }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Iconn name={'info'} size={20} color={'#222222'} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>About</Text>
+              </View>
+              <IconI name={'right'} size={15} color={'#081F62'} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => {
+              handleLogOut();
+            }} style={{ flexDirection: 'row', marginVertical: 20 }}>
+              <View style={{ flexDirection: 'row' }}>
+                <Icon name={'log-out-outline'} size={20} color={'#F01212'} style={{ transform: [{ rotate: '180deg' }] }} />
+                <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#1A1A1A', marginLeft: 20 }}>Log out</Text>
+              </View>
+            </TouchableOpacity>
+  </View>
+  </View>
+
+          <TouchableOpacity
+            onPress={() => {
+              setModalVisibleRS(true);
+            }}
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingHorizontal: 20,
+              paddingVertical: 20,
+              borderBottomColor: '#F6F6F6',
+              borderBottomWidth: 1,
+              backgroundColor: '#FBE4D0',
+              marginBottom: 40,
+              borderRadius:0
+            }}>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <View
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: 30,
+                  backgroundColor: '#FFFFFF',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                <IconI name={'delete'} size={15} color={'#D40D0D'} />
+              </View>
+              <Text
+                style={{
+                  fontFamily: 'Montserrat-SemiBold',
+                  fontSize: 12,
+                  color: '#1A1A1A',
+                  marginLeft: 10,
+                }}>
+                Delete Account
+              </Text>
+            </View>
+            {/* <IconI name={'right'} size={15} color={'#081F62'} /> */}
+          </TouchableOpacity>
+
+        
+        </ScrollView>
+      </Animated.View>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisibleRS}
+        onRequestClose={() => {
+          setModalVisibleRS(false);
+        }}>
+        <View style={styles.modalBackground}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Delete Account</Text>
+            <Text style={styles.modalSubtitle}>
+              Are you sure you want to delete this account?
+            </Text>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                width: '100%',
+              }}>
+              <TouchableOpacity
+                style={{
+                  marginTop: 20,
+
+                  paddingVertical: 12,
+                  borderColor: '#0E2038',
+                  borderWidth: 1,
+                  // paddingHorizontal: 0,
+                  borderRadius: 15,
+                  width: '40%',
+                  marginHorizontal: 3,
+                  alignItems: 'center',
+                }}
+                onPress={() => {
+                  setModalVisibleRS(false);
+                }}>
+                <Text style={[styles.okayButtonText, {color: '#0E2038'}]}>
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.okayButton}
+                onPress={() => {
+                  handleDeleteAccount();
+                }}>
+                <Text style={styles.okayButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </View>
+    </SafeAreaView>
+  );
+}
+const styles = StyleSheet.create({
+  input: {
+    borderColor: '#1A1A1A',
+    borderWidth: 1,
+    borderRadius: 8,
+    fontFamily: 'Barlow-Medium',
+    fontSize: 16,
+  },
+
+  mostCommonFaqsTypo: {
+    fontFamily: 'WorkSans-SemiBold',
+    color: '#000',
+    textAlign: 'left',
+    letterSpacing: 0,
+    fontSize: 18,
+    marginHorizontal: 15,
+   // borderWidth:1
+  },
+  viewTypo1: {
+    color: '#000000',
+    fontFamily: 'Montserrat-Medium',
+    textAlign: 'center',
+    letterSpacing: 0,
+    fontSize: 14,
+    paddingVertical: 15,
+  },
+  viewTypo11: {
+    color: '#386BF6',
+    fontFamily: 'WorkSans-Medium',
+    textAlign: 'center',
+
+    fontSize: 12,
+  },
+  maskGroupIconLayout: {
+    flex: 1,
+    width: width * 0.3,
+    height: height * 0.16,
+    overflow: 'visible',
+  },
+
+  groupChild22: {
+    borderRadius: 12,
+    borderColor: '#e7e7e7',
+    borderWidth: 1,
+    borderStyle: 'solid',
+    backgroundColor: '#ffffff',
+    // padding:20,
+    paddingVertical: 10,
+    width: '100%',
+    // flex: 1
+  },
+  groupChild23: {
+    //  top: 175,
+    left: 121,
+    // alignItems:'center',
+    width: 142,
+    height: 18,
+    //position: "absolute",
+    overflow: 'hidden',
+  },
+  airportTypo: {
+    color: '#2b2b2b',
+    fontSize: 11,
+    fontFamily: 'Montserrat-Medium',
+    //alignItems: 'center',
+    textAlign: 'center',
+    // fontWeight: "500",
+    //paddingVertical: 10
+  },
+  image: {
+    width: width * 0.93,
+    height: height * 0.22,
+    //height:160,
+    borderRadius: 15,
+    //flex: 1,
+  },
+  wrapper: {},
+  container: {
+    flex: 1,
+  },
+  videoContainer: {
+    position: 'absolute',
+    bottom: 10,
+    left: 10,
+    width: width * 0.4, // Adjust the width of the video as needed
+    height: 255, // Adjust the height of the video as needed
+    overflow: 'hidden',
+    borderRadius: 10, // Optional: For rounded corners on the video
+  },
+  backgroundVideo: {
+    width: '100%',
+    height: '100%',
+  },
+  backgroundVideo2: {
+    width: '10%',
+    height: '10%',
+  },
+  image1: {
+    width: 100,
+    height: 60,
+  },
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContainer: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 16,
+    fontFamily: 'Montserrat-Bold',
+    color: '#000',
+    marginTop: 20,
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#000000',
+    marginTop: 10,
+    textAlign: 'center',
+    opacity: 0.8,
+    lineHeight: 20,
+  },
+  okayButton: {
+    marginTop: 20,
+    backgroundColor: '#0E2038',
+    paddingVertical: 12,
+    // paddingHorizontal: 0,
+    borderRadius: 15,
+    width: '40%',
+    alignItems: 'center',
+    marginHorizontal: 3,
+  },
+  okayButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+});

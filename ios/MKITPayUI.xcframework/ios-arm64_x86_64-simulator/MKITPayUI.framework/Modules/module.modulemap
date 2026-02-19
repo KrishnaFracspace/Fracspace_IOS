@@ -1,0 +1,11 @@
+framework module MKITPayUI {
+  umbrella header "MKITPayUI.h"
+
+  export *
+  module * { export * }
+}
+
+module MKITPayUI.Swift {
+  header "MKITPayUI-Swift.h"
+  requires objc
+}

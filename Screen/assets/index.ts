@@ -1,0 +1,11 @@
+export const altairaIcon = require('./altairaIcon.jpeg')
+export const altairaImgIcon = require('./altairaLogo.webp')
+export const modalImg = require('./modalImg.jpeg')
+export const wallet1 = require('./wallet1.png')
+export const wallet2 = require('./wallet2.png')
+export const wallet3 = require('./wallet3.png')
+export const wallet4 = require('./wallet4.png')
+export const wallet5 = require('./wallet5.png')
+export const wallet6 = require('./wallet6.png')
+export const wallet7 = require('./wallet7.png')
+//export const googleImg = require('./google.jpeg');

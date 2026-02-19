@@ -1,0 +1,144 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 5.7.2 (swiftlang-5.7.2.135.5 clang-1400.0.29.51)
+// swift-module-flags: -target x86_64-apple-ios11.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name MKITPayUI
+// swift-module-flags-ignorable: -enable-bare-slash-regex
+import Foundation
+@_exported import MKITPayUI
+import Swift
+import UIKit
+import WebKit
+import _Concurrency
+import _StringProcessing
+public struct MKITPayRequest {
+  public var AESKey: Swift.String!
+  public var SecureSecret: Swift.String!
+  public var BankId: Swift.String!
+  public var MerchantId: Swift.String!
+  public var TerminalId: Swift.String!
+  public var TxnRefNo: Swift.String!
+  public var MCC: Swift.String!
+  public var PassCode: Swift.String!
+  public var TxnType: Swift.String!
+  public var Currency: Swift.String!
+  public var Amount: Swift.String!
+  public var OrderInfo: Swift.String!
+  public var payOpt: Swift.String!
+  public var CardNumber: Swift.String!
+  public var ExpiryDate: Swift.String!
+  public var CardSecurityCode: Swift.String!
+  public var BankCode: Swift.String!
+  public var chTokenizationConsent: Swift.String!
+  public var chUserID: Swift.String!
+  public var CardTokenPan: Swift.String!
+  public var CardTokenExpiry: Swift.String!
+  public var CardTokenCrypto: Swift.String!
+  public var MerchantTRID: Swift.String!
+  public var CardTokenReferenceNo: Swift.String!
+  public var FirstName: Swift.String!
+  public var LastName: Swift.String!
+  public var Street: Swift.String!
+  public var City: Swift.String!
+  public var ZIP: Swift.String!
+  public var State: Swift.String!
+  public var Email: Swift.String!
+  public var Phone: Swift.String!
+  public var UDF01: Swift.String!
+  public var UDF02: Swift.String!
+  public var UDF03: Swift.String!
+  public var UDF04: Swift.String!
+  public var UDF05: Swift.String!
+  public var UDF06: Swift.String!
+  public var UDF07: Swift.String!
+  public var UDF08: Swift.String!
+  public var UDF09: Swift.String!
+  public var UDF10: Swift.String!
+  public var Version: Swift.String!
+  public var encData: Swift.String?
+  public init()
+}
+public struct MKITUpiPayRequest {
+  public var AESKey: Swift.String!
+  public var SecureSecret: Swift.String!
+  public var BankId: Swift.String!
+  public var MerchantId: Swift.String!
+  public var TerminalId: Swift.String!
+  public var OrderId: Swift.String!
+  public var AccessCode: Swift.String!
+  public var Command: Swift.String!
+  public var PaymentOption: Swift.String
+  public var MCC: Swift.String!
+  public var Currency: Swift.String!
+  public var Amount: Swift.String!
+  public var OrderInfo: Swift.String!
+  public var chFirstName: Swift.String!
+  public var chLastName: Swift.String!
+  public var chAddrStreet: Swift.String!
+  public var chAddrCity: Swift.String!
+  public var chAddrZip: Swift.String!
+  public var chAddrState: Swift.String!
+  public var chEmail: Swift.String!
+  public var chPhone: Swift.String!
+  public var IpAddress: Swift.String!
+  public var UDF01: Swift.String!
+  public var UDF02: Swift.String!
+  public var UDF03: Swift.String!
+  public var UDF04: Swift.String!
+  public var UDF05: Swift.String!
+  public var UDF06: Swift.String!
+  public var UDF07: Swift.String!
+  public var UDF08: Swift.String!
+  public var UDF09: Swift.String!
+  public var UDF10: Swift.String!
+  public var TransactionNote: Swift.String!
+  public var MerchantReturnURL: Swift.String!
+  public var encData: Swift.String?
+  public init()
+}
+@_hasMissingDesignatedInitializers public class MKITUpiStatusRequest {
+  public class RequestBuilder {
+    public init()
+    public func setBankId(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setMerchantId(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setTerminalId(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setOrderId(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setAccessCode(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setTxnType(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setHashKey(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setAESKey(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func setEncData(value: Swift.String) -> MKITPayUI.MKITUpiStatusRequest.RequestBuilder
+    public func build() -> MKITPayUI.MKITUpiStatusRequest
+    @objc deinit
+  }
+  @objc deinit
+}
+public struct MKITPayResponse {
+}
+public struct MKITUpiPayResponse : Swift.Codable {
+  public func encode(to encoder: Swift.Encoder) throws
+  public init(from decoder: Swift.Decoder) throws
+}
+@objc public protocol MKITPayControllerDelegate {
+  @objc optional func didFinishPaymentWithData(response: [Swift.String : Any])
+  @objc func didFinishPaymentWithJSONData(response: Swift.String)
+  @objc func didFailWithError(error: Swift.Error?)
+  @objc optional func didFinishWithUPI()
+}
+@objc @_inheritsConvenienceInitializers @_Concurrency.MainActor(unsafe) public class MKITPayController : UIKit.UIViewController {
+  @_Concurrency.MainActor(unsafe) public var enableLog: Swift.Bool
+  @_Concurrency.MainActor(unsafe) public static func initiateMKITPay(onViewController: UIKit.UIViewController, delegate: MKITPayUI.MKITPayControllerDelegate?) -> MKITPayUI.MKITPayController?
+  @_Concurrency.MainActor(unsafe) public static func checkUPIStatus(upiStatusRequest: MKITPayUI.MKITUpiStatusRequest, delegate: MKITPayUI.MKITPayControllerDelegate?, enableLog: Swift.Bool = false, baseURL: Swift.String, completionHandler: @escaping (_ status: Swift.Bool, _ response: Swift.String?, _ error: Swift.Error?) -> Swift.Void) throws
+  @_Concurrency.MainActor(unsafe) public static func getVersion() -> Swift.String
+  @_Concurrency.MainActor(unsafe) public func makePayment(payRequest: MKITPayUI.MKITPayRequest, baseURL: Swift.String) throws
+  @_Concurrency.MainActor(unsafe) public func makePayment(payUpiRequest: MKITPayUI.MKITUpiPayRequest, baseURL: Swift.String) throws
+  @_Concurrency.MainActor(unsafe) public func decryptEncData(strEncData: Swift.String, aesKey: Swift.String) -> [Swift.String : Swift.String]
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public func viewDidLoad()
+  @objc deinit
+  @_Concurrency.MainActor(unsafe) @objc override dynamic public init(nibName nibNameOrNil: Swift.String?, bundle nibBundleOrNil: Foundation.Bundle?)
+  @_Concurrency.MainActor(unsafe) @objc required dynamic public init?(coder: Foundation.NSCoder)
+}
+extension MKITPayUI.MKITPayController : WebKit.WKNavigationDelegate, WebKit.WKUIDelegate {
+  @_Concurrency.MainActor(unsafe) @objc dynamic public func webView(_ webView: WebKit.WKWebView, decidePolicyFor navigationAction: WebKit.WKNavigationAction, decisionHandler: @escaping (WebKit.WKNavigationActionPolicy) -> Swift.Void)
+  @_Concurrency.MainActor(unsafe) @objc dynamic public func webView(_ webView: WebKit.WKWebView, didCommit navigation: WebKit.WKNavigation!)
+  @_Concurrency.MainActor(unsafe) @objc dynamic public func webView(_ webView: WebKit.WKWebView, didFailProvisionalNavigation navigation: WebKit.WKNavigation!, withError error: Swift.Error)
+  @_Concurrency.MainActor(unsafe) @objc dynamic public func webView(_ webView: WebKit.WKWebView, didFail navigation: WebKit.WKNavigation!, withError error: Swift.Error)
+}
