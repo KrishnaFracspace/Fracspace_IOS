@@ -14,9 +14,8 @@ export default function InteriorForm() {
     const [Property, setProperty] = useState({ PropertyKind: 'Residential', PropertyTypeR: 'Apartment', PropertyTypeC: 'Office Spaces', ifOtherPropertyType: '', ifOtherPropertyTypeC: '' });
 
 
-
     return (
-         <SafeAreaView style={{flex: 1,}}>
+         <SafeAreaView style={{flex: 1,backgroundColor: '#FFFFFF'}}>
         <ScrollView style={{backgroundColor: '#FFFFFF',width: '100%',}}>
             <View style={{ width: '100%',  paddingHorizontal: 15, flex: 1, }}>
                 <View style={{
@@ -27,17 +26,13 @@ export default function InteriorForm() {
                     width: '100%'
                 }}>
                     <TouchableOpacity style={{ flex: 1 ,paddingVertical: 15,}}
-                        onPress={() => {
-                            
-                            navigation.navigate('HomePage');
-
-                        }}>
+                        onPress={() =>   navigation?.goBack()}>
                         <Icon name="chevron-back-outline" size={25} color={'#000'} />
                     </TouchableOpacity>
                     <TouchableOpacity style={{ flex: 1 ,
                     paddingVertical: 15,}}
                         onPress={() => {
-                            navigation.navigate('HomePage');
+                            navigation?.goBack();
 
                         }}>
                         <Text style={{

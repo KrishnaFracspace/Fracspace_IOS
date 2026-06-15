@@ -185,51 +185,15 @@ export default function EnquirtyFS(props) {
 
     return (
          <SafeAreaView style={{flex: 1,}}>
-            <View style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding:15,
-                // paddingVertical: 15,
-                // width: '100%',
-                // paddingHorizontal: 15,
-                // elevation: 5,
-                // // borderBottomWidth: 1,
-                // shadowColor: '#000',
-                // shadowOffset: { width: 2, height: 2 },
-                // shadowOpacity: 0.15,
-                // shadowRadius: 2,
-                // backgroundColor: '#FFFFFF',
-                // //elevation: 1,
-                borderBottomColor: '#DDE1E5'
-            }}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:15}}>
                 <TouchableOpacity style={{ flex: 1 }}
                     onPress={() => {
                         navigation.goBack()
-                        //navigation.navigate('StayPropertyDetails');
-
                     }}>
                     <Icon name="chevron-back-outline" size={25} color={'#000'} />
                 </TouchableOpacity>
-                <Text style={{
-                    fontSize: 15,
-                    fontFamily: 'WorkSans-SemiBold',
-                    color: '#000000',
-                }}>My Bookings
-                </Text>
-                <View style={{width:25}}/>
-                {/* <TouchableOpacity style={{ flex: 1 }}
-                    onPress={() => {
-                        navigation.navigate('HomePage');
-
-                    }}>
-                    <Text style={{
-                        fontSize: 15,
-                        fontFamily: 'WorkSans-SemiBold',
-                        color: '#0424CB',
-                        textAlign: 'right'
-                    }}>EXIT</Text>
-                </TouchableOpacity> */}
+                <Text style={{fontSize: 15,fontFamily: 'WorkSans-SemiBold',color: '#000000'}}>My Bookings</Text>
+                <View style={{width:120}}></View>
             </View>
             <ScrollView style={{ backgroundColor: '#FFFFFF', width: '100%', padding: 20 }}>
                 <View style={{ paddingVertical: 10 }}>
@@ -533,7 +497,7 @@ export default function EnquirtyFS(props) {
                 }}>Mobile Number</Text>
                 <View style={{ flexDirection: 'row', justifyContent: 'flex-start', width: '100%' }}>
 
-                    <TouchableOpacity onPress={() => {
+                    {/* <TouchableOpacity onPress={() => {
 
                         setShow(true);
                     }} style={{ flexDirection: 'row', borderColor: '#010101', borderRadius: 5, paddingHorizontal: 10, borderWidth: 1, alignItems: 'center', justifyContent: 'center' }}>
@@ -544,13 +508,13 @@ export default function EnquirtyFS(props) {
                             color: '#000000',
                         }}>{countryCode}</Text>
                         <Icon name={'caret-down'} size={16} color={'#333333'} />
-                    </TouchableOpacity>
-                    <View style={[styles.input, { marginLeft: 10, width: '75%' }]}>
+                    </TouchableOpacity> */}
+                    <View style={[styles.input, { width: '100%' }]}>
                         <TextInput
                             style={{
                                 width: '100%',
                                 height: 45,
-                                // paddingLeft: 30,
+                                paddingLeft: 15,
                                 color: '#1E2135',
                                 fontFamily: 'Poppins-Regular',
                             }}
@@ -638,7 +602,7 @@ export default function EnquirtyFS(props) {
                             fontSize: 12,
                             paddingLeft: 5
                         }}>
-                        I agree to Dreamscape’s
+                        I agree to
                     </Text>
                     <TouchableOpacity
                         onPress={() => {

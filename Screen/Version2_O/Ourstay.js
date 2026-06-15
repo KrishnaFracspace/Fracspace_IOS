@@ -12,7 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Property from '../Property';
 import { useDispatch, useSelector } from "react-redux";
 import { upComingProjectApi } from "../redux/reducer/propertyReducer";
-
+import Back from "../Back";
 
 export default function Ourstay (props){
      const { globalState, setGlobalState } = useContext(AppContext);
@@ -31,7 +31,6 @@ export default function Ourstay (props){
         try {
             let {data : res} = await DreamscapeHotels(payload);
             setLocationDetails(res?.hotels);
-       
         } catch (error) {
             console.log("Error in Listed Hotels: ",error);
         }
@@ -46,20 +45,10 @@ export default function Ourstay (props){
         <View style={styles.container}>
         <StaggeredList
             data={locationDetails}
-            numColumns={2} // 2-column layout
+            numColumns={2} 
             keyExtractor={(item) => item.id}
             ListHeaderComponent={<>
-            <View style={{backgroundColor:'#0D2038',padding:25,flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}>
-                <TouchableOpacity onPress={() => {
-                      navigation.goBack()
-                  //  navigation.navigate('DreamscapeHome');
-                }}>
-                    <Icon name={'left'} size={20} color={'#FFFFFF'}/>
-                </TouchableOpacity>
-                <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:18,color:'#FFFFFF'}}>{SearchLocation}</Text>
-                <View></View>
-            </View>
-
+            <Back title={SearchLocation}/>
             <View style={{padding:20}}>
                 <Text style={{fontFamily:'Poppins-SemiBold',fontSize:16,color:'#000000'}}>Properties in {SearchLocation}</Text>
             </View>

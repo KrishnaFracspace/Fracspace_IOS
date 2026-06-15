@@ -1,5 +1,6 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import axios from 'axios';
+import LableProperty from '../../Version2_O/LableProperty';
 
 const initialState = {
   userName: '',
@@ -38,6 +39,7 @@ AllProperties:[],
 isDepplinkNav: false,
 isPopupVisible: false,
 hasShownHomePopup: false,
+InterNational:[]
 
 };
 
@@ -158,8 +160,6 @@ export const getPackages = createAsyncThunk(
   },
 );
 
-
-
 const homeSlice = createSlice({
   name: 'home',
   initialState,
@@ -178,9 +178,7 @@ showPopup(state) {
     state.hasShownHomePopup = true; // mark as shown
   }
 },
-
-
-  hidePopup(state) {
+hidePopup(state) {
     state.isPopupVisible = false;
   },
 
@@ -205,19 +203,33 @@ setDeepLinkNav(state, action) {
         state.prior = res.priority;
         state.AllProperties= res.properties
         // const allProp = 
-        const domastic = res.properties
-          .filter(item => item.PropertyType === 'Domastic')
-          .sort((a, b) => (a.num > b.num ? 1 : -1));
-        // Label properties (PropLable)
+     const domastic = res.properties
+  .filter(item =>
+    item.PropertyType === 'International-Villa' ||
+    item.PropertyType === 'Domastic'
+  )
+  .sort((a, b) => (a.num > b.num ? 1 : -1))
+  // .sort((a, b) => {
+  //   if (a.PropertyType === 'International-Villa' && b.PropertyType !== 'International-Villa') {
+  //     return -1;
+  //   }
+  //   if (b.PropertyType === 'International-Villa' && a.PropertyType !== 'International-Villa') {
+  //     return 1;
+  //   }
+  //   return a.num - b.num;
+  // });
         const label = res.properties
           .filter(item => item.PropertyType === 'Label')
           .sort((a, b) => (a.num > b.num ? 1 : -1));
         state.ProDetails = domastic;
-        
         state.LableProDetails = label;
-// Same as setProperties(Prop)
         state.Properties = domastic;
-        // Indian Domastic properties
+       
+        international =res.properties
+          .filter(item => item.PropertyType === 'International-Villa')
+          .sort((a, b) => (a.num > b.num ? 1 : -1));
+        state.InterNational = international 
+        
         state.indianProperties = res.properties
           .filter(item => !item.country && item.PropertyType === 'Domastic')
           .sort((a, b) => (a.num > b.num ? 1 : -1));
@@ -289,9 +301,7 @@ setDeepLinkNav(state, action) {
           .addCase(getPackages.rejected, (state, action) => {
             state.loading = false;
             state.error = action.payload;
-          }),
-
-          
+          }),      
       );
   },
 });

@@ -53,6 +53,15 @@ export const PropertyDetails = async () => {
   });
 };
 
+export const PropertyDetailsById = async (propId) => {
+  return await axios.get(`https://apitest.fracspace.com/api/users/getPropertyById/${propId}`,{
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': 'Fracspace@2024'
+    },
+  });
+};
+
 export const LikeData = async (payload) => {
   return await axios.post('https://apitest.fracspace.com/api/users/interestedProperties',payload,{
     headers: {
@@ -690,6 +699,19 @@ export const MonitorNotification = async payload => {
     );
 };
 
+export const DeleteNotification = async payload => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/notifications/deleteNotification',
+    payload,
+    {
+      headers: {
+        'Content-Type' : 'application/json',
+        'x-api-key' : 'Fracspace@2024'
+      },
+    },
+  );
+};
+
 export const TransferProperty = async payload => {
   return await axios.post(
       'https://apitest.fracspace.com/api/users/transferPropertyInvestment',
@@ -944,4 +966,212 @@ export const GetCarousel = async () => {
     );
 };
 
+export const SetPrimaryAccount = async payload => {
+    return await axios.post(
+        'https://apitest.fracspace.com/api/users/setPrimaryBankAccount',
+        payload,
+        {
+            headers: {
+                'Content-Type' : 'application/json',
+                'x-api-key' : 'Fracspace@2024'
+            }
+        }
+    )
+}
 
+
+export const GetBankLogo = async () => {
+    return await axios.get(
+        'https://apitest.fracspace.com/api/v1/bankLogos/getBankDetails',
+        {
+            headers: {
+                'Content-Type' : 'application/json',
+                'x-api-key' : 'Fracspace@2024'
+            },
+        },
+    );
+};
+
+export const SendOtpForVerificationToEmail = async payload => {
+    return await axios.post (
+        'https://apitest.fracspace.com/api/users/sendConfirmationOTPToFractionalOwnerEmail',
+        payload,
+        {
+            headers: {
+                'Content-Type' : 'application/json',
+                'x-api-key' : 'Fracspace@2024'
+            },
+        },
+    );
+};
+
+
+export const VerifyOtpForVerificationToEmail = async payload => {
+    return await axios.post (
+        'https://apitest.fracspace.com/api/users/verifyConfirmationOTPSentToFractionalOwnerEmail',
+        payload,
+        {
+            headers: {
+                'Content-Type' : 'application/json',
+                'x-api-key' : 'Fracspace@2024'
+            },
+        },
+    );
+};
+
+
+export const GetFeedbackFormForExit = async() => {
+  return await axios.get(
+    'https://apitest.fracspace.com/api/users/getFeedbackFormForExitRequest',
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+export const SubmitFeedbackForm = async (payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/users/submitFeedbackFormForExitRequest',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+export const updateFCMToken = async (payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/users/updateFCMToken',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      }
+    }
+  )
+}
+
+
+
+// ---------------------- Escape Membership APIs ----------------------
+
+export const createAgreement = async(payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/escapeInvestment/createAgreement',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+export const initiatePaymentForEscape = async(payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/escapeInvestment/initiatePayment',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+
+export const verifyPaymentForEscape = async(payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/escapeInvestment/verifyPayment',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+
+export const InvestmentDetailsForEscape = async (userId) => {
+  return await axios.get(
+    `https://apitest.fracspace.com/api/v1/escapeInvestment/showUserInvestmentDetails?userId=${userId}`,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+export const GetInvestmentDetails = async () => {
+  return await axios.get(
+    'https://apitest.fracspace.com/api/v1/escapeInvestment/getInvestmentPlan',
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+export const EnquiryForCreditUsage = async(payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/escapeInvestment/enquiryForCreditUsage',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+
+export const UpdateBankForMembers = async(payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/escapeInvestment/updateInvesterBankDetails',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+
+export const GetInternationalProperties = async(payload) => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/travel/elasticHotelSearchForGlobalHotelData',
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};

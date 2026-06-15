@@ -1,4 +1,6 @@
-/* fonts */
+import Ourstay from "./Version2_O/Ourstay";
+
+Ourstay/* fonts */
 export const FontFamily = {
     interMedium: "Poppins-Medium",
     inriaSerifBold: "Poppins-Bold",

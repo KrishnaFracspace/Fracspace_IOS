@@ -121,7 +121,7 @@ export default function Enquirenew(props) {
   };
 
   return (
-      <SafeAreaView style={{flex: 1}}>
+      <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
       <Back title={'Enquire Now'} />
 
       <ScrollView style={{backgroundColor: '#FAFAFF', padding: 15}}>

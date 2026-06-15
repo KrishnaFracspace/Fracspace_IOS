@@ -3,6 +3,8 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import api from "../../utils/config/api";
 import { endpoints } from "../../utils/config/config";
+import analytics from '@react-native-firebase/analytics';
+import messaging from '@react-native-firebase/messaging';
 
 const initialState = {
   user: null,
@@ -10,6 +12,14 @@ const initialState = {
   token: null,
   error: null,
 };
+
+const handleUserType = async (userType) => {
+  if(userType) {
+    await messaging().subscribeToTopic('owners');
+  }else {
+    await messaging().unsubscribeFromTopic('owners');
+  }
+}
 
 export const profileDetails = createAsyncThunk(
   "profile/profileDetails",
@@ -30,6 +40,19 @@ export const profileDetails = createAsyncThunk(
           },
         }
       );
+      // console.log("Profile res: ", res?.data);
+      if(res?.data?.success){
+        const userType = res?.data?.data?.verification || res?.data?.data?.ownedProperties?.length > 0;
+        // console.log('UserType: ',userType);
+        if(userType){
+          analytics().setUserProperty('user_type', 'owners');
+        }else{
+          analytics().setUserProperty('user_type', 'normal');
+        }
+
+        handleUserType(userType);
+      }
+      
       return res.data;  
     } catch (err) {
       return rejectWithValue(err.response?.data);
@@ -71,8 +94,8 @@ export const AltairaInterest = createAsyncThunk(
       //     },
       //   })
       
-
     //  console.log("INTEREST API SUCCESS ===>", res.data);
+
       return res.data;
 
     } catch (err) {
@@ -84,7 +107,6 @@ export const AltairaInterest = createAsyncThunk(
     }
   }
 );
-
 
 
 const profileSlice = createSlice({

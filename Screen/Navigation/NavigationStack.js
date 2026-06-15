@@ -2,8 +2,6 @@ import React, { useState, useEffect, useContext, useLayoutEffect } from 'react';
 import { View, Image, Dimensions, Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from '../Home';
-import LoginPage from '../LoginPage';
-import Signin from '../Signin';
 import Property from '../Property';
 import Enquire from '../Enquire';
 import Contact from '../Contact';
@@ -73,6 +71,20 @@ import EdgeFab from '../Version2_O/altaira/FloatingButton';
 import BottomNavigations from './BottomNavigation';
 import LiveStream from '../Version2_O/altaira/LiveStream';
 import EnquirtyFS from '../Version2_O/EnquirtyFS';
+import VerificationOrWallet from './VerificationOrWallet';
+import CameraScreen from '../components/CCTVView';
+import PaymentSummaryScreen from '../Version2_O/PaymentSummaryScreen';
+import ChatBoat from '../Version2_O/chatboat/ChatBoat'
+import AISearchScreen from '../Version2_O/chatboat/APIChatBoat';
+import MembershipProfile from '../Version2_O/escapeMembership/MembershipProfile';
+import MembershipProprtyDesc from '../Version2_O/escapeMembership/MembershipProprtyDesc';
+import PaymentSuccessEscape from '../Version2_O/escapeMembership/PaymentSuccessEscape';
+import PaymentFailedEscape from '../Version2_O/escapeMembership/PaymentFailedEscape';
+import EscapePaymentPage from '../Version2_O/escapeMembership/EscapePaymentPage';
+import TranHisForEscape from '../Version2_O/escapeMembership/TranHisForEscape';
+import ViewAgreement from '../Version2_O/escapeMembership/ViewAgreement';
+import MembershipHome from '../Version2_O/escapeMembership/MembershipHome';
+import PackageDescription from '../Version2_O/PackageDescription';
 
 const { width, height } = Dimensions.get('window');
 
@@ -84,8 +96,7 @@ export default function NavigationStack() {
   const [LoadingS, setLoadingS] = useState(true);
   const [token, setToken] = useState('');
 
-  const handleProfle = async (emailId, tokenid) => {
-    console.log(emailId,"===em======",tokenid,"=====tok==")
+  const handleProfle1 = async (emailId, tokenid) => {
     let payload = JSON.stringify({
       email: emailId,
     });
@@ -126,7 +137,7 @@ export default function NavigationStack() {
     }
   };
 
-  const handleAuth = async () => {
+  const handleAuth1 = async () => {
     try {
       const token = await AsyncStorage.getItem('mytoken');
       const email = await AsyncStorage.getItem('Email');
@@ -145,9 +156,90 @@ export default function NavigationStack() {
     }
   };
 
-  useLayoutEffect(() => {
-    handleAuth();
-  }, []);
+// Updated handleProfile - More robust for deep linking
+const handleProfile = async (emailId, tokenid) => {
+  if (!emailId || !tokenid) {
+    console.warn('Missing email or token for profile fetch');
+    setToken('');
+    setLoadingS(false);
+    return;
+  }
+
+  // console.log('Fetching profile →', { email: emailId, token: tokenid });
+
+  const payload = JSON.stringify({ email: emailId });
+
+  try {
+    const { data: res } = await ProfileDetails(payload, tokenid);
+
+    if (res?.success) {
+      setGlobalState(prev => ({
+        ...prev,
+        userName: res?.data?.userName,
+        userEmail: emailId,
+        token: tokenid,
+        userPhone: res?.data?.phoneNumber,
+        userDetails: res?.data,
+        userProfile: res?.data?.profilePicture,
+      }));
+
+      setToken(tokenid);
+      // console.log('Profile fetched successfully');
+    } else {
+      throw new Error(res?.message || 'Profile fetch failed');
+    }
+  } catch (error) {
+    console.error('Profile fetch error:', error);
+
+    const errorMessage = error?.response?.data?.message || error?.message || 'Unknown error';
+
+    if (errorMessage.toLowerCase().includes('invalid token') || 
+        error?.response?.status === 401) {
+      
+      console.log('Invalid/expired token detected → logging out');
+      setToken('');
+      await AsyncStorage.multiRemove(['mytoken', 'Email']);
+      
+      // Do NOT clear pendingDeepLink here - we want to keep it for after re-login
+    } else {
+      // Non-critical error - show alert but keep token and pending deep link
+      Alert.alert(
+        'Profile Error',
+        errorMessage || 'Failed to load profile. Some features may be limited.',
+      );
+      // Keep the token so deep link flow can still work after login
+      setToken(tokenid);
+    }
+  } finally {
+    setLoadingS(false);
+  }
+};
+
+// Improved handleAuth
+const handleAuth = async () => {
+  try {
+    const [[, storedToken], [, storedEmail]] = await AsyncStorage.multiGet(['mytoken', 'Email']);
+
+    if (storedToken && storedEmail) {
+      // console.log('Stored token found, fetching profile...');
+      await handleProfile(storedEmail, storedToken);
+    } else {
+      console.log('No stored token found');
+      setToken('');
+      setLoadingS(false);
+    }
+  } catch (error) {
+    console.error('Auth check failed:', error);
+    setToken('');
+    setLoadingS(false);
+  }
+};
+
+// Keep your useLayoutEffect as is
+useLayoutEffect(() => {
+  handleAuth();
+}, []);
+
 
   if (LoadingS) {
     return (
@@ -162,21 +254,30 @@ export default function NavigationStack() {
   } else {
     return (
       <Stack.Navigator initialRouteName={token != '' ? 'BottomNavigations' : 'NewLogin'}>
-   <Stack.Screen
+        <Stack.Screen
           name="HomePage"
           component={HomePage}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
+        {/* <Stack.Screen
           name="LoginPage"
           component={LoginPage}
           options={{ headerShown: false }}
-        />
+        /> */}
         <Stack.Screen
           name="BottomNavigations"
           component={BottomNavigations}
           options={{ headerShown: false }}
         />
+        <Stack.Screen name="MembershipHome" component={MembershipHome} options={{headerShown:false}}/>
+        <Stack.Screen name="MembershipProfile" component={MembershipProfile} options={{headerShown:false}}/>
+        <Stack.Screen name="MembershipProprtyDesc" component={MembershipProprtyDesc} options={{headerShown:false}}/>
+        <Stack.Screen name="PaymentSuccessEscape" component={PaymentSuccessEscape} options={{headerShown:false}}/>
+        <Stack.Screen name="PaymentFailedEscape" component={PaymentFailedEscape} options={{headerShown:false}}/>
+        <Stack.Screen name="EscapePaymentPage" component={EscapePaymentPage} options={{headerShown:false}}/>
+        <Stack.Screen name="TranHisForEscape" component={TranHisForEscape} options={{headerShown:false}}/>
+        <Stack.Screen name="ViewAgreement" component={ViewAgreement} options={{headerShown:false}}/>
+        <Stack.Screen name="PackageDescription" component={PackageDescription} options={{headerShown:false}}/>
         <Stack.Screen
           name="trails"
           component={EdgeFab}
@@ -202,11 +303,7 @@ export default function NavigationStack() {
           component={Home}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="Signin"
-          component={Signin}
-          options={{ headerShown: false }}
-        />
+     
         <Stack.Screen
           name="Property"
           component={Property}
@@ -510,6 +607,29 @@ export default function NavigationStack() {
         <Stack.Screen
           name="Packages"
           component={Packages}
+          options={{ headerShown: false }}
+        />
+          <Stack.Screen
+          name="CameraScreen"
+          component={CameraScreen}
+          options={{ headerShown: false }}
+        />
+
+          <Stack.Screen
+          name="PaymentSummary"
+          component={PaymentSummaryScreen}
+          options={{ headerShown: false }}
+        />
+        
+          <Stack.Screen
+          name="ChatBoat"
+          component={ChatBoat}
+          options={{ headerShown: false }}
+        />
+       
+            <Stack.Screen
+          name="AISearchScreen"
+          component={AISearchScreen}
           options={{ headerShown: false }}
         />
       </Stack.Navigator>

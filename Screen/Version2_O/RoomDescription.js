@@ -119,7 +119,7 @@ export default function RoomDescription(props) {
             <Text
               style={{
                 fontFamily: 'WorkSans-SemiBold',
-                fontSize: 20,
+                fontSize: 16,
                 color: '#000000',
               }}>
               {description?.name}-
@@ -135,18 +135,18 @@ export default function RoomDescription(props) {
           </View>
           <View
             style={{flexDirection: 'row', alignItems: 'center', marginTop: 3}}>
-            <Ic name={'location-sharp'} size={20} color={'#0D2037'} />
+            <Ic name={'location-sharp'} size={15} color={'#0D2037'} />
             <Text
               style={{
-                fontFamily: 'Poppins-Medium',
+                fontFamily: 'Poppins-Regular',
                 fontSize: 14,
-                color: '#0424CB',
-                textDecorationLine: 'underline',
+                color: '#000',
+                // textDecorationLine: 'underline',
                 marginLeft: 5,
               }}>{`${description?.location?.address}, ${description?.location?.city}`}</Text>
           </View>
         </View>
-        <View style={{paddingHorizontal: 20, paddingVertical: 15}}>
+        <View style={{paddingHorizontal: 20, paddingTop: 0}}>
           <Text
             style={{
               fontFamily: 'Poppins-SemiBold',
@@ -181,7 +181,7 @@ export default function RoomDescription(props) {
               }}>
               Popular Amenities
             </Text>
-            <Text
+            {/* <Text
               style={{
                 fontFamily: 'Poppins-Medium',
                 fontSize: 10,
@@ -189,7 +189,7 @@ export default function RoomDescription(props) {
                 textDecorationLine: 'underline',
               }}>
               VIEW ALL
-            </Text>
+            </Text> */}
           </View>
 
           <ScrollView horizontal={true} style={{marginTop: 15, gap: 15}}>
@@ -231,7 +231,7 @@ export default function RoomDescription(props) {
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                {/* <Image resizeMode='contain' source={{ uri: 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/icon3.png' }} style={{ width: 30, height: 22 }} /> */}
+                {/* <Image resizeMode='contain' source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/icon3.png' }} style={{ width: 30, height: 22 }} /> */}
                 <Iconn name={'room-service'} size={20} color={'#000000'} />
                 <Text
                   style={{
@@ -300,7 +300,7 @@ export default function RoomDescription(props) {
                 <Image
                   resizeMode="contain"
                   source={{
-                    uri: 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/icon2.png',
+                    uri: 'https://duixj37yn5405.cloudfront.net/appImages/icon2.png',
                   }}
                   style={{width: 30, height: 23}}
                 />
@@ -360,7 +360,7 @@ export default function RoomDescription(props) {
                   alignItems: 'center',
                   justifyContent: 'center',
                 }}>
-                {/* <Image resizeMode='contain' source={{ uri: 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/icon5.png' }} style={{ width: 30, height: 30 }} /> */}
+                {/* <Image resizeMode='contain' source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/icon5.png' }} style={{ width: 30, height: 30 }} /> */}
                 <Iccoo name={'dumbbell'} size={20} color={'#000000'} />
                 <Text
                   style={{
@@ -655,20 +655,30 @@ export default function RoomDescription(props) {
                     justifyContent: 'space-between',
                     marginRight: 20,
                   }}>
-                  <View style={{flexDirection: 'row', flex: 1}}>
+                  <View style={{flexDirection: 'row', justifyContent:'space-between', flex: 1}}>
+                    <View style={{flexDirection:'row',alignItems:'center'}}>
+                      <Image source={{uri:'https://duixj37yn5405.cloudfront.net/appImages/spoon.png'}} style={{ width: 15, height: 15 }} />
+                      <Text
+                        style={{
+                          fontFamily: 'WorkSans-Medium',
+                          fontSize: 12,
+                          color: '#000000',
+                          marginHorizontal: 20,
+                        }}>
+                        {item?.name}
+                      </Text>
+                    </View>
 
-                    <Image source={{uri:'https://duixj37yn5405.cloudfront.net/appImages/spoon.png'}} style={{ width: 15, height: 15 }} />
                     <Text
                       style={{
                         fontFamily: 'WorkSans-Medium',
                         fontSize: 12,
                         color: '#000000',
-                        marginHorizontal: 20,
                       }}>
-                      {item?.name}
+                      {item?.Dist}
                     </Text>
                   </View>
-                  <View
+                  {/* <View
                     style={{
                       flexDirection: 'row',
                       flex: 1,
@@ -680,15 +690,8 @@ export default function RoomDescription(props) {
                       color={'#0424CB'}
                       style={{transform: [{rotate: '315deg'}]}}
                     />
-                    <Text
-                      style={{
-                        fontFamily: 'WorkSans-Medium',
-                        fontSize: 12,
-                        color: '#000000',
-                      }}>
-                      {item?.Dist}
-                    </Text>
-                  </View>
+                    
+                  </View> */}
                 </View>
               ))}
               {/* <View
@@ -993,7 +996,7 @@ export default function RoomDescription(props) {
                 </View>
               </View>
 
-              <View style={{marginTop: 10}}>
+              {/* <View style={{marginTop: 10}}>
                 <Text
                   style={{
                     fontFamily: 'Poppins-SemiBold',
@@ -1037,7 +1040,6 @@ export default function RoomDescription(props) {
                     </Text>
                   </View>
                   <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                    {/* <Iconn name={'account-check-outline'} size={20} color={'#333333'}/> */}
                     <Image
                       source={{
                         uri: 'https://duixj37yn5405.cloudfront.net/appImages/icon6.png',
@@ -1055,7 +1057,7 @@ export default function RoomDescription(props) {
                     </Text>
                   </View>
                 </View>
-              </View>
+              </View> */}
               <View
                 style={{
                   borderWidth: 1,
@@ -1229,7 +1231,7 @@ export default function RoomDescription(props) {
               fontSize: 14,
               color: '#FFFFFF',
             }}>
-            Pay on hotel
+            Pay at hotel
           </Text>
         </TouchableOpacity>
       </View>

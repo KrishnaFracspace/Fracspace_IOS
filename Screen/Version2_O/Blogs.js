@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, Dimensions,TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, Image, Dimensions,TouchableOpacity, StyleSheet } from 'react-native'
 import React from 'react'
 import Icon from 'react-native-vector-icons/AntDesign'
 import { useNavigation } from '@react-navigation/native';
@@ -18,7 +18,7 @@ const navigation = useNavigation();
                         <Icon name={'left'} size={20} color={'#FFFFFF'} />
                     </TouchableOpacity>
                     <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 15, color: '#FFFFFF' }}>Postcards</Text>
-                    <View></View>
+                    <View style={{width:20}}></View>
                 </View>
                 {props?.route?.params?.Blogfor == 'SrilankaBlog' && <View style={{ padding: 20 }}>
                     <View style={{ flexDirection: 'row', alignContent: 'flex-end', justifyContent: 'space-between' }}>
@@ -229,8 +229,6 @@ const navigation = useNavigation();
                     </View>
                 </View>}
 
-
-
                 {props?.route?.params?.Blogfor == 'VaranasiBlog' && <View style={{ padding: 20 }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between',   }}>
                         <View style={{}}>
@@ -352,7 +350,302 @@ const navigation = useNavigation();
                             {`\n`}<Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 15, color: '#000', lineHeight: 25, letterSpacing: 0.3 }}>CEO</Text> </Text>
                     </View>
                 </View>}
+
+                {props?.route?.params?.Blogfor == 'SouthIndia' && 
+                    <View style={{padding:20}}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between',   }}>
+                            <View style={{}}>
+                                <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/FsLogo.png' }} style={{ width: 70, height: 50 }} />
+                            </View>
+                            <View style={{ alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'center' }}>
+                                <View>
+                                    <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 10, color: '#000' }}>May 19, 2026</Text>
+                                </View>
+                                <View style={{ borderWidth: 0.5, borderColor: '#6262624D', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5, marginLeft: 10 }}>
+                                    <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 10, color: '#000' }}>5 min read</Text>
+                                </View>
+                            </View>
+                        </View>
+
+                        <Text style={styles.heading}>
+                            <Text style={{fontFamily:'WorkSans-Medium'}}>FROM THE ROAD</Text> - A JOURNEY ACROSS SOUTH INDIA
+                        </Text>
+                        <Image
+                            source={{
+                                uri: 'https://duixj37yn5405.cloudfront.net/Postcard+Images/srisailam1.jpg',
+                            }}
+                            style={styles.blogImage}
+                            resizeMode="cover"
+                        />
+
+                        {/* Heading */}
+                        
+
+                        {/* Sub Heading */}
+                        <Text style={{color: '#000',fontFamily: 'WorkSans-SemiBold',fontSize:14,marginTop:10}}>
+                            Temples, Time & The Real Meaning of Building
+                        </Text>
+
+                        {/* Description */}
+                        <Text style={styles.description}>
+                            Over the last few weeks, I had the opportunity to travel across South India through 
+                            some of the country’s most sacred temple towns - from the powerful silence of <Text style={{fontFamily:'WorkSans-SemiBold'}}>Srisailam</Text>, 
+                            to the fire of <Text style={{fontFamily:'WorkSans-SemiBold'}}>Arunachalam</Text>, the devotion of 
+                            <Text style={{fontFamily:'WorkSans-SemiBold'}}> Rameshwaram</Text>, the cosmic energy of 
+                            <Text style={{fontFamily:'WorkSans-SemiBold'}}> Chidambaram</Text>, 
+                            the stillness of <Text style={{fontFamily:'WorkSans-SemiBold'}}>Guruvayur</Text>, and the countless ancient temples hidden between highways, forests, 
+                            rivers and small towns.
+                        </Text>
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',marginTop:10,lineHeight: 20}}>
+                            What started as a <Text style={{fontFamily:'WorkSans-SemiBold'}}>spiritual yatra</Text> slowly became something much deeper.
+                        </Text>
+
+                        <Image
+                            source={{
+                                uri: 'https://duixj37yn5405.cloudfront.net/Postcard+Images/chidambaram.jpg',
+                            }}
+                            style={styles.blogImage}
+                            resizeMode="cover"
+                        />
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',marginTop:10,lineHeight: 20}}>
+                            Somewhere between long road journeys, temple bells, barefoot walks, ancient stone corridors, 
+                            and seeing structures that have stood strong for over <Text style={{fontFamily:'WorkSans-SemiBold'}}>1000 years…</Text> 
+                            I began to realize something important:
+                        </Text>
+
+                        <Text style={styles.description}>
+                            This journey became more than travel. It became a reminder that the
+                            strongest foundations are built with patience, vision, and intent.
+                            The same philosophy inspires the way we think about experiences,
+                            hospitality, and investments.
+                        </Text>
+
+                        <View style={{backgroundColor:'#0212650D',padding:10,borderRadius:5,marginTop:10,borderLeftWidth:5,borderLeftColor:'#021265'}}>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>
+                                The people who built these temples were not just constructing buildings.
+                                <Text style={{fontFamily:'WorkSans-SemiBold'}}> They were creating legacies.</Text>
+                                They were building experiences, emotions, communities, destinations and stories designed to outlive generations.
+                            </Text>
+                        </View>
+
+                        <View style={{flexDirection:'row',alignItems:'center',marginTop:15}}>
+                            <View style={{flex:2}}>
+                                <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>
+                                    And that thought stayed with me throughout the <Text style={{fontFamily:'WorkSans-SemiBold'}}>journey.</Text>
+                                </Text>
+                                <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                                    Every great temple town in India was built around more than just faith. It created 
+                                    <Text style={{fontFamily:'WorkSans-SemiBold'}}> movement.</Text> It created 
+                                    <Text style={{fontFamily:'WorkSans-SemiBold'}}> livelihoods.</Text> It created 
+                                    <Text style={{fontFamily:'WorkSans-SemiBold'}}> hospitality, culture, food, trade, architecture and human connection </Text> 
+                                    that continue to thrive centuries later.
+                                </Text>
+                            </View>
+                            <View style={{flex:1}}>
+                                <Image
+                                    source={{
+                                        uri: 'https://duixj37yn5405.cloudfront.net/Postcard+Images/Arunachalam.jpg',
+                                    }}
+                                    style={{width:width*0.25,height:160}}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                        </View>
+
+                        <Image source={{uri:'https://duixj37yn5405.cloudfront.net/Postcard+Images/Guruvayur1.png'}}
+                            style={styles.blogImage}
+                        />
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            In many ways, this is exactly what we dream of building at <Text style={{fontFamily:'WorkSans-SemiBold'}}>Fracspace.</Text>
+                        </Text>
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            Not just <Text style={{fontFamily:'WorkSans-SemiBold'}}>properties.</Text>
+                        </Text>
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>Not just <Text style={{fontFamily:'WorkSans-SemiBold'}}>hospitality spaces.</Text></Text>
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>But <Text style={{fontFamily:'WorkSans-SemiBold'}}>destinations</Text> people emotionally connect with.</Text>
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>Places where people <Text style={{fontFamily:'WorkSans-SemiBold'}}>gather.</Text></Text>
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>Places where <Text style={{fontFamily:'WorkSans-SemiBold'}}>memories</Text> are created.</Text>
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>Places where <Text style={{fontFamily:'WorkSans-SemiBold'}}>architecture</Text> meets emotion.</Text>
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>Places people <Text style={{fontFamily:'WorkSans-SemiBold'}}>return</Text> to year after year.</Text>
+
+                        <View style={{backgroundColor:'#0212650D',padding:10,borderRadius:5,marginTop:10,borderLeftWidth:5,borderLeftColor:'#021265'}}>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>
+                                One of the biggest realizations during this journey was how deeply rooted Indians are to experiences 
+                                that carry <Text style={{fontFamily:'WorkSans-SemiBold'}}>meaning.</Text> Even today, millions travel across the country not for luxury, but for <Text style={{fontFamily:'WorkSans-SemiBold'}}>peace, 
+                                connection</Text> and something they can feel beyond material value.
+                            </Text>
+                        </View>
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            That is a <Text style={{fontFamily:'WorkSans-SemiBold'}}>powerful reminder</Text> for all of us in real estate and hospitality
+                        </Text>
+
+                        <Image 
+                            source={{uri: 'https://duixj37yn5405.cloudfront.net/Postcard+Images/Overall+Villa.jpeg'}}
+                            style={styles.blogImage}
+                        />
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            At <Text style={{fontFamily:'WorkSans-SemiBold'}}>Fracspace</Text>, 
+                            whether it is a holiday home, a <Text style={{fontFamily:'WorkSans-SemiBold'}}>Dreamscape </Text> 
+                            property, <Text style={{fontFamily:'WorkSans-SemiBold'}}>Altaira</Text>, a retreat, 
+                            or even a small stay tucked away in nature - our vision has always been to create spaces 
+                            that people feel attached to emotionally, not just financially.
+                        </Text>
+
+                        <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>And perhaps the biggest lesson this journey left me with is this:</Text>
+
+                        <View style={{flexDirection:'row',}}>
+                            <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:12,color:'#000',marginTop:2}}>• </Text>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginLeft:5}}>
+                                The <Text style={{fontFamily:'WorkSans-SemiBold'}}>greatest structures</Text> in history were never built for short-term trends.
+                            </Text>
+                        </View>
+                        <View style={{flexDirection:'row',}}>
+                            <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:12,color:'#000',marginTop:2}}>• </Text>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginLeft:5}}>
+                                They were built to <Text style={{fontFamily:'WorkSans-SemiBold'}}>last.</Text>
+                            </Text>
+                        </View>
+                        <View style={{flexDirection:'row',}}>
+                            <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:12,color:'#000',marginTop:2}}>• </Text>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginLeft:5}}>
+                                Many of these temples took decades - sometimes centuries - to complete. Yet they were created with 
+                                <Text style={{fontFamily:'WorkSans-SemiBold'}}> extraordinary patience, detailing, craftsmanship and long-term thinking.
+                                The greatest structures in history were never built for short-term trends.</Text>
+                            </Text>
+                        </View>
+                        <View style={{flexDirection:'row',}}>
+                            <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:12,color:'#000',marginTop:2}}>• </Text>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginLeft:5}}>
+                               In today’s fast-moving world, we often expect everything <Text style={{fontFamily:'WorkSans-SemiBold'}}>instantly. </Text> 
+                               But true <Text style={{fontFamily:'WorkSans-SemiBold'}}>value</Text>, true experiences and true legacies take time to build.
+                            </Text>
+                        </View>
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            This <Text style={{fontFamily:'WorkSans-SemiBold'}}>journey</Text> has strengthened our belief that the projects we create henceforth must carry that same philosophy - <Text style={{fontFamily:'WorkSans-SemiBold'}}>to build with meaning, to build with emotion</Text>, and most importantly:
+                        </Text>
+
+                        <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            To build to last.
+                        </Text>
+
+                        <View style={{backgroundColor:'#0212650D',padding:10,borderRadius:5,marginTop:10,borderLeftWidth:5,borderLeftColor:'#021265'}}>
+                            <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20}}>
+                                Not just for today’s generation, but for <Text style={{fontFamily:'WorkSans-SemiBold'}}>generations that come after us.</Text>
+                                {"\n"}As I return from this journey, I come back with:
+                                {"\n"}• renewed clarity,
+                                {"\n"}• deeper gratitude,
+                                {"\n"}• stronger faith,
+                                {"\n"}and even bigger <Text style={{fontFamily:'WorkSans-SemiBold'}}>conviction</Text> in what we are building together.
+                            </Text>
+                        </View>
+
+                        <Image 
+                            source={{uri: 'https://duixj37yn5405.cloudfront.net/Postcard+Images/WhatsApp+Image+2026-05-18+at+10.11.53+AM.jpeg'}}
+                            style={styles.blogImage}
+                        />
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            To everyone who has been part of the <Text style={{fontFamily:'WorkSans-SemiBold'}}>Fracspace journey</Text> so far - <Text style={{fontFamily:'WorkSans-SemiBold'}}>thank you.</Text>
+                        </Text>
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            And to those who have <Text style={{fontFamily:'WorkSans-SemiBold'}}>travelled with us, invested with us, stayed with us, trusted us and believed in us</Text> - this journey only reinforces one thing:
+                        </Text>
+
+                        <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',lineHeight: 20,marginTop:10}}>
+                            We are not just building spaces.
+                            {"\n"}We are building <Text style={{fontFamily:'WorkSans-SemiBold'}}>legacies, experiences and destinations</Text> that we hope people will remember for decades to come.
+                            {"\n"}—
+                            {"\n"}Unnath Reddy
+                            {"\n"}CEO
+                        </Text>
+                    </View>
+                }
     </ScrollView>
         </SafeAreaView>
     )
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F5EF',
+    paddingHorizontal: 20,
+  },
+
+  topRow: {
+    marginTop: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  blogText: {
+    fontSize: 20,
+    color: '#000',
+    fontFamily: 'WorkSans-SemiBold',
+  },
+
+  readContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  timeText: {
+    fontSize: 12,
+    color: '#7A7A7A',
+    fontFamily: 'WorkSans-Regular',
+  },
+
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#7A7A7A',
+    marginHorizontal: 8,
+  },
+
+  readText: {
+    fontSize: 12,
+    color: '#7A7A7A',
+    fontFamily: 'WorkSans-Regular',
+  },
+
+  blogImage: {
+    width: '100%',
+    height: 200,
+    marginTop: 24,
+  },
+
+  heading: {
+    marginTop: 15,
+    fontSize: 13,
+    color: '#111',
+    lineHeight: 22,
+    letterSpacing: 0.5,
+    fontFamily: 'WorkSans-SemiBold',
+    textTransform: 'uppercase',
+  },
+
+  subHeading: {
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#7B6331',fontFamily: 'WorkSans-SemiBold',
+  },
+
+  description: {
+    marginTop: 10,
+    fontSize: 12,
+    lineHeight: 20,
+    color: '#000',
+    fontFamily: 'WorkSans-Regular',
+  },
+});

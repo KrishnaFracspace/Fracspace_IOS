@@ -42,7 +42,13 @@ export default function CustomSwiper({
     return stopAutoSlide;
   }, [autoplay, data.length]);
 
+  // const startAutoSlide = () => {
+  //   stopAutoSlide();
+
   const startAutoSlide = () => {
+    if (!Array.isArray(data) || data.length <= 1) {
+      return;
+    }
     stopAutoSlide();
     intervalRef.current = setInterval(() => {
       let nextIndex = currentIndexRef.current + 1;
@@ -50,10 +56,16 @@ export default function CustomSwiper({
       if (nextIndex >= data.length) {
         nextIndex = 0;
       }
-      flatListRef.current?.scrollToIndex({
-        index: nextIndex,
-        animated: true,
-      });
+      // flatListRef.current?.scrollToIndex({
+      //   index: nextIndex,
+      //   animated: true,
+      // });
+      if (flatListRef.current &&nextIndex >= 0 &&nextIndex < data.length) {
+        flatListRef.current.scrollToIndex({
+          index: nextIndex,
+          animated: true,
+        });
+      }
       currentIndexRef.current = nextIndex;
       setCurrentIndex(nextIndex);
     }, autoplayInterval);
@@ -88,6 +100,7 @@ export default function CustomSwiper({
   if (!data.length) return null;
 
   const renderItem = ({ item }) => {
+//    console.log(item,"========item====",item?.iosScree)
     // NORMAL BANNER
     if (item.type !== 'COUNTDOWN') {
       return (
@@ -174,6 +187,21 @@ export default function CustomSwiper({
 
   return (
     <View style={[styles.container, { height }]}>
+      {/* <Animated.FlatList
+        ref={flatListRef}
+        data={data}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(_, i) => i.toString()}
+        renderItem={renderItem}
+        onScrollBeginDrag={stopAutoSlide}
+        onMomentumScrollEnd={onMomentumScrollEnd}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+          { useNativeDriver: false }
+        )}
+      /> */}
       <Animated.FlatList
         ref={flatListRef}
         data={data}
@@ -182,6 +210,21 @@ export default function CustomSwiper({
         showsHorizontalScrollIndicator={false}
         keyExtractor={(_, i) => i.toString()}
         renderItem={renderItem}
+
+        getItemLayout={(_, index) => ({
+          length: ITEM_WIDTH,
+          offset: ITEM_WIDTH * index,
+          index,
+        })}
+        onScrollToIndexFailed={(info) => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({
+              index: info.index,
+              animated: true,
+            });
+          }, 300);
+        }}
+
         onScrollBeginDrag={stopAutoSlide}
         onMomentumScrollEnd={onMomentumScrollEnd}
         onScroll={Animated.event(

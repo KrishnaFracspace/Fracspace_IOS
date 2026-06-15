@@ -28,7 +28,7 @@ export default function InteriorFormThird(props) {
   const navigation = useNavigation();
   const [P_Type, setP_Type] = useState(globalState?.ConstructionFData?.PropertyKind == 'Residential' ? 'R' : 'C');
   const [PropertyPreference, setPropertyPreference] = useState('');
-  console.log(globalState?.currentLocation?.City);
+  //console.log(globalState?.currentLocation?.City);
   const [Budget, setBudget] = useState('');
   const [Location, setLocation] = useState(globalState?.currentLocation?.City||'Hyderabad');
   const [Adress, setAdress] = useState('');
@@ -218,7 +218,7 @@ export default function InteriorFormThird(props) {
       }
     }
   };
-  
+
   const handleContructionListing = async () => {
     let payload = JSON.stringify({
       projectType: P_Type == 'R' ? 'Residential' : 'Commercial',

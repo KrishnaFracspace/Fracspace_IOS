@@ -23,6 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function Home(props) {
   const dispatch = useDispatch();
   const PropertyDetails = useSelector(state => state.home.Properties);
+  //console.log(PropertyDetails,"PropertyDetails")
   const frontendReferral= useSelector(state => state.property.referralLinkfront);
   const referralData = useSelector(state => state.property.referralData);
   const prior = useSelector(state => state.home.prior);
@@ -62,8 +63,9 @@ export default function Home(props) {
       const srilankaProperties = PropertyDetails.filter(
         item => item.country == 'International',
       );
-      srilankaProperties.sort((a, b) => (a.num > b.num ? 1 : -1));
+      srilankaProperties.sort((a, b) => (a.num > b.num ? 1 : 1));
       setPropDetails(srilankaProperties);
+     // console.log(srilankaProperties,"srilankaProperties")
     }
   }, [selectCountry]);
 
@@ -153,7 +155,6 @@ const shareReferral = async (propertyId) => {
 
     try {
       let { data: res } = await Like(payload);
-
       if (res?.success) {
         //setIsLike(Productid);
       //   setIsLike([...IsLike, item?._id]);
@@ -172,7 +173,7 @@ const shareReferral = async (propertyId) => {
   };
 
 
-const toggleLike = (item) => {
+  const toggleLike = (item) => {
     setLike((prevSelected) =>
       prevSelected.includes(item)
         ? prevSelected.filter((selected) => selected !== item)
@@ -221,31 +222,33 @@ const toggleLike = (item) => {
   const uniqueCities = Object.values(cityMap);
   const uniqueTypes = Object.values(typeMap);
 
+//console.log(propDetails,"propDetails")
   const filteredAvlProps = (propDetails || [])
-    .filter(item => item.AvailableFractions > 0)
+    .filter(item =>  item.AvailableFractions > 0)
     .filter((prop) => {
       if (propertyType.length > 0) {
         return propertyType.some(type => prop.P_Type?.toLowerCase() === type.toLowerCase());
       }
       return true;
     })
+
     .filter((prop) => {
       if (location.length > 0) {
         return location.some(loc => prop.city?.toLowerCase() === loc.toLowerCase());
       }
       return true;
     })
-    .filter((item) => {
-      const price = parseInt(item.FC_Price.replace(/[^\d]/g, ''));
-      return price >= priceRange[0] && price <= priceRange[1];
-    })
+    // .filter((item) => {
+    //   const price = parseInt(item.FC_Price.replace(/[^\d]/g, ''));
+    //   return price >= priceRange[0] && price <= priceRange[1];
+    // })
     .filter((item) => {
       if (searchQuery.trim() !== '') {
         return item.name?.toLowerCase().includes(searchQuery.toLowerCase()) || item.Location?.toLowerCase().includes(searchQuery.toLowerCase());
       }
       return true;
     });
-
+//console.log(filteredAvlProps,"filteredAvlProps/")
   const filteredNonAvlProps = (propDetails || [])
     .filter(item => item.AvailableFractions === 0)
     .filter(prop => {
@@ -272,9 +275,9 @@ const toggleLike = (item) => {
     });
 
   return (
-    <SafeAreaView style={{ flex: 1,  }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor:"#FFF" }}>
       <View style={{flex:1,backgroundColor: '#FFF' }}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{ padding: 20, backgroundColor: '#FFFFFF', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomColor: '#0000001A', borderBottomWidth: 1, paddingTop: 20 }}>
           <TouchableOpacity onPress={() => {
          navigation?.navigate("BottomNavigations") || navigation.popToTop();
@@ -441,7 +444,7 @@ const toggleLike = (item) => {
                           <Image resizeMode='contain' source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/HotProperty.png' }} style={{ width: 60, height: 100 }} />
                         </View>
                       </View>
-
+{/* 
                       <TouchableOpacity onPress={()=> shareReferral(item._id)} style={{ position: 'absolute',top:12, right: 25 }}>
                       
                         <LinearGradient
@@ -450,7 +453,7 @@ const toggleLike = (item) => {
                              <Ico name={'share-social'} size={20} color="#000" />
                           </LinearGradient>
                       
-                      </TouchableOpacity>
+                      </TouchableOpacity> */}
                       
 
                       <View style={{ position: 'absolute', top: 15, left: 15 }}>
@@ -489,6 +492,7 @@ const toggleLike = (item) => {
                           <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 14, color: '#1E3A8A' }}>₹{item?.Price}</Text>
                         </View>
                       </View>
+                      {item?.name !== 'ALTAIRA – VILLA' &&
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 }}>
                         <View style={{ flex: 2 }}>
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#000000' }}>Frac value:</Text>
@@ -497,6 +501,7 @@ const toggleLike = (item) => {
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#1E3A8A' }}>₹ {item?.FC_Price}</Text>
                         </View>
                       </View>
+              }
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 5 }}>
                         <View style={{ flex: 2 }}>
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#000000' }}>Available Frac</Text>
@@ -752,7 +757,7 @@ const toggleLike = (item) => {
                       />
                     </View>
                     <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
-                      <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 13, color: '#000000' }}>Finalized Price Range</Text>
+                      <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 13, color: '#000000' }}>Finalised Price Range</Text>
                       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
                         <View style={{}}>
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#101010' }}>Min</Text>

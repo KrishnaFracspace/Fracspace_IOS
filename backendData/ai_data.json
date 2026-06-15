@@ -1,0 +1,76 @@
+{
+"Properties":[
+{
+"id": "prop_1",
+"type": "property",
+"text": "Property Name: SOULFUL GHAT BY FRACSPACE. Type: 8 Premium Rooms apartment. Location: Varanasi, Uttar Pradesh, India. Price: 2.5 Crores. Fractional Price: 10 Lakhs. Area: 481 sqft. Booking amount: 25,000. Description: A spiritual property located near the Ganges river with access to temples and ghats. Total Fractions: 25. Available Fractions: 0. Ideal for cultural and spiritual investment."
+},
+{
+"id": "prop_2",
+"type": "property",
+"text": "Property Name: LAKEVIEW BY FRACSPACE CEYLON. Type: 2.5 BHK apartment. Location: Colombo, Sri Lanka. Price: 7 Crores. Fractional Price: 26 Lakhs. Area: 1960 sqft. Booking amount: 50,000. Description: A luxury apartment overlooking Beira Lake with modern amenities and peaceful environment. Total Fractions: 25. Available Fractions: 25. Ideal for international real estate investment."
+},
+{
+"id": "prop_3",
+"type": "property",
+"text": "Property Name: FRACSPACE @ HAVELOCK CITY. Type: 4 BHK penthouse. Location: Colombo, Sri Lanka. Price: 10 Crores. Fractional Price: 20 Lakhs. Area: 3600 sqft. Booking amount: 1 Lakh. Description: A premium penthouse with ocean and city views, clubhouse, gym, and luxury lifestyle features. Total Fractions: 50. Available Fractions: 35. Ideal for high-end investors."
+}
+],
+"FAQs":[
+{
+"id": "faq_1",
+"type": "faq",
+"text": "What is fractional ownership? Fractional ownership allows multiple investors to co-own a property by purchasing shares."
+},
+{
+"id": "faq_2",
+"type": "faq",
+"text": "What is lock-in period? Lock-in period is the minimum time investors must hold their property share before selling."
+},
+{
+"id": "faq_3",
+"type": "faq",
+"text": "How to book a property? Users can book a property by paying the booking amount and completing KYC verification."
+},
+{
+"id": "faq_4",
+"type": "faq",
+"text": "Can I sell my share? Yes, investors can sell their share after the lock-in period through the platform."
+}
+],
+"FinancialData":[
+{
+"id": "fin_1",
+"type": "finance",
+"text": "Rental yield is the annual income earned from a property investment, usually expressed as a percentage of property value."
+},
+{
+"id": "fin_2",
+"type": "finance",
+"text": "Fractional investment allows investors to buy a portion of a property instead of full ownership, reducing investment cost."
+},
+{
+"id": "fin_3",
+"type": "finance",
+"text": "Return on Investment (ROI) in real estate is calculated based on rental income and property appreciation over time."
+}
+],
+"CompanyData":[
+{
+"id": "comp_1",
+"type": "company",
+"text": "Fracspace is a platform that enables users to co-own premium real estate properties in India and international locations."
+},
+{
+"id": "comp_2",
+"type": "company",
+"text": "Fracspace provides investment opportunities with lower entry cost by dividing properties into fractions."
+},
+{
+"id": "comp_3",
+"type": "company",
+"text": "Fracspace handles property management, legal compliance, and rental operations for investors."
+}
+]
+}
+

@@ -8,4 +8,5 @@ export const wallet4 = require('./wallet4.png')
 export const wallet5 = require('./wallet5.png')
 export const wallet6 = require('./wallet6.png')
 export const wallet7 = require('./wallet7.png')
+export const DefaultBank = require('./DefaultBank.jpeg')
 //export const googleImg = require('./google.jpeg');

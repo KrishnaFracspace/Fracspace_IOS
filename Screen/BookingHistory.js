@@ -45,7 +45,7 @@ export default function BookingHistory(props) {
   };
 
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
       <View style={{flex: 1}}>
         <Back title={'Purchase History'} />
         <ScrollView style={{backgroundColor: '#FAFAFF', padding: 10}}>

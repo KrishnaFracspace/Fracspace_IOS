@@ -6,10 +6,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function Privacy() {
   return (
-     <SafeAreaView style={{flex:1}}>
+     <SafeAreaView style={{flex:1,backgroundColor:"#021265"}}>
       <Back title={'Privacy'} />
-      <ScrollView style={{backgroundColor: '#FFFFFF'}}>
-        <View style={{padding: 20}}>
+      <ScrollView style={{backgroundColor: '#FFFFFF'}} 
+      showsVerticalScrollIndicator={false}
+      >
+        <View style={{padding: 20,paddingRight:25}}>
           <Text
             style={{
               color: '#1E2135',

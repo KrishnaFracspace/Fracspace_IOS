@@ -9,6 +9,7 @@ import { GetLogin, GetOtpForLoginWithNumber, OtpLoginWithEmail, verifyOtpLogin }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../Context/AppContext'
 import { SafeAreaView } from 'react-native-safe-area-context';
+import analytics from '@react-native-firebase/analytics';
 
 export default function NewLogin() {
   const navigation = useNavigation();
@@ -22,7 +23,7 @@ export default function NewLogin() {
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
   const route = useRoute();
-//.log(route?.params,"==========params")
+
   const handleChange = (text, index) => {
     const updatedOtp = [...otpDigits];
     updatedOtp[index] = text;
@@ -41,7 +42,7 @@ export default function NewLogin() {
   };
 
   const handleLoginSuccess1 = async (resData, userEmailOrPhone) => {
-   console.log(resData,"====resDatta====")
+    console.log(resData, "====resDatta====")
     await AsyncStorage.setItem('mytoken', resData?.data);
     await AsyncStorage.setItem('Email', resData?.email);
     setGlobalState((prevState) => ({
@@ -52,15 +53,15 @@ export default function NewLogin() {
       token: resData?.data,
     }));
 
-  const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
-  const redirect = route.params?.redirectAfterLogin; 
-  if (!redirect && pendingJson) {
-    redirect = JSON.parse(pendingJson);
-    // Clean up so it doesn't repeat on next login
-    await AsyncStorage.removeItem('pendingDeepLink');
-  }
+    const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
+    const redirect = route.params?.redirectAfterLogin;
+    if (!redirect && pendingJson) {
+      redirect = JSON.parse(pendingJson);
+      // Clean up so it doesn't repeat on next login
+      await AsyncStorage.removeItem('pendingDeepLink');
+    }
 
-console.log(redirect,"=====redi-====")
+    console.log(redirect, "=====redi-====")
     if (redirect) {
       // Deep link was waiting → go there with params
       navigation.replace(redirect.screen, redirect.params);
@@ -69,10 +70,15 @@ console.log(redirect,"=====redi-====")
       navigation.replace('BottomNavigations');
     }
   };
+
 const handleLoginSuccess = async (resData) => {
+  // console.log("Res dTA: ", resData);
+  try {
+    // Save auth data
     await AsyncStorage.setItem('mytoken', resData?.data);
     await AsyncStorage.setItem('Email', resData?.email);
-       setGlobalState((prevState) => ({
+
+    setGlobalState((prevState) => ({
       ...prevState,
       userName: resData?.userName,
       userEmail: resData?.email,
@@ -80,25 +86,51 @@ const handleLoginSuccess = async (resData) => {
       token: resData?.data,
     }));
 
-  const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
-  const redirect = route.params?.redirectAfterLogin;
+    console.log('[Login Success] Auth data saved successfully', resData?.data);
 
-   if (!redirect && pendingJson) {
-    redirect = JSON.parse(pendingJson);
-    // Clean up so it doesn't repeat on next login
-    await AsyncStorage.removeItem('pendingDeepLink');
-  }
+    // ==================== DEEP LINK REDIRECT LOGIC ====================
+    let targetRoute = { name: 'BottomNavigations' };
 
-  
-  if (redirect) {
+    // Priority 1: Check route params (from navigate('NewLogin', { redirectAfterLogin }))
+    const redirectFromParams = route?.params?.redirectAfterLogin;
+
+    // Priority 2: Check stored pendingDeepLink (for deferred deep links / first launch)
+    const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
+
+    if (redirectFromParams) {
+      targetRoute = {
+        name: redirectFromParams.screen,
+        params: redirectFromParams.params || {},
+      };
+      console.log('[Login Success] Using redirect from params:', redirectFromParams.screen);
+    } 
+    else if (pendingJson) {
+      try {
+        const pending = JSON.parse(pendingJson);
+        if (pending?.screen) {
+          targetRoute = {
+            name: pending.screen,
+            params: pending.params || {},
+          };
+          console.log('[Login Success] Using pending deep link:', pending.screen);
+        }
+        await AsyncStorage.removeItem('pendingDeepLink'); // Clean up
+      } catch (e) {
+        console.warn('Invalid pending deep link JSON', e);
+      }
+    }
+
+    // Final Navigation Reset
     navigation.reset({
-     index: 0,
+      index: 0,
       routes: [
-         { name: 'BottomNavigations' },
-        { name: redirect.screen, params: redirect.params }
+        { name: 'BottomNavigations' },
+        targetRoute,
       ],
     });
-  } else {
+  } catch (error) {
+    console.error('Error in handleLoginSuccess:', error);
+    // Fallback navigation
     navigation.reset({
       index: 0,
       routes: [{ name: 'BottomNavigations' }],
@@ -106,7 +138,7 @@ const handleLoginSuccess = async (resData) => {
   }
 };
 
-  
+
   const handleOTPLogin = async () => {
     const otp = otpDigits.join('');
     const payload = JSON.stringify(
@@ -116,11 +148,13 @@ const handleLoginSuccess = async (resData) => {
         smsCountry: true
       }
     );
-   // console.log(payload,"========pay==")
+
     try {
       let { data: res } = await GetOtpForLoginWithNumber(payload);
-    //  console.log('Response:', res?.data);
       if (res?.success) {
+        analytics().logEvent('user_login_indian', {
+          user_id: res?.email
+        });
         await handleLoginSuccess(res, selectedCode?.code + phone);
       }
     } catch (error) {
@@ -163,14 +197,11 @@ const handleLoginSuccess = async (resData) => {
     }
   };
 
-
-
   const handleLoginWithEmail = async () => {
     let payload = JSON.stringify(
       {
         email: email
-      }
-    );
+      });
     try {
       let { data: res } = await OtpLoginWithEmail(payload);
       if (res?.success) {
@@ -181,14 +212,11 @@ const handleLoginSuccess = async (resData) => {
       if (error?.response) {
         if (error.response.status == 401) {
           Alert.alert('User not found!', "You're not registered yet. Sign up now.");
-          // You can show this in a toast, alert, etc.
         } else {
           console.error('API error:', error.response.data);
         }
         console.log('like', `${JSON.stringify(error?.response)}`);
-
       } else if (error?.request) {
-        // console.log('like', `${JSON.stringify(error?.request)}`);
         Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
       } else {
         Alert.alert('Error:', `${error?.message}`);
@@ -198,16 +226,17 @@ const handleLoginSuccess = async (resData) => {
 
   const handleOtpLoginWithEmail = async () => {
     const otp = otpDigits.join('');
-    let payload = JSON.stringify(
-      {
-        email: email,
-        otp: otp
-      }
-    );
+    let payload = JSON.stringify({
+      email: email,
+      otp: otp
+    });
     try {
       let { data: res } = await verifyOtpLogin(payload);
-    //  console.log(res,"========data==67")
+      //  console.log(res,"========data==67")
       if (res?.success) {
+        analytics().logEvent('user_login_international', {
+          user_id: res?.email
+        });
         await handleLoginSuccess(res, email);
       }
     } catch (error) {
@@ -220,23 +249,6 @@ const handleLoginSuccess = async (resData) => {
       }
     }
   }
-
-  // const handleOtpLoginWithEmail1 = async () => {
-  // const otp = otpDigits.join('');
-  // let payload = JSON.stringify({
-  // email: email,
-  // otp: otp,
-  // });
-  // try {
-  // let { data: res } = await verifyOtpLogin(payload);
-  // if (res?.success) {
-  // await handleLoginSuccess(res, email);
-  // }
-  // } catch (error) {
-  // // ... your existing error handling ...
-  // Alert.alert('Error', error?.response?.data?.message || 'Login failed');
-  // }
-  // };
 
   useFocusEffect(
     React.useCallback(() => {
@@ -257,7 +269,18 @@ const handleLoginSuccess = async (resData) => {
           <View style={{ padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 23, color: '#160D1F' }}>Sign in</Text>
             <TouchableOpacity
-              onPress={() => { navigation.navigate('NewSigin') }} style={{ backgroundColor: '#EFF3F9', padding: 5, borderRadius: 5 }}>
+           
+              onPress={() => {
+    const redirect = route.params?.redirectAfterLogin;
+    if (redirect) {
+      navigation.navigate('NewSigin', {
+        redirectAfterLogin: redirect,   // Pass deep link data to Login too
+      });
+    } else {
+      navigation.navigate('NewSigin');
+    }
+  }}
+               style={{ backgroundColor: '#EFF3F9', padding: 5, borderRadius: 5 }}>
               <Icon name={'cross'} size={20} color={'#160D1F'} />
             </TouchableOpacity>
           </View>
@@ -337,18 +360,16 @@ const handleLoginSuccess = async (resData) => {
                 </TouchableOpacity>
 
                 <TouchableOpacity onPress={() => {
-                     const redirect = route.params?.redirectAfterLogin; 
-console.log(redirect,"=====redi-====")
-    if (redirect) {
-      // Deep link was waiting → go there with params
- navigation.navigate('NewSigin', {
-  redirectAfterLogin: route?.params?.redirectAfterLogin,
-});
-    } else {
-      // Normal login flow
-       navigation.navigate('NewSigin');
-    } 
-                
+                  const redirect = route.params?.redirectAfterLogin;
+                  console.log(redirect, "=====redi-====")
+                  if (redirect) {
+                    navigation.navigate('NewSigin', {
+                      redirectAfterLogin: route?.params?.redirectAfterLogin,
+                    });
+                  } else {
+                    navigation.navigate('NewSigin');
+                  }
+
                 }} style={{ alignSelf: 'center', marginTop: 40 }}>
                   <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#8E9398' }}>
                     Don't have an account yet? <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#000000' }}> Sign up</Text>
@@ -391,6 +412,9 @@ console.log(redirect,"=====redi-====")
                           keyboardType="number-pad"
                           maxLength={1}
                           value={otpDigits[index]}
+                          textContentType="oneTimeCode"
+                          autoComplete="sms-otp"
+                          importantForAutofill="yes"
                           onChangeText={(text) => handleChange(text, index)}
                           onKeyPress={(e) => handleKeyPress(e, index)}
                         />
@@ -426,6 +450,5 @@ console.log(redirect,"=====redi-====")
         </View>
       </View>
     </SafeAreaView>
-
   )
 }

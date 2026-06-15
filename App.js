@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Dimensions,Linking } from 'react-native';
+import { StyleSheet, Dimensions, Linking, Alert, AppState } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
-import { Provider, useDispatch } from 'react-redux';
+import { Provider } from 'react-redux';
 import messaging from '@react-native-firebase/messaging';
 import Video from 'react-native-video';
 import appsFlyer from 'react-native-appsflyer';
@@ -10,11 +10,13 @@ import { AppProvider } from './Screen/Context/AppContext';
 import store from './Screen/redux/store/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setDeepLinkNav } from './Screen/redux/reducer/homeReducer';
-
+import Toast from 'react-native-toast-message';
+import { withStallion, useStallionUpdate, restart } from 'react-native-stallion';
+import analytics from '@react-native-firebase/analytics';
 const { width, height } = Dimensions.get('window');
 const navigationRef = createNavigationContainerRef();
 
-// Deep linking configuration
+
 const linking = {
   prefixes: ['fracspace://', 'fsapp://', 'https://fracspace.com', 'https://fracspace.onelink.me'],
   config: {
@@ -35,122 +37,154 @@ const App = () => {
   const pendingLinkRef = useRef(null);
   const [showSplash, setShowSplash] = useState(true);
   const splashVideo = require('./Screen/assets/Demovideo.mp4');
- // const dispatch = useDispatch();
+const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStallionUpdate();
 
-  const navigateWithAuthCheck = async(redirectData) => {
-        let vasu= store.dispatch(setDeepLinkNav(true));
-       //  console.log('======',vasu)
-   // console.log('navigateWithAuthCheck →', redirectData);
-
-    const state = store.getState();
-       const token = await AsyncStorage.getItem('mytoken');
-//console.log(redirectData.params,"redirectData.params")
+  const navigateWithAuthCheck = async (redirectData) => {
+    store.dispatch(setDeepLinkNav(true));
+    const token = await AsyncStorage.getItem('mytoken');
     if (token) {
-    //  console.log('Authenticated → navigate to', redirectData.screen);
       navigationRef.navigate(redirectData.screen, redirectData.params);
     } else {
-     // console.log('No token → go to NewLogin with redirect');
       navigationRef.navigate('NewLogin', {
         redirectAfterLogin: redirectData,
       });
-      
     }
   };
 
-  // Splash + Firebase permission
   useEffect(() => {
-    const requestPermission = async () => {
-      try {
-        const authStatus = await messaging().requestPermission();
-        const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-        if (enabled) {
-          await messaging().getToken();
-        }
-      } catch (err) {
-        console.log('Firebase permission error:', err);
+    const sendEvent = async() => {
+      try{
+        await analytics().logEvent('app_open');
+        console.log('Firebase event sent');
+      }catch(e){
+        console.log('Firebase error: ', e);
       }
-    };
-    requestPermission();
-
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-     // console.log('Splash hidden → app ready');
-    }, 4000);
-    return () => clearTimeout(timer);
+    }
+    sendEvent();
   }, []);
 
+useEffect(() => {
+  console.log('=== Stallion Debug ===');
+  console.log('isRestartRequired:', isRestartRequired);
+  // console.log('newReleaseBundle:', newReleaseBundle);
+  console.log('currentlyRunningBundle:', currentlyRunningBundle); 
+
+  if (isRestartRequired) {
+    Alert.alert(
+      'Update Available',
+      newReleaseBundle?.releaseNote || 'A new version of Fracspace is ready.',
+      [
+        { text: 'Later', style: 'cancel' },
+        { text: 'Restart Now', onPress: restart },
+      ]
+    );
+  }
+}, [isRestartRequired, newReleaseBundle]);
+
+// useEffect(() => {
+//   console.log('=== Stallion Debug ===');
+//   console.log('isRestartRequired:', isRestartRequired);
+//   console.log('newReleaseBundle:', newReleaseBundle);
+//   console.log('currentlyRunningBundle:', currentlyRunningBundle);
+
+//   if (isRestartRequired) {
+//     console.log('OTA update downloaded.');
+
+//     const handleAppStateChange = nextAppState => {
+//       if (nextAppState === 'background' || nextAppState === 'inactive') {
+//         console.log('Restarting app with new OTA bundle...');
+//         restart();
+//       }
+//     };
+
+//     const subscription = AppState.addEventListener(
+//       'change',
+//       handleAppStateChange,
+//     );
+
+//     return () => {
+//       subscription.remove();
+//     };
+//   }
+// }, [isRestartRequired]);
+
+
+
   useEffect(() => {
-    // Shared redirect logic
-    const tryNavigate = (data, source = 'unknown') => {
-      console.log(`[${source}] tryNavigate with data:`, data);
-
-      if (!data?.deep_link_value) {
-      //  console.log(`[${source}] No deep_link_value`);
-        return;
+    const getDeviceToken = async() => {
+      try{
+        const data = await messaging().getToken();
+        console.log("FCM Token: ", data);
+      }catch(error){
+        console.log("Fcm token error: ",error);
       }
+    }
+    
+    getDeviceToken();
+  }, []);
 
-      if (data.deep_link_value === 'property' || 'property_share') {
-       // console.log(`[${source}] MATCH – Property deep link`);
+  // const getDeviceToken = async () => {
+  //   try{
+  //     const data = await messaging().getToken();
+  //     console.log("FCM token: ", data);
+  //   }catch(error){
+  //     console.log("FCM token error: ", error);
+  //   }
+  // };
 
-        const redirectData = {
-          screen: 'Property',
-          params: {
-            Id: data.af_sub2 || data?.af_sub1 || data?.deep_link_sub1 || 'MISSING',
-            referralCode: data.af_sub1||  'MISSING',
-          },
-        };
-
-        const isFirstLaunch = data.is_first_launch === true || data.is_first_launch === 'true';
-
-        if (isFirstLaunch && source === 'onInstallConversionData') {
-      // Save to storage so it survives login/signup
-        AsyncStorage.setItem('pendingDeepLink', JSON.stringify(redirectData))
-        .then(() => console.log('Saved deferred deep link for after login'))
-        .catch(err => console.log('Save pending error:', err));
+  const tryNavigate = (data, source = 'unknown') => {
+    console.log(`[${source}] Deep link received:`, data);
+    if (!data?.deep_link_value) return;
+    let redirectData = null;
+    if (data.deep_link_value === 'property' || data.deep_link_value === 'property_share') {
+      redirectData = {
+        screen: 'Property',
+        params: {
+          Id: data.af_sub2 || data?.af_sub1 || data?.deep_link_sub1 || 'MISSING',
+          referralCode: data.af_sub1 || 'MISSING',
+        },
+      };
+    } else if (data.deep_link_value === 'wallet_section') {
+      redirectData = { screen: 'WalletAmount', params: {} };
+    } else if (data.deep_link_value === 'payment_link') {
+      redirectData = { screen: 'Book', params: { Id: data?.deep_link_sub1 || 'MISSING' } };
+    } else if (data.deep_link_value === 'escape_section'){
+      redirectData = { screen: 'MembershipHome', params: {}};
+    } else {
+      return;
     }
 
-    // if (navigationRef.isReady()) {
-    //   navigateWithAuthCheck(redirectData);
-    // } else {
-    //   pendingLinkRef.current = redirectData;
-    // }
-
-        if (navigationRef.isReady()) {
-         // console.log('Direct URL → navigating to Property');
-         // console.log(`[${source}] Nav ready – navigating`);
-          navigateWithAuthCheck(redirectData);
+    const isFirstLaunch = data?.is_first_launch === true || data?.is_first_launch === 'true';
+    if (isFirstLaunch || source === 'onInstallConversionData') {
+      AsyncStorage.setItem('pendingDeepLink', JSON.stringify(redirectData))
+        .catch(err => console.log('Save pending error:', err));
+    }
+    AsyncStorage.getItem('mytoken').then((token) => {
+      if (navigationRef.isReady()) {
+        if (token) {
+          navigationRef.navigate(redirectData.screen, redirectData.params);
         } else {
-         // console.log(`[${source}] Nav not ready – pending`);
-          pendingLinkRef.current = redirectData;
+          navigationRef.navigate('NewLogin', { redirectAfterLogin: redirectData });
         }
       } else {
-        console.log(`[${source}] Not property:`, data.deep_link_value);
-      }
-    };
-
-    // 1. Unified Deep Linking (UDL) – main for installed app
-    const deepLinkUnsub = appsFlyer.onDeepLink((res) => {
-    //  console.log('=== onDeepLink ===', JSON.stringify(res, null, 2));
-      if (res?.deepLinkStatus === 'FOUND') {
-        tryNavigate(res.data, 'onDeepLink');
+        pendingLinkRef.current = redirectData;
       }
     });
+  };
 
-    // 2. Install Conversion Data – deferred deep links after install
+  useEffect(() => {
+    const deepLinkUnsub = appsFlyer.onDeepLink((res) => {
+      if (res?.deepLinkStatus === 'FOUND') tryNavigate(res.data, 'onDeepLink');
+    });
+
     const installUnsub = appsFlyer.onInstallConversionData((res) => {
-    //  console.log('=== onInstallConversionData ===', JSON.stringify(res, null, 2));
       tryNavigate(res?.data || {}, 'onInstallConversionData');
     });
 
-    // 3. App Open Attribution – deep links when app is already open/re-opened
     const attributionUnsub = appsFlyer.onAppOpenAttribution((res) => {
-     // console.log('=== onAppOpenAttribution ===', JSON.stringify(res, null, 2));
       tryNavigate(res?.data || {}, 'onAppOpenAttribution');
     });
 
-    // Init SDK
     appsFlyer.initSdk(
       {
         devKey: 'z9iokP3YwU3z6uxEkKgJfn',
@@ -159,11 +193,10 @@ const App = () => {
         onInstallConversionDataListener: true,
         onDeepLinkListener: true,
       },
-      () => console.log('✅ AppsFlyer init success'),
-      (err) => console.log('❌ AppsFlyer init failed:', err)
+      () => console.log(' AppsFlyer init success'),
+      (err) => console.log('AppsFlyer init failed:', err)
     );
 
-    // Cleanup
     return () => {
       deepLinkUnsub?.();
       installUnsub?.();
@@ -171,33 +204,51 @@ const App = () => {
     };
   }, []);
 
-  // Consume pending navigation
   useEffect(() => {
     const unsubscribe = navigationRef.addListener('ready', () => {
-    //  console.log('Navigation is READY');
       if (pendingLinkRef.current) {
-        //console.log('Consuming pending redirect');
         navigateWithAuthCheck(pendingLinkRef.current);
         pendingLinkRef.current = null;
       }
     });
-
     return unsubscribe;
   }, []);
 
-  // Optional UID log
   useEffect(() => {
-    appsFlyer.getAppsFlyerUID((err, uid) => {
-      if (!err) console.log('AppsFlyer UID:', uid);
-      //else console.log('UID error:', err);
-    });
+    const requestPermission = async () => {
+      try {
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+        if (enabled) await messaging().getToken();
+      } catch (err) {
+        console.log('Firebase permission error:', err);
+      }
+    };
+    requestPermission();
+    const timer = setTimeout(() => setShowSplash(false), 4000);
+    return () => clearTimeout(timer);
   }, []);
 
-  // Handle direct URI scheme deep links (fracspace://, fsapp://)
+  useEffect(() => {
+    const checkPendingAfterSplash = async () => {
+      if (!showSplash) {
+        const pending = await AsyncStorage.getItem('pendingDeepLink');
+        if (pending && navigationRef.isReady()) {
+          try {
+            const data = JSON.parse(pending);
+            navigateWithAuthCheck(data);
+            await AsyncStorage.removeItem('pendingDeepLink');
+          } catch (e) {}
+        }
+      }
+    };
+    checkPendingAfterSplash();
+  }, [showSplash]);
+
   useEffect(() => {
     const parseAndNavigate = (url) => {
-     // console.log('Parsing direct URL:', url);
-      // Handle fracspace://property/123/ABC or fsapp://property/123/ABC
       if (url.includes('property/')) {
         const match = url.match(/property\/([^\/]+)\/([^\/\?]+)/);
         if (match) {
@@ -206,33 +257,31 @@ const App = () => {
             screen: 'Property',
             params: { Id: id, referralCode: referralCode },
           };
-          if (navigationRef.isReady()) {
-         // console.log('Direct URL → navigating to Property');
-            navigateWithAuthCheck(redirectData);
-          } else {
-            //console.log('Direct URL → pending');
-            pendingLinkRef.current = redirectData;
-          }
+          AsyncStorage.getItem('mytoken').then((token) => {
+            if (navigationRef.isReady()) {
+              if (token) {
+                navigationRef.navigate(redirectData.screen, redirectData.params);
+              } else {
+                navigationRef.navigate('NewLogin', { redirectAfterLogin: redirectData });
+              }
+            } else {
+              pendingLinkRef.current = redirectData;
+            }
+          });
         }
       }
     };
 
     const handleInitialURL = async () => {
       const url = await Linking.getInitialURL();
-      if (url) {
-     //   console.log('Initial URI scheme:', url);
-        parseAndNavigate(url);
-      }
+      if (url) parseAndNavigate(url);
     };
+
     handleInitialURL();
-
-    const subscription = Linking.addEventListener('url', ({ url }) => {
-    //  console.log('Received URI scheme:', url);
-      parseAndNavigate(url);
-    });
-
+    const subscription = Linking.addEventListener('url', ({ url }) => parseAndNavigate(url));
     return () => subscription.remove();
   }, []);
+
   return (
     <>
       {showSplash ? (
@@ -252,6 +301,7 @@ const App = () => {
           </AppProvider>
         </Provider>
       )}
+      <Toast />
     </>
   );
 };
@@ -264,4 +314,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default App;
+export default withStallion(App);

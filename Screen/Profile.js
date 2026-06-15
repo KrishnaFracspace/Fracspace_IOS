@@ -10,7 +10,8 @@ import {
   Alert,
   TextInput,
   Linking,
-  Modal
+  Modal,
+  StatusBar
 } from 'react-native';
 import {useState, useEffect, useContext, useRef} from 'react';
 import Footer from './Footer';
@@ -52,9 +53,16 @@ export default function Profile() {
   const [Bookingdata, setBookingdata] = useState([]);
   const [SiteData, setSiteData] = useState([]);
   const [document, setDocument] = useState(false);
-  const [Docs, setDocs] = useState(globalState?.userDetails?.documents);
+  const Docs = globalState?.userDetails?.documents || [];
   const [PanDoc, setPanDoc] = useState('');
  
+//console.log(Docs,"=====Docs",globalState?.userDetails?.documents)
+const phone = globalState?.userDetails?.phoneNumber || '';
+const isIndian = phone.startsWith('+91');
+
+const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
+
+
 
   const launchGallery = () => {
     const options = {
@@ -101,7 +109,7 @@ export default function Profile() {
       }
     });
   };
-console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
+//console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
   const handleProfilePic = async ProfileData => {
     var form = new FormData();
     form.append('email', globalState?.userDetails?.email);
@@ -253,11 +261,47 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
    
   }, []);
 
+  const handleCallNow = Phone => {
+      const phoneNumber = Phone;
+      const phoneUrl = `tel:${phoneNumber}`;
+      Linking.openURL(phoneUrl)
+          .then(supported => {
+              if (!supported) {
+                  Alert.alert('Error', 'Phone number is not supported');
+              }
+          })
+          .catch(error => console.log('Error making phone call:', error));
+  };
+
+  const openWhatsApp = async () => {
+
+    const phoneNumber = '919880626111';
+    const message = 'Hello, I want to know more about Fracspace Escape Membership';
+
+    const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
+    // const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+
+    try {
+
+      const supported = await Linking.canOpenURL(url);
+
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert('WhatsApp is not installed');
+      }
+
+    } catch (error) {
+      console.log('WhatsApp Error => ', error);
+    }
+  };
+
   return (
-     <SafeAreaView style={{flex: 1,}}>
+     <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
          <View style={{flex:1}}>
+          {/* <StatusBar barStyle="light-content" /> */}
       <Back title={'Profile'} isBack={false}/>
-      <ScrollView style={{backgroundColor: '#F9F9F9', padding: 20}}>
+      <ScrollView style={{backgroundColor: '#F9F9F9', padding: 20}} showsVerticalScrollIndicator={false}>
         <TouchableOpacity
           onPress={() => {
             setModalVisible(true);
@@ -415,11 +459,21 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
           )} */}
 
           {globalState?.userDetails?.verification && (
+          
+
             <>
               <TouchableOpacity
-                onPress={() => {
-                  setDocument(!document);
-                }}
+               onPress={() => {
+  if (!isIndian) {
+    navigation.navigate('DisplayDoc', {
+      Link: Docs?.[0], // only 1 doc for international
+      screen: 'Doc',
+    });
+  } else {
+    setDocument(!document);
+  }
+}}
+              
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
@@ -467,11 +521,16 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                   <TouchableOpacity
                     style={{alignItems: 'center', gap: 10}}
                     onPress={() => {
-                      navigation.navigate('DisplayDoc', {
-                        Link: Docs[0],
-                        screen: 'Doc',
-                      });
-                    }}>
+  if (isPDF(Docs[0])) {
+    navigation.navigate('DisplayDoc', {
+      Link: Docs[0],
+      screen: 'Doc',
+    });
+  } else {
+    setPanDoc(Docs[0]);
+    setVisible(true);
+  }
+}}>
                     <Image
                       resizeMode="contain"
                       source={{
@@ -488,10 +547,19 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                       Aadhar Card
                     </Text>
                   </TouchableOpacity>
-                  <TouchableOpacity  onPress={() => {
-                     setPanDoc(Docs[1])
-                      setVisible(true);
-                    }}style={{alignItems: 'center', gap: 10}}>
+                  <TouchableOpacity 
+                 onPress={() => {
+  if (isPDF(Docs[1])) {
+    navigation.navigate('DisplayDoc', {
+      Link: Docs[1],
+      screen: 'Doc',
+    });
+  } else {
+    setPanDoc(Docs[1]);
+    setVisible(true);
+  }
+}}
+                    style={{alignItems: 'center', gap: 10}}>
                     <Image
                       resizeMode="contain"
                       source={{
@@ -509,10 +577,17 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => {
-                       setPanDoc(Docs[2])
-                       setVisible(true);
-                    }}
+                   onPress={() => {
+  if (isPDF(Docs[2])) {
+    navigation.navigate('DisplayDoc', {
+      Link: Docs[2],
+      screen: 'Doc',
+    });
+  } else {
+    setPanDoc(Docs[2]);
+    setVisible(true);
+  }
+}}
                     style={{alignItems: 'center', gap: 10}}>
                     <Image
                       resizeMode="contain"
@@ -556,15 +631,13 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                 }}>
                 {/* <Icco name={'clock'} size={18} color={'#081F62'} /> */}
                 <Image source={{uri: 'https://duixj37yn5405.cloudfront.net/appImages/History.png'}} style={{width:25,height:25}}/>
-                <View style={{paddingLeft: 25}}>
+                <View style={{paddingLeft: 20}}>
                   <Text
                     style={{
                       color: '#181D27',
                       fontSize: 14,
                       fontFamily: 'OpenSans-SemiBold',
-                    }}>
-                    Purchase History
-                  </Text>
+                    }}>Purchase History</Text>
                  
                 </View>
               </View>
@@ -651,10 +724,8 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
             <Icon name="chevron-right" size={25} color="#555252" />
           </TouchableOpacity>
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={() => {
-              // handleLogOut();
-              // navigation.navigate('Documents');
               navigation.navigate('MyProfile', {screen: 'home'});
             }}
             style={{
@@ -687,7 +758,7 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
               </View>
             </View>
             <Icon name="chevron-right" size={25} color="#555252" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           <TouchableOpacity
             onPress={() => {
@@ -758,7 +829,7 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                     fontSize: 14,
                     fontFamily: 'OpenSans-SemiBold',
                   }}>
-                  Join Our Whatsapp Channel
+                  Join Our WhatsApp Channel
                 </Text>
               </View>
             </View>
@@ -772,8 +843,8 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              // paddingHorizontal: 20,
-              //paddingVertical: 20,
+              // paddingHorizontal: 5,
+              paddingVertical: 20,
               alignItems: 'center',
             }}>
             <View
@@ -781,7 +852,7 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                 flexDirection: 'row',
                 justifyContent: 'flex-start',
                 alignItems: 'center',
-                paddingTop:20
+                // paddingTop:20
               }}>
               {/* <IconA name="staro" size={25} color="#081F62" /> */}
               <Image
@@ -800,111 +871,159 @@ console.log(globalState?.userDetails?.email,"globalState?.userDetails?.email")
                   Rate our app
                 </Text>
               </View>
+
             </View>
             <Icon name="chevron-right" size={25} color="#555252" />
           </TouchableOpacity>
+
+          <View style={{borderColor:'#0000004D',borderWidth:0.5,borderRadius:10,padding:15}}>
+            <View style={{alignItems:'center'}}>
+              <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:15,color:'#181D27'}}>Help and Support</Text>
+              <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:'#00000080',marginTop:10}}>We’re here to help. Choose how you’d like to connect with us.</Text>
+            </View>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:20}}>
+              <TouchableOpacity onPress={() => {
+                openWhatsApp()
+              }} style={{alignItems:'center',flex:1}}>
+                <View style={{backgroundColor:'#29A71A33',borderRadius:30,padding:10,alignItems:'center',justifyContent:'center'}}>
+                  <Icons name={'logo-whatsapp'} size={20} color={'#29A71A'}/>
+                </View>
+                <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:'#000',textAlign:'center',marginTop:10}}>Connect with us on WhatsApp</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => {
+                const phone = "+919880626111"
+                handleCallNow(phone);
+              }} style={{alignItems:'center',flex:1,marginLeft:8}}>
+                <View style={{backgroundColor:'#0212651a',borderRadius:30,padding:10,alignItems:'center',justifyContent:'center'}}>
+                  <Icons name={'call'} size={18} color={'#021265'}/>
+                </View>
+                <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:'#000',textAlign:'center',marginTop:10}}>For Support Enquiries</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => {
+                const phone = "+919063448275"
+                handleCallNow(phone);
+              }} style={{alignItems:'center',flex:1,marginLeft:8}}>
+                <View style={{backgroundColor:'#0212651a',borderRadius:30,padding:10,alignItems:'center',justifyContent:'center'}}>
+                  <Icons name={'call'} size={18} color={'#021265'}/>
+                </View>
+                <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:'#000',textAlign:'center',marginTop:10}}>For Hospitality/Stays</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
         </View>
-        <View style={{alignItems: 'center', top:40}}>
+        <View style={{alignItems: 'center', top:0}}>
           <Text
             style={{
               fontFamily: 'WorkSans-Regular',
               fontSize: 12,
               color: '#898585',
             }}>
-            App Version 2.1.0
+            V 2.1.9
           </Text>
+          <Text style={{fontFamily:'WorkSans-Medium',fontSize:14,color:'#021265',marginTop:5}}>Fracspace Private Limited</Text>
         </View>
+        <View style={{marginBottom:100}}/>
       </ScrollView>
 
       </View>
-      <CustomModal
+      <Modal transparent animationType='fade'
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         modalStyle={styles.customModal}>
-        <View style={[styles.modal]}>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              paddingHorizontal: 20,
-              alignItems: 'center',
-            }}>
-            <Text></Text>
-            <Text
+        <View style={{flex:1, backgroundColor:'#00000065'}}>
+          <TouchableOpacity onPress={() => {setModalVisible(false)}} style={{flex:1}}/>
+          <View style={[styles.modal]}>
+            <View
               style={{
-                fontSize: 20,
-                fontFamily: 'OpenSans-SemiBold',
-                color: '#081F62',
-                textAlign: 'center',
-                paddingTop: 10,
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                paddingHorizontal: 20,
+                alignItems: 'center',
               }}>
-              {'  '}Profile Photo
-            </Text>
-            <Icons name="close" size={25} color="#808080" />
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              width: '100%',
-            }}>
-            <View></View>
-            <View style={{alignItems: 'center', margin: 20}}>
-              <TouchableOpacity
-                onPress={() => {
-                  launchCamera();
-                }}
-                style={{
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  borderColor: '#081F62',
-                  borderWidth: 1,
-                  borderRadius: 60,
-                  padding: 15,
-                }}>
-                <CameraIcon name="camera" size={35} color="#081F62" />
-              </TouchableOpacity>
+              <Text></Text>
               <Text
                 style={{
-                  fontSize: 16,
+                  fontSize: 20,
                   fontFamily: 'OpenSans-SemiBold',
                   color: '#081F62',
+                  textAlign: 'center',
+                  paddingTop: 10,
                 }}>
-                {'  '}Camera
+                {'  '}Profile Photo
               </Text>
-            </View>
-            <View style={{alignItems: 'center', margin: 20}}>
-              <TouchableOpacity
-                onPress={() => {
-                  launchGallery();
-                }}
-                style={{
-                  alignItems: 'center',
-                  //flexDirection: 'row',
-                  justifyContent: 'center',
-                  // backgroundColor: '#043862',
-                  // padding: 0,
-                  //margin: 20,
-                  borderColor: '#081F62',
-                  borderWidth: 1,
-                  borderRadius: 60,
-                  padding: 15,
-                }}>
-                <CameraIcon name="image-inverted" size={35} color="#081F62" />
+              <TouchableOpacity onPress={() => {
+                setModalVisible(false);
+              }}>
+                <Icons name="close" size={25} color="#808080" />
               </TouchableOpacity>
-              <Text
-                style={{
-                  fontSize: 16,
-                  fontFamily: 'OpenSans-SemiBold',
-                  color: '#081F62',
-                }}>
-                Gallery
-              </Text>
             </View>
-            <View></View>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                width: '100%',
+              }}>
+              <View></View>
+              <View style={{alignItems: 'center', margin: 20}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    launchCamera();
+                  }}
+                  style={{
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderColor: '#081F62',
+                    borderWidth: 1,
+                    borderRadius: 60,
+                    padding: 15,
+                  }}>
+                  <CameraIcon name="camera" size={35} color="#081F62" />
+                </TouchableOpacity>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontFamily: 'OpenSans-SemiBold',
+                    color: '#081F62',
+                  }}>
+                  {'  '}Camera
+                </Text>
+              </View>
+              <View style={{alignItems: 'center', margin: 20}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    launchGallery();
+                  }}
+                  style={{
+                    alignItems: 'center',
+                    //flexDirection: 'row',
+                    justifyContent: 'center',
+                    // backgroundColor: '#043862',
+                    // padding: 0,
+                    //margin: 20,
+                    borderColor: '#081F62',
+                    borderWidth: 1,
+                    borderRadius: 60,
+                    padding: 15,
+                  }}>
+                  <CameraIcon name="image-inverted" size={35} color="#081F62" />
+                </TouchableOpacity>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    fontFamily: 'OpenSans-SemiBold',
+                    color: '#081F62',
+                  }}>
+                  Gallery
+                </Text>
+              </View>
+              <View></View>
+            </View>
           </View>
         </View>
-      </CustomModal>
+      </Modal>
 
       <Modal visible={Visible} transparent animationType="fade">
         <View
@@ -969,6 +1088,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E2135',
   },
   modal: {
+    position:'absolute',bottom:0,left:0,right:0,
     width: '100%',
     alignSelf: 'center',
     borderColor: '#A0A0A0',

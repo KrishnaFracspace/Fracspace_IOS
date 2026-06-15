@@ -12,12 +12,15 @@ import Pdf from 'react-native-pdf';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/MaterialIcons';
 
-export default function PdfViewerScreen() {
+export default function PdfViewerScreen(props) {
   const navigation = useNavigation();
+ const PdFView = props.route?.params?.pdf;
+ //console.log(PdFView,"=====ffff===")
 
   const source = {
-    uri: 'https://d1nj26fz89n9xw.cloudfront.net/fracspace_properties_images/altaira/Altaira++-+Concept+Proposal+(28th+Nov+2025)_compressed_compressed.pdf',
-    cache: true,
+   // uri: 'https://d1nj26fz89n9xw.cloudfront.net/fracspace_properties_images/altaira/Altaira++-+Concept+Proposal+(28th+Nov+2025)_compressed_compressed.pdf',
+    uri:PdFView,
+   cache: true,
   };
 
   return (
@@ -46,6 +49,7 @@ export default function PdfViewerScreen() {
 
       {/* PDF VIEW */}
       <Pdf
+      showsVerticalScrollIndicator={false}
         source={source}
         style={styles.pdf}
         onLoadComplete={(pages) => {

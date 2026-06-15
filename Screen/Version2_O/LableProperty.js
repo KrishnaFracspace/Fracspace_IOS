@@ -11,6 +11,8 @@ import Video from 'react-native-video';
 import { GetLabelsProp } from '../Services/UserApi';
 import { useDispatch, useSelector } from 'react-redux';
 import { labelProperty } from '../redux/reducer/propertyReducer';
+import { altairaImgIcon } from '../assets';
+import { AltairaLogo, fracspaceLogo, fracspaceLogos } from './assets';
 
 
 export default function LableProperty() {
@@ -70,7 +72,7 @@ export default function LableProperty() {
     );
 
   return (
-    <SafeAreaView style={{flex:1}}>
+    <SafeAreaView style={{flex:1,backgroundColor:"#E9E8E5"}}>
 
         {videoDone ? 
             <Video
@@ -79,7 +81,7 @@ export default function LableProperty() {
                 resizeMode="cover"
                 paused={false}         
                 onEnd={() => setVideoDone(false)}  
-                onError={(e) => console.log(e,"=========errooovideo")}
+               // onError={(e) => console.log(e,"=========errooovideo")}
             />
             :
             <View style={{flex:1}}>
@@ -95,7 +97,7 @@ export default function LableProperty() {
                     </View>
                 )}
 
-                <View style={{flex:1,backgroundColor:'#E9E8E5'}}>
+                <View style={{backgroundColor:'#E9E8E5'}}>
                     <View style={{padding:20,flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
                         <TouchableOpacity onPress={() => {
                             navigation.navigate('HomePage');
@@ -111,13 +113,35 @@ export default function LableProperty() {
                             <View style={{width:'100%'}}>
                                 <Image resizeMode='cover' source={{uri: item.image.Image1}} style={{width:'100%',height:222,borderTopLeftRadius:25,borderTopRightRadius:25}}/>
                                 <View style={{position:'absolute',top:20,left:20,}}>
-                                    <View style={{borderColor:'#fff',borderWidth:1,borderRadius:20,paddingHorizontal:13,paddingVertical:8,alignItems:'center'}}>
-                                        <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:12,color:'#fff'}}>🚀Pre-Launch</Text>
+                                    <View style={{backgroundColor:'rgba(222, 213, 196, 1)',borderRadius:20,paddingHorizontal:13,paddingVertical:8,alignItems:'center'}}>
+                                        <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:12,color:'#000'}}>🚀Pre-Launch</Text>
                                     </View>
                                 </View>
                             </View>
-
-                            <View style={{width:width*0.58,backgroundColor:'#F6F6F6',elevation:5,height:80,borderRadius:13,alignSelf:'center',marginTop:-40,alignItems:'center',justifyContent:'center'}}>
+                            <View style={{alignItems:"center"}}>
+                                {/* <Image source={AltairaLogo} style={{height:100,width:100,alignSelf:"center",zIndex:-10,borderRadius:100,marginTop:-55, shadowOffset: { width: 0, height: 8 },
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 10,
+                                    elevation: 10}}/> */}
+                                <Image source={AltairaLogo} style={{height:100,width:100,alignSelf:'center',borderRadius:50,marginTop:-55,shadowOffset:{width:0, height:8},
+                                    shadowOpacity: 0.2,
+                                    shadowRadius: 10
+                                }}/>
+                                 <View style={{flexDirection:'row',alignItems:'center',marginTop:5}}>
+                                        <Ico name={'location-outline'} size={15} color={'#000'}/>
+                                        <Text style={{fontFamily:'Montserrat-Regular',fontSize:13,color:'#000',marginLeft:5}}>{item.Location}</Text>
+                                    </View>
+                                </View>
+<View style={{borderBottomWidth:1,borderBottomColor:"rgba(0, 0, 0, 0.3)",width:"80%",justifyContent:"center"
+    ,alignSelf:"center",paddingVertical:7}}/>
+                            {/* <View style={{width:width*0.58,backgroundColor:'#F6F6F6',elevation:5,height:80,borderRadius:13,alignSelf:'center',marginTop:-40,alignItems:'center',justifyContent:'center',  shadowColor: "#fff",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
+    // Android shadow
+    elevation: 10,borderWidth:1,
+      borderWidth: 3,
+    borderColor: "white",}}>
                                 <View style={{alignItems:'center'}}>
                                     <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:16,color:'#0B2C0B'}}>{item.name}</Text>
                                     <View style={{flexDirection:'row',alignItems:'center',marginTop:5}}>
@@ -125,9 +149,9 @@ export default function LableProperty() {
                                         <Text style={{fontFamily:'Montserrat-Regular',fontSize:13,color:'#000',marginLeft:5}}>{item.Location}</Text>
                                     </View>
                                 </View>
-                            </View>
+                            </View> */}
 
-                            <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',justifyContent:'space-between',gap:20,paddingHorizontal:25,paddingVertical:20}}>
+                            <View style={{flexDirection:'row',alignItems:'center',flexWrap:'wrap',justifyContent:'space-between',gap:20,paddingHorizontal:25,paddingVertical:20,}}>
                                 <View style={{flexDirection:'row',alignItems:'center',}}>
                                     <View style={{flex:1}}>
                                         <Text style={{fontFamily:'Montserrat-Medium',fontSize:13,color:'#000'}}>{item?.EnclBalconyArea}</Text>
@@ -156,8 +180,13 @@ export default function LableProperty() {
                         </View>
                     ))}
                 </View>
+                <View style={{justifyContent:"center",alignItems:"center",marginTop:20}}>
+<Text style={{color:"rgba(0, 0, 0, 0.7)",fontFamily:"Work Sans"}}>A landmark experience by</Text>
+<Image source={fracspaceLogos} style={{height:60,width:'65%'}} resizeMode='cover'/>
+                </View>
+                
             </View>
         }
-    </SafeAreaView>
+    </SafeAreaView> 
   )
 }

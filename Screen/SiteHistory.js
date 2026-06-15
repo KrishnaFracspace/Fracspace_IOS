@@ -20,7 +20,7 @@ export default function SiteHistory(props) {
 
   
   return (
-     <SafeAreaView style={{flex: 1,}}>
+     <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
     <View style={{flex: 1}}>
       <Back title={"Properties Visit Status"}/>
       <ScrollView style={{backgroundColor: '#f5f7fe'}}>

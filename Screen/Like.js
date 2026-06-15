@@ -6,6 +6,7 @@ import {
   Dimensions,
   ScrollView,
   Alert,
+  StyleSheet,
 } from 'react-native';
 import React, {useContext, useEffect, useState} from 'react';
 import Footer from './Footer';
@@ -19,10 +20,13 @@ import {AppContext} from './Context/AppContext';
 import Back from './Back';
 import Contact from './Contact';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { WishListLogo } from './Version2_O/assets';
+import LinearGradient from 'react-native-linear-gradient';
+
+const HEADER_HEIGHT = 60;
 
 export default function Like() {
   const {globalState, setGlobalState} = useContext(AppContext);
-
   const navigation = useNavigation();
   const [IsLike, setIsLike] = useState([]);
   const [EventStatus, setEventStatus] = useState(0);
@@ -97,13 +101,75 @@ export default function Like() {
   useEffect(() => {
     handleAllLike();
   }, [EventStatus]);
+
+  const EmptyWishlist = ({ }) => {
   return (
-    <SafeAreaView style={{flex: 1}}>
+    <LinearGradient
+      colors={['#C7E5FD', '#FFFFFF','#FFFFFF']}
+      style={styles.emptyContainer}>
+      <View style={styles.emptyHeader}>
+        <TouchableOpacity onPress={() => navigation?.goBack()}>
+          <Icon name="chevron-left" size={25} />
+        </TouchableOpacity>
+        <Text style={styles.emptyHeaderTitle}>Wishlist</Text>
+      </View>
+
+      <Image
+        source={WishListLogo}
+        style={styles.emptyImage}
+        resizeMode="contain"
+      />
+
+      <Text style={styles.emptyTitle}>
+        Your wishlist is waiting
+      </Text>
+
+      <Text style={styles.emptyDesc}>
+        Discover stays and co-ownerships worth coming back to.
+      </Text>
+
+      <TouchableOpacity
+        style={styles.startBtn}
+        onPress={() => navigation?.navigate('Home')}
+      >
+        <Text style={styles.startBtnText}>
+          Start Exploring
+        </Text>
+      </TouchableOpacity>
+    </LinearGradient>
+  );
+};
+
+    const Header = () => (
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Icon name="chevron-left" size={22} />
+        </TouchableOpacity>
+  
+        <Text style={styles.headerTitle}>Wishlist</Text>
+  
+        {/* {unreadCount > 0 ? (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount}</Text>
+          </View>
+        ) : (
+          <View style={{ width: 30 }} />
+        )} */}
+      </View>
+    );
+
+  return (
+    <SafeAreaView style={{flex: 1,backgroundColor:"#C7E5FD"}}>
       <View style={{flex: 1}}>
-        <Back title={'Wishlist'} />
-        <ScrollView style={{padding: 15, backgroundColor: '#FAFAFF'}}>
+        {/* <Back title={'Wishlist'} /> */}
+      
+      
           {IsLike.length !== 0 ? (
-            <View style={{marginBottom: 150}}>
+            <>
+            <Header/>
+             <ScrollView style={{padding: 15, backgroundColor: '#FAFAFF'}}>
+            <View style={{marginBottom: 80}}>
+           
               {IsLike.map((item, index) => (
                 <TouchableOpacity
                   key={index}
@@ -121,7 +187,7 @@ export default function Like() {
                   }}
                   onPress={() => {
                     //  const name = item?.name;
-                    navigation.navigate('Property', {details: item});
+                    navigation.navigate('Property', {details: item, Id:item._id});
                   }}>
                   <Image
                     style={{
@@ -132,29 +198,7 @@ export default function Like() {
                     }}
                     source={{uri: item?.image?.Image1}}
                   />
-                  {/* <TouchableOpacity
-                style={{
-                  position: 'absolute',
-                 // padding:10,
-                 margin:10,
-                 alignItems: 'center',
-                  justifyContent:'center',
-                  backgroundColor: 'white',
-                  height: 25,
-                  width: 25,
-                  borderRadius: 25,
-                 
-                }}
-                onPress={()=>{
-                 
-                }}>
-               
-               <Icon
-                name={'cards-heart' }
-                size={20}
-                color={'#FF3659'}
-              />
-              </TouchableOpacity> */}
+                
                   {item?.AvailableFractions == 0 && (
                     <Image
                       style={{
@@ -303,21 +347,112 @@ export default function Like() {
                 </TouchableOpacity>
               ))}
             </View>
+             </ScrollView></>      
           ) : (
-            <Text
-              style={{
-                color: '#043862',
-                fontSize: 16,
-                fontFamily: 'OpenSans-SemiBold',
-                textAlign: 'center',
-              }}>
-              {Massage}
-            </Text>
+            <EmptyWishlist/>
           )}
-        </ScrollView>
+       
         {/* <Contact /> */}
         {/* <Footer navigation={navigation} activeFooterTab={'like'} /> */}
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#C7E5FD' },
+  header: {
+    height: HEADER_HEIGHT,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: '#C7E5FD',
+    elevation: 4,
+  },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontFamily: 'WorkSans-SemiBold',
+  },
+  
+  skeletonIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#EAEAEA',
+  },
+  skeletonText: { flex: 1, paddingHorizontal: 10 },
+  skeletonLineLarge: {
+    height: 14,
+    width: '70%',
+    backgroundColor: '#EAEAEA',
+    borderRadius: 6,
+  },
+  skeletonLineSmall: {
+    height: 10,
+    width: '90%',
+    backgroundColor: '#EAEAEA',
+    borderRadius: 6,
+    marginTop: 8,
+  },
+ emptyContainer: {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  padding: 24,
+
+},
+
+emptyHeader: {
+  position: 'absolute',
+  top: 10,
+  left: 16,
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  width:220,
+  //marginBottom:50
+},
+
+emptyHeaderTitle: {
+  marginLeft: 10,
+  fontSize: 18,
+  fontFamily: 'WorkSans-SemiBold',
+},
+
+emptyImage: {
+  width: 220,
+  height: 200,
+  marginBottom: 20,
+   //marginTop:50
+},
+
+emptyTitle: {
+  fontSize: 20,
+  fontFamily: 'WorkSans-SemiBold',
+  color: '#1E2135',
+  marginBottom: 6,
+},
+
+emptyDesc: {
+  fontSize: 14,
+  color: '#666',
+  textAlign: 'center',
+  marginBottom: 24,
+},
+
+startBtn: {
+  backgroundColor: '#021265',
+  paddingHorizontal: 32,
+  paddingVertical: 12,
+  borderRadius: 30,
+},
+
+startBtnText: {
+  color: '#FFF',
+  fontSize: 14,
+  fontFamily: 'Poppins-SemiBold',
+},
+
+});

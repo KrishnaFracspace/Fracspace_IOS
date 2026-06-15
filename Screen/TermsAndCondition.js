@@ -7,28 +7,29 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function TermsAndCondition() {
   const [TermOpen, setTermOpen] = useState('');
   return (
-     <SafeAreaView style={{flex: 1,}}>
+     <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
     <Back title={"Terms and Conditions"}/>
-    <ScrollView style={{ backgroundColor: '#FAFAFF', width: '100%', padding: 20 }}>
-      <View style={{ width: '100%', flex: 1, paddingBottom: 40 }}>
+    <ScrollView style={{ backgroundColor: '#FAFAFF',paddingVertical: 20 }}
+    showsVerticalScrollIndicator={false}>
+
+      <View style={{flex: 1, paddingBottom: 40,paddingHorizontal:20,paddingRight:35 }}>
         <Text
           style={{
             color: '#1A1A1A',
-            fontSize: 18,
+            fontSize: 17,
             fontFamily: "Montserrat-Bold",
-            marginBottom: 8,
-            ///textAlign: 'center',
+            marginBottom: 5,
+            //textAlign: 'center',
           }}>
           Terms & Conditions
         </Text>
-        <View style={{ borderBottomColor: '#F6F6F6', borderBottomWidth: 1, width: '100%', marginBottom: 8 }}></View>
-
-        <View style={{ borderBottomWidth: 1, borderBottomColor: '#F6F6F6', width: '100%' }}>
+        <View style={{ borderBottomColor: '#F6F6F6', borderBottomWidth: 1, marginBottom: 5 }}></View>
+        <View style={{ borderBottomWidth: 1, borderBottomColor: '#F6F6F6', }}>
           <TouchableOpacity
             onPress={() => {
               setTermOpen('Co-ownership');
             }}
-            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, width: '100%' }}>
+            style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10, }}>
 
             <Text
               style={{
@@ -199,7 +200,7 @@ export default function TermsAndCondition() {
         </View>
 
         <View style={{ borderBottomWidth: 1, borderBottomColor: '#F6F6F6', width: '100%' }}>
-          <TouchableOpacity onPress={() => {
+          {/* <TouchableOpacity onPress={() => {
             setTermOpen('Bluhous');
           }} style={{ flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: '#F6F6F6', paddingVertical: 10, width: '100%' }}>
 
@@ -216,7 +217,7 @@ export default function TermsAndCondition() {
               <Icon name="chevron-small-up" size={32} color="#1E2135" />}
 
 
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
 
         <View>

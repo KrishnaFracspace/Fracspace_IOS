@@ -10,6 +10,7 @@ import {
   Image,
   ImageBackground,
   TextInput,
+  Modal,
 } from 'react-native';
 import React, {useEffect, useRef, useState} from 'react';
 import Icon from 'react-native-vector-icons/AntDesign';
@@ -31,9 +32,7 @@ import { nearByStaysApi } from '../redux/reducer/propertyReducer';
 import RoomListingSkeleton from '../components/RoomListingSkeleton';
 
 export default function RoomListing(props) {
-  // console.log(props?.route?.params);
   const [guestData, setGuestData] = useState(props?.route?.params);
-
   const {width, height} = Dimensions.get('window');
   const [guestModal, setGuestModal] = useState(false);
   const [adult, setAdult] = useState(props?.route?.params?.Adult || 1);
@@ -62,10 +61,8 @@ export default function RoomListing(props) {
   const [propertyType, setPropertyType] = useState('');
 
   const dispatch = useDispatch();
-  //const UpComingDetails  = useSelector(state => state.property.upComingProjects);
   const nearByStaysDetails = useSelector((state)=> state.property.nearByStays)
   const loading = useSelector((state)=> state.property.loading)
-//console.log(nearByStaysDetails,"=====nearByStaysDetails")
   const data = [
     {label: 'Hyderabad', value: 'Hyderabad'},
     {label: 'Munnar', value: 'Munnar'},
@@ -82,14 +79,6 @@ export default function RoomListing(props) {
           : [...prevSelected, item], // Add if not selected
     );
   };
-
-  // const toggleLikes = (item) => {
-  //     setLike((prevSelected) =>
-  //         prevSelected.includes(item)
-  //             ? prevSelected.filter((selected) => selected !== item)
-  //             : [...prevSelected, item]
-  //     );
-  // };
 
   // Handle date selection
   const handleDayPress = day => {
@@ -208,7 +197,7 @@ export default function RoomListing(props) {
           style={{
             backgroundColor: '#0D2038',
             width: width,
-            height: height * 0.24,
+            height: height * 0.12,
           }}>
           <View
             style={{
@@ -231,14 +220,14 @@ export default function RoomListing(props) {
                 fontSize: 16,
                 color: '#FFFFFF',
               }}>
-              Dreamscape Hotel Rooms
+              Available Hotels
             </Text>
             {/* <Icon name={'phone'} size={20} color={'#FFFFFF'} style={{ transform: [{ rotate: '90deg' }] }} /> */}
             <View></View>
           </View>
         </View>
 
-        <View
+        {/* <View
           style={{
             marginHorizontal: 20,
             borderRadius: 15,
@@ -413,7 +402,7 @@ export default function RoomListing(props) {
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
 
         {[...hotelDetails]
           .filter(hotel => {
@@ -477,7 +466,7 @@ export default function RoomListing(props) {
                         height: 8,
                         borderRadius: 4,
                       }}
-                      autoplay>
+                      >
                       {item.images.map((img, imgIndex) => (
                         <Image
                           key={imgIndex}
@@ -487,7 +476,8 @@ export default function RoomListing(props) {
                       ))}
                     </Swiper>
                   )}
-
+      
+                  {item?.offers &&
                   <View style={{position: 'absolute', top: 15, left: 15}}>
                     <LinearGradient
                       colors={['#0000006B', '#9999996B']}
@@ -510,6 +500,7 @@ export default function RoomListing(props) {
                       </Text>
                     </LinearGradient>
                   </View>
+                  }
 
                   <View style={{position: 'absolute', top: 15, right: 15}}>
                     <TouchableOpacity
@@ -546,6 +537,7 @@ export default function RoomListing(props) {
                     </TouchableOpacity>
                   </View>
 
+                  {(item?.name == 'DREAMSCAPE' || item?.name == 'Fracspace Abode' || item?.name == 'Eleven Views' || item?.name == 'Hilltop By Fracspace') &&
                   <View style={{position: 'absolute', bottom: 0, right: 0}}>
                     <TouchableOpacity
                       onPress={() => {
@@ -593,6 +585,7 @@ export default function RoomListing(props) {
                       </View>
                     </TouchableOpacity>
                   </View>
+          }
                 </View>
                 <View
                   style={{
@@ -658,671 +651,684 @@ export default function RoomListing(props) {
       </ScrollView>
 
       {guestModal && (
-        <CustomModal visible={true} modalStyle={{width: '100%'}}>
-          <ScrollView
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderTopLeftRadius: 40,
-              borderTopRightRadius: 40,
-              padding: 30,
-            }}>
-            <View>
-              <Text
-                style={{
-                  fontFamily: 'Poppins-SemiBold',
-                  fontSize: 18,
-                  color: '#000000',
-                }}>
-                Select Guests and Rooms
-              </Text>
-            </View>
-            <View
+        <Modal visible={true} transparent animationType='fade' modalStyle={{width: '100%'}}>
+          <View style={{flex:1}}>
+            <TouchableOpacity onPress={() => {setGuestModal(false)}} style={{flex:1,backgroundColor:'#00000065'}}/>
+            <ScrollView
               style={{
-                paddingVertical: 20,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
+                position:'absolute',bottom:0,left:0,right:0,
+                backgroundColor: '#FFFFFF',
+                borderTopLeftRadius: 40,
+                borderTopRightRadius: 40,
+                padding: 30,
               }}>
               <View>
                 <Text
                   style={{
-                    fontFamily: 'Poppins-Medium',
-                    fontSize: 16,
+                    fontFamily: 'Poppins-SemiBold',
+                    fontSize: 18,
                     color: '#000000',
                   }}>
-                  Adults
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 12,
-                    color: '#262626CC',
-                  }}>
-                  Age 18 or above
+                  Select Guests and Rooms
                 </Text>
               </View>
               <View
                 style={{
+                  paddingVertical: 20,
                   flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 100,
                   justifyContent: 'space-between',
                 }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (adult > 0) setAdult(adult - 1);
-                  }}
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 16,
+                      color: '#000000',
+                    }}>
+                    Adults
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 12,
+                      color: '#262626CC',
+                    }}>
+                    Age 18 or above
+                  </Text>
+                </View>
+                <View
                   style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     alignItems: 'center',
+                    width: 100,
+                    justifyContent: 'space-between',
                   }}>
-                  <Icon name={'minus'} size={15} color={'#0D2038'} />
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                  }}>
-                  {adult}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (adult < 20) setAdult(adult + 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#0D2038',
-                  }}>
-                  <Icon name={'plus'} size={15} color={'#E09E3B'} />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (adult > 0) setAdult(adult - 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <Icon name={'minus'} size={15} color={'#0D2038'} />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                    }}>
+                    {adult}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (adult < 20) setAdult(adult + 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#0D2038',
+                    }}>
+                    <Icon name={'plus'} size={15} color={'#E09E3B'} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              <View>
-                <Text
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 16,
+                      color: '#000000',
+                    }}>
+                    Children
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 12,
+                      color: '#262626CC',
+                    }}>
+                    Age 0-17 years old
+                  </Text>
+                </View>
+                <View
                   style={{
-                    fontFamily: 'Poppins-Medium',
-                    fontSize: 16,
-                    color: '#000000',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    width: 100,
+                    justifyContent: 'space-between',
                   }}>
-                  Children
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 12,
-                    color: '#262626CC',
-                  }}>
-                  Age 0-17 years old
-                </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (children > 0) setChildren(children - 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <Icon name={'minus'} size={15} color={'#0D2038'} />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                    }}>
+                    {children}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (children < 20) setChildren(children + 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#0D2038',
+                    }}>
+                    <Icon name={'plus'} size={15} color={'#E09E3B'} />
+                  </TouchableOpacity>
+                </View>
               </View>
               <View
                 style={{
+                  paddingVertical: 20,
                   flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 100,
                   justifyContent: 'space-between',
                 }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (children > 0) setChildren(children - 1);
-                  }}
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 16,
+                      color: '#000000',
+                    }}>
+                    Rooms
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 12,
+                      color: '#262626CC',
+                    }}>
+                    No.of rooms
+                  </Text>
+                </View>
+                <View
                   style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     alignItems: 'center',
+                    width: 100,
+                    justifyContent: 'space-between',
                   }}>
-                  <Icon name={'minus'} size={15} color={'#0D2038'} />
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                  }}>
-                  {children}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (children < 20) setChildren(children + 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#0D2038',
-                  }}>
-                  <Icon name={'plus'} size={15} color={'#E09E3B'} />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (rooms > 0) setRooms(rooms - 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <Icon name={'minus'} size={15} color={'#0D2038'} />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                    }}>
+                    {rooms}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (rooms < 20) setRooms(rooms + 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#0D2038',
+                    }}>
+                    <Icon name={'plus'} size={15} color={'#E09E3B'} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            <View
-              style={{
-                paddingVertical: 20,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-              }}>
-              <View>
+              <TouchableOpacity
+                onPress={() => {
+                  setGuestModal(!guestModal);
+                }}
+                style={{
+                  backgroundColor: '#0D2038',
+                  borderRadius: 30,
+                  padding: 10,
+                  alignItems: 'center',
+                  marginHorizontal: 60,
+                  marginVertical: 20,
+                }}>
                 <Text
                   style={{
-                    fontFamily: 'Poppins-Medium',
+                    fontFamily: 'Montserrat-SemiBold',
                     fontSize: 16,
-                    color: '#000000',
+                    color: '#FFFFFF',
                   }}>
-                  Rooms
+                  Apply
                 </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 12,
-                    color: '#262626CC',
-                  }}>
-                  No.of rooms
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 100,
-                  justifyContent: 'space-between',
-                }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (rooms > 0) setRooms(rooms - 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <Icon name={'minus'} size={15} color={'#0D2038'} />
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                  }}>
-                  {rooms}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (rooms < 20) setRooms(rooms + 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#0D2038',
-                  }}>
-                  <Icon name={'plus'} size={15} color={'#E09E3B'} />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity
-              onPress={() => {
-                setGuestModal(!guestModal);
-              }}
-              style={{
-                backgroundColor: '#0D2038',
-                borderRadius: 30,
-                padding: 10,
-                alignItems: 'center',
-                marginHorizontal: 60,
-                marginVertical: 20,
-              }}>
-              <Text
-                style={{
-                  fontFamily: 'Montserrat-SemiBold',
-                  fontSize: 16,
-                  color: '#FFFFFF',
-                }}>
-                Apply
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </CustomModal>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </Modal>
       )}
 
       {showCalendar && (
-        <CustomModal visible={true} modalStyle={{width: '100%'}}>
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              padding: 30,
-              borderWidth: 1,
-              borderTopLeftRadius: 30,
-              borderTopRightRadius: 30,
-            }}>
+        <Modal visible={true} transparent animationType='fade' modalStyle={{width: '100%'}}>
+          <View style={{flex:1}}>
+            <TouchableOpacity onPress={() => {setShowCalendar(false)}} style={{flex:1, backgroundColor:'#00000065'}}/>
             <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              <View></View>
-              <Text
-                style={{
-                  fontFamily: 'Montserrat-SemiBold',
-                  fontSize: 17,
-                  color: '#000000',
-                }}>
-                Select Date
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setShowCalendar(!showCalendar);
-                }}>
-                <Icc name={'cross'} size={20} color={'#000000'} />
-              </TouchableOpacity>
-            </View>
-            <View style={{}}>
-              <Calendar
-                onDayPress={handleDayPress}
-                markingType="period"
-                markedDates={selectedDates}
-                minDate={moment().format('YYYY-MM-DD')}
-              />
+              style={{
+                position:'absolute',bottom:0,left:0,right:0,
+                backgroundColor: '#FFFFFF',
+                padding: 30,
+                borderTopLeftRadius: 30,
+                borderTopRightRadius: 30,
+              }}>
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <View></View>
+                <Text
+                  style={{
+                    fontFamily: 'Montserrat-SemiBold',
+                    fontSize: 17,
+                    color: '#000000',
+                  }}>
+                  Select Date
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowCalendar(!showCalendar);
+                  }}>
+                  <Icc name={'cross'} size={20} color={'#000000'} />
+                </TouchableOpacity>
+              </View>
+              <View style={{}}>
+                <Calendar
+                  onDayPress={handleDayPress}
+                  markingType="period"
+                  markedDates={selectedDates}
+                  minDate={moment().format('YYYY-MM-DD')}
+                />
+              </View>
             </View>
           </View>
-        </CustomModal>
+        </Modal>
       )}
 
       {filter && (
-        <CustomModal visible={true} modalStyle={{width: width, flex: 1}}>
-          <ScrollView
-            style={styles.container}
-            contentContainerStyle={{flexGrow: 1}}>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              <Text style={styles.title}>Filters</Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setFilter(!filter);
-                }}>
-                <Icc name={'cross'} size={20} color={'#000000'} />
-              </TouchableOpacity>
-            </View>
-
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: '#E7E9EB',
-                marginVertical: 15,
-              }}></View>
-
-            <Text
-              style={{
-                fontFamily: 'Poppins-Medium',
-                fontSize: 16,
-                color: '#000000',
-              }}>
-              Select Price Range:
-            </Text>
-            {/*  */}
-            {/* MultiSlider for Min and Max Price */}
-            <View style={{paddingHorizontal: 10}}>
-              <MultiSlider
-                style={{width: width}}
-                values={priceRange}
-                sliderLength={width * 0.85}
-                onValuesChange={values => setPriceRange(values)}
-                min={0}
-                max={30000}
-                step={1000}
-                selectedStyle={{
-                  backgroundColor: '#4C61D0', // Blue range between min and max
-                }}
-                unselectedStyle={{
-                  backgroundColor: '#E3E3E3', // Gray for outside range
-                }}
-                customMarker={e => (
-                  <View
-                    style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: '#0424CB',
-                      borderRadius: 10,
-                    }}></View>
-                )}
-              />
-            </View>
-
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+        <Modal visible={true} transparent animationType='fade' modalStyle={{width: width, flex: 1}}>
+          <View style={{flex:1,}}>
+            <TouchableOpacity onPress={() => {setFilter(false)}} style={{flex:1,backgroundColor:'#00000065'}}/>
+            <ScrollView
+              style={styles.container}
+              contentContainerStyle={{flexGrow: 1}}>
               <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderColor: '#EAEAEA',
-                  borderWidth: 1,
-                  paddingHorizontal: 10,
-                  borderRadius: 6,
-                }}>
-                <Text
-                  style={{
-                    fontFamily: 'Poppins-Medium',
-                    fontSize: 11,
-                    color: '#101010',
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <Text style={styles.title}>Filters</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setFilter(!filter);
                   }}>
-                  Min
-                </Text>
-                <TextInput
-                  value={`₹${priceRange[0]}`}
-                  editable={false}
-                  style={{marginLeft: 10, color: '#101010'}}
-                />
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderColor: '#EAEAEA',
-                  borderWidth: 1,
-                  paddingHorizontal: 10,
-                  borderRadius: 6,
-                }}>
-                <Text
-                  style={{
-                    fontFamily: 'Poppins-Medium',
-                    fontSize: 11,
-                    color: '#101010',
-                  }}>
-                  Max
-                </Text>
-                <TextInput
-                  value={`₹${priceRange[1]}`}
-                  editable={false}
-                  style={{marginLeft: 10, color: '#101010'}}
-                />
-              </View>
-            </View>
-
-            <View
-              style={{
-                borderTopWidth: 1,
-                borderTopColor: '#E7E9EB',
-                marginVertical: 15,
-              }}></View>
-
-            <View>
-              <Text
-                style={{
-                  fontFamily: 'Poppins-Meidum',
-                  fontSize: 16,
-                  color: '#000000',
-                }}>
-                Property Type:{' '}
-              </Text>
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  gap: 15,
-                  flexWrap: 'wrap',
-                  marginTop: 10,
-                }}>
-                {propertyTypes.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      setPropertyType(prev => (prev === item ? '' : item));
-                    }}
-                    style={{
-                      borderWidth: 1,
-                      borderColor:
-                        propertyType == item ? '#E09E3B' : '#62626233',
-                      backgroundColor:
-                        propertyType == item ? '#E09E3B' : '#FFFFFF',
-                      borderRadius: 5,
-                      paddingVertical: 10,
-                      paddingHorizontal: 20,
-                    }}>
-                    <Text
-                      style={{
-                        fontFamily: 'Montserrat-Medium',
-                        fontSize: 12,
-                        color: propertyType == item ? '#FFFFFF' : '#00000099',
-                      }}>
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                  <Icc name={'cross'} size={20} color={'#000000'} />
+                </TouchableOpacity>
               </View>
 
               <View
                 style={{
-                  borderTopColor: '#F0EFFB',
                   borderTopWidth: 1,
+                  borderTopColor: '#E7E9EB',
                   marginVertical: 15,
                 }}></View>
-            </View>
 
-            <View style={{}}>
               <Text
                 style={{
                   fontFamily: 'Poppins-Medium',
                   fontSize: 16,
                   color: '#000000',
                 }}>
-                Room Type:{' '}
+                Select Price Range:
               </Text>
+              {/*  */}
+              {/* MultiSlider for Min and Max Price */}
+              <View style={{paddingHorizontal: 10}}>
+                <MultiSlider
+                  style={{width: width}}
+                  values={priceRange}
+                  sliderLength={width * 0.85}
+                  onValuesChange={values => setPriceRange(values)}
+                  min={0}
+                  max={30000}
+                  step={1000}
+                  selectedStyle={{
+                    backgroundColor: '#4C61D0', // Blue range between min and max
+                  }}
+                  unselectedStyle={{
+                    backgroundColor: '#E3E3E3', // Gray for outside range
+                  }}
+                  customMarker={e => (
+                    <View
+                      style={{
+                        width: 20,
+                        height: 20,
+                        backgroundColor: '#0424CB',
+                        borderRadius: 10,
+                      }}></View>
+                  )}
+                />
+              </View>
 
               <View
-                style={{
-                  flexDirection: 'row',
-                  gap: 15,
-                  flexWrap: 'wrap',
-                  marginTop: 10,
-                }}>
-                {roomTypes.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      // setRoomType(item);
-                      setRoomType(prev => (prev === item ? '' : item)); // Deselect if same
-                    }}
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    borderColor: '#EAEAEA',
+                    borderWidth: 1,
+                    paddingHorizontal: 10,
+                    borderRadius: 6,
+                  }}>
+                  <Text
                     style={{
-                      borderWidth: 1,
-                      borderColor: roomType == item ? '#E09E3B' : '#62626233',
-                      backgroundColor: roomType == item ? '#E09E3B' : '#FFFFFF',
-                      borderRadius: 5,
-                      paddingVertical: 10,
-                      paddingHorizontal: 20,
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 11,
+                      color: '#101010',
                     }}>
-                    <Text
-                      style={{
-                        fontFamily: 'Montserrat-Medium',
-                        fontSize: 12,
-                        color: roomType == item ? '#FFFFFF' : '#00000099',
-                      }}>
-                      {item}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                    Min
+                  </Text>
+                  <TextInput
+                    value={`₹${priceRange[0]}`}
+                    editable={false}
+                    style={{marginLeft: 10, color: '#101010'}}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    borderColor: '#EAEAEA',
+                    borderWidth: 1,
+                    paddingHorizontal: 10,
+                    borderRadius: 6,
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 11,
+                      color: '#101010',
+                    }}>
+                    Max
+                  </Text>
+                  <TextInput
+                    value={`₹${priceRange[1]}`}
+                    editable={false}
+                    style={{marginLeft: 10, color: '#101010'}}
+                  />
+                </View>
               </View>
 
               <View
                 style={{
-                  borderTopColor: '#F0EFFB',
                   borderTopWidth: 1,
-                  marginTop: 15,
+                  borderTopColor: '#E7E9EB',
+                  marginVertical: 15,
                 }}></View>
-            </View>
 
-            <View style={{margin: 20, paddingBottom: 20}}>
-              <TouchableOpacity
-                onPress={() => {
-                  setFilter(!filter);
-                }}
-                style={{
-                  backgroundColor: '#0E2037',
-                  padding: 15,
-                  borderRadius: 15,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
+              <View>
                 <Text
                   style={{
-                    fontFamily: 'Poppins-SemiBold',
-                    fontSize: 14,
-                    color: '#FFFFFF',
+                    fontFamily: 'Poppins-Meidum',
+                    fontSize: 16,
+                    color: '#000000',
                   }}>
-                  Continue
+                  Property Type:{' '}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
-        </CustomModal>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 15,
+                    flexWrap: 'wrap',
+                    marginTop: 10,
+                  }}>
+                  {propertyTypes.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        setPropertyType(prev => (prev === item ? '' : item));
+                      }}
+                      style={{
+                        borderWidth: 1,
+                        borderColor:
+                          propertyType == item ? '#E09E3B' : '#62626233',
+                        backgroundColor:
+                          propertyType == item ? '#E09E3B' : '#FFFFFF',
+                        borderRadius: 5,
+                        paddingVertical: 10,
+                        paddingHorizontal: 20,
+                      }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-Medium',
+                          fontSize: 12,
+                          color: propertyType == item ? '#FFFFFF' : '#00000099',
+                        }}>
+                        {item}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View
+                  style={{
+                    borderTopColor: '#F0EFFB',
+                    borderTopWidth: 1,
+                    marginVertical: 15,
+                  }}></View>
+              </View>
+
+              <View style={{}}>
+                <Text
+                  style={{
+                    fontFamily: 'Poppins-Medium',
+                    fontSize: 16,
+                    color: '#000000',
+                  }}>
+                  Room Type:{' '}
+                </Text>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    gap: 15,
+                    flexWrap: 'wrap',
+                    marginTop: 10,
+                  }}>
+                  {roomTypes.map((item, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        // setRoomType(item);
+                        setRoomType(prev => (prev === item ? '' : item)); // Deselect if same
+                      }}
+                      style={{
+                        borderWidth: 1,
+                        borderColor: roomType == item ? '#E09E3B' : '#62626233',
+                        backgroundColor: roomType == item ? '#E09E3B' : '#FFFFFF',
+                        borderRadius: 5,
+                        paddingVertical: 10,
+                        paddingHorizontal: 20,
+                      }}>
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-Medium',
+                          fontSize: 12,
+                          color: roomType == item ? '#FFFFFF' : '#00000099',
+                        }}>
+                        {item}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <View
+                  style={{
+                    borderTopColor: '#F0EFFB',
+                    borderTopWidth: 1,
+                    marginTop: 15,
+                  }}></View>
+              </View>
+
+              <View style={{margin: 20, paddingBottom: 20}}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setFilter(!filter);
+                  }}
+                  style={{
+                    backgroundColor: '#0E2037',
+                    padding: 15,
+                    borderRadius: 15,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-SemiBold',
+                      fontSize: 14,
+                      color: '#FFFFFF',
+                    }}>
+                    Continue
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </Modal>
       )}
 
       {sort && (
-        <CustomModal visible={true} modalStyle={{width: '100%'}}>
-          <View
-            style={{backgroundColor: '#FFFFFF', padding: 20, borderRadius: 30}}>
+        <Modal visible={true} transparent animationType='fade' modalStyle={{width: '100%'}}>
+          <View style={{flex:1}}>
+            <TouchableOpacity onPress={() => {setSort(false)}} style={{flex:1,backgroundColor:'#00000065'}}/>
             <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              <Text
+              style={{position:'absolute',bottom:0,left:0,right:0,backgroundColor: '#FFFFFF', padding: 20, borderRadius: 30}}>
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <Text
+                  style={{
+                    fontFamily: 'Poppins-SemiBold',
+                    fontSize: 18,
+                    color: '#000000',
+                  }}>
+                  Sort By
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSort(!sort);
+                  }}>
+                  <Icc name={'cross'} size={20} color={'#000000'} />
+                </TouchableOpacity>
+              </View>
+
+              <View
                 style={{
-                  fontFamily: 'Poppins-SemiBold',
-                  fontSize: 18,
-                  color: '#000000',
-                }}>
-                Sort By
-              </Text>
-              <TouchableOpacity
-                onPress={() => {
-                  setSort(!sort);
-                }}>
-                <Icc name={'cross'} size={20} color={'#000000'} />
-              </TouchableOpacity>
-            </View>
+                  borderTopColor: '#E7E9EB',
+                  borderTopWidth: 1,
+                  marginVertical: 15,
+                }}></View>
 
-            <View
-              style={{
-                borderTopColor: '#E7E9EB',
-                borderTopWidth: 1,
-                marginVertical: 15,
-              }}></View>
+              <View>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSortBy('Popularity');
+                    setSort(!sort);
+                  }}
+                  style={{flexDirection: 'row'}}>
+                  {sortBy == 'Popularity' ? (
+                    <Ico
+                      name={'radio-button-on-outline'}
+                      size={20}
+                      color={'#001DD8'}
+                    />
+                  ) : (
+                    <Ico
+                      name={'radio-button-off-outline'}
+                      size={20}
+                      color={'#9B9B9B'}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                      marginLeft: 10,
+                    }}>
+                    Popularity
+                  </Text>
+                </TouchableOpacity>
 
-            <View>
-              <TouchableOpacity
-                onPress={() => {
-                  setSortBy('Popularity');
-                  setSort(!sort);
-                }}
-                style={{flexDirection: 'row'}}>
-                {sortBy == 'Popularity' ? (
-                  <Ico
-                    name={'radio-button-on-outline'}
-                    size={20}
-                    color={'#001DD8'}
-                  />
-                ) : (
-                  <Ico
-                    name={'radio-button-off-outline'}
-                    size={20}
-                    color={'#9B9B9B'}
-                  />
-                )}
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                    marginLeft: 10,
-                  }}>
-                  Popularity
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSortBy('Low to High');
+                    setSort(!sort);
+                  }}
+                  style={{flexDirection: 'row', marginVertical: 15}}>
+                  {sortBy == 'Low to High' ? (
+                    <Ico
+                      name={'radio-button-on-outline'}
+                      size={20}
+                      color={'#001DD8'}
+                    />
+                  ) : (
+                    <Ico
+                      name={'radio-button-off-outline'}
+                      size={20}
+                      color={'#9B9B9B'}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                      marginLeft: 10,
+                    }}>
+                    Price (Low to High)
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                onPress={() => {
-                  setSortBy('Low to High');
-                  setSort(!sort);
-                }}
-                style={{flexDirection: 'row', marginVertical: 15}}>
-                {sortBy == 'Low to High' ? (
-                  <Ico
-                    name={'radio-button-on-outline'}
-                    size={20}
-                    color={'#001DD8'}
-                  />
-                ) : (
-                  <Ico
-                    name={'radio-button-off-outline'}
-                    size={20}
-                    color={'#9B9B9B'}
-                  />
-                )}
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                    marginLeft: 10,
-                  }}>
-                  Price (Low to High)
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                onPress={() => {
-                  setSortBy('High to Low');
-                  setSort(!sort);
-                }}
-                style={{flexDirection: 'row'}}>
-                {sortBy == 'High to Low' ? (
-                  <Ico
-                    name={'radio-button-on-outline'}
-                    size={20}
-                    color={'#001DD8'}
-                  />
-                ) : (
-                  <Ico
-                    name={'radio-button-off-outline'}
-                    size={20}
-                    color={'#9B9B9B'}
-                  />
-                )}
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                    marginLeft: 10,
-                  }}>
-                  Price (High to Low)
-                </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setSortBy('High to Low');
+                    setSort(!sort);
+                  }}
+                  style={{flexDirection: 'row'}}>
+                  {sortBy == 'High to Low' ? (
+                    <Ico
+                      name={'radio-button-on-outline'}
+                      size={20}
+                      color={'#001DD8'}
+                    />
+                  ) : (
+                    <Ico
+                      name={'radio-button-off-outline'}
+                      size={20}
+                      color={'#9B9B9B'}
+                    />
+                  )}
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                      marginLeft: 10,
+                    }}>
+                    Price (High to Low)
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </CustomModal>
+        </Modal>
       )}
     </SafeAreaView>
   );
@@ -1351,6 +1357,7 @@ const styles = StyleSheet.create({
     height: 8,
   },
   container: {
+    position:'absolute',bottom:0,left:0,right:0,
     backgroundColor: '#FFFFFF',
     padding: 25,
     borderTopRightRadius: 30,
@@ -1363,7 +1370,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Poppins-SemiBold',
     color: '#000000',
-    // marginBottom: 20,
   },
 });
 

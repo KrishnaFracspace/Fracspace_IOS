@@ -18,6 +18,7 @@ import InteriorFormSec from '../Version2_O/InteriorFormSec';
 import InteriorFSec from '../Version2_O/InteriorFSec';
 import InteriorFormThird from '../Version2_O/InteriorFormThird';
 import Locationview from '../Version2_O/Locationview';
+import Like from '../Like';
 
 
 const Stack = createNativeStackNavigator();
@@ -31,6 +32,7 @@ export default function HomeStack() {
         <Stack.Screen name="Book" component={Book} />
         <Stack.Screen name="Enquirenew" component={Enquirenew} />
         <Stack.Screen name="Review" component={Review} />
+        <Stack.Screen name="Like" component={Like} />
 
         {/* ------ Altaira ----- */}
         <Stack.Screen name="LableProperty" component={LableProperty}/>
@@ -46,7 +48,7 @@ export default function HomeStack() {
 
         {/* ------ Dreamscape ------ */}
         <Stack.Screen name="DreamscapeHome" component={DreamscapeHome}/>
-        <Stack.Screen name="RoomListing" component={RoomListing}/>
+        {/* <Stack.Screen name="RoomListing" component={RoomListing}/> */}
         <Stack.Screen name="EnquirtyFS" component={EnquirtyFS}/>
 
 

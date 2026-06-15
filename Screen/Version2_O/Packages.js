@@ -66,7 +66,7 @@ dispatch(getPackages())
     handlePackageData();
   }, []);
   return (
-    <SafeAreaView style={{ flex: 1,}}>
+    <SafeAreaView style={{ flex: 1,backgroundColor:"#FEFFF2"}}>
       {/* <LinearGradient colors={['#FEFFF2 ', '#FCFDF6','#FAFAFA']} style={{ flex: 1 }}> */}
       <LinearGradient colors={['#FEFFF2', '#FCFDF6', '#FAFAFA']} style={{ flex: 1 }}>
         <View style={{

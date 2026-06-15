@@ -3,7 +3,7 @@ import React, { useContext, useState } from 'react';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
 import Back from './Back';
-import { CoOwnerBookingverification } from './Services/UserApi';
+import { CoOwnerBookingverification, PayUPaymentVerify } from './Services/UserApi';
 import { AppContext } from './Context/AppContext';
 const {width, height} = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,84 +14,114 @@ export default function PaymentPage(props) {
   const navigation = useNavigation();
   const [pageUrl, setPageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [TxnID,setTxnID]=useState(props?.route?.params?.TxnID);
-  const [Property,setProperty]=useState(props?.route?.params?.property);
+  //const [TxnID,setTxnID]=useState(props?.route?.params?.TxnID);
+  //const [Property,setProperty]=useState(props?.route?.params?.property);
+  const TxnID = props?.route?.params?.TxnID;
+const Property = props?.route?.params?.property;
+const Link = props?.route?.params?.Link;
+const fractions = props?.route?.params?.numberOfFractions;
+const totalAmount = props?.route?.params?.totalAmount;
+const location = props?.route?.params?.location;
+ const taxAmount = props?.route?.params?.taxAmount;
+ const Number = props?.route?.params?.Number;      
+ const baseAmount = props?.route?.params?.baseAmount;
+        
 
-  const HandlePayUPaymentVerify = async (status) => {
-    let payload = JSON.stringify({
-    propertyName: Property?.propertyName,
-    propertyId: Property?.propertyId,
-    email: Property?.email,
-    fractionValue: Property?.FC_Price,
-    numberOfFractions: Property?.numberOfFractions,
-    totalBookingAmount: Property?.totalBookingAmount + 300*Property?.numberOfFractions,
-    Price: Property?.Price,
-    FC_Price: Property?.FC_Price,
-    termsAndConditions:Property?.termsAndConditions,
-    payUpayment: [
-        {
-            txnId: TxnID,
-            amount: Property?.totalBookingAmount + 300*Property?.numberOfFractions,
-            username: Property?.email,
-            status: status,
-            mihpayid: "MHP12345"
-        }
-    ],
-    bookingStatus: status,
-    statusKey: "BOOK123"
+const HandlePayUPaymentVerify = async (paymentStatus) => {
+  try {
+    // Step 1: Verify Payment
+    const paymentVerification = await PayUPaymentVerify({ txnID: TxnID });
+    let verifySuccess = paymentVerification?.success || paymentVerification?.status == 'success';
+//console.log(paymentVerification?.data?.payment?._id,"===paymentVerification-----------999")
+const bookingId = paymentVerification?.data?.payment?._id
+const time =  paymentVerification?.data?.payment?.responseDetails?.addedon
+
+let payload = JSON.stringify({
+  propertyName: Property?.name,
+  propertyId: Property?._id,
+  email: globalState?.userDetails?.email,
+  fractionValue: Property?.FC_Price,
+  numberOfFractions: Property?.numberOfFractions || 1,
+  totalBookingAmount: Property?.BookingAmount,
+  Price: Property?.Price,
+  FC_Price: Property?.FC_Price,
+  termsAndConditions: true,
+  payUpayment: [
+    {
+      txnId: TxnID,
+      amount: Property?.BookingAmount,
+      username: globalState?.userDetails?.email,
+      status: paymentStatus,
+      mihpayid: "MHP12345",
+    },
+  ],
+  bookingStatus: paymentStatus,
+  statusKey: "BOOK123",
+});
+
+    // Step 3: Call Booking API
+    let bookingResponse = await CoOwnerBookingverification(payload);
+    let bookingSuccess = bookingResponse?.success || bookingResponse?.data?.success;
+    const bookingData = bookingResponse?.data;
+
+    // ✅ Final Success Logic
+    let finalSuccess =
+      paymentStatus === "Success" &&
+      verifySuccess &&
+      bookingSuccess;
+
+    navigation.replace("PaymentSummary", {
+      success: finalSuccess,
+      paymentStatus,
+      verifySuccess,
+      bookingSuccess,
+      txnId: TxnID,
+      property: Property,
+      bookingData: bookingResponse?.data,
+        totalAmount:totalAmount,
+          taxAmount:taxAmount,
+          Number:Number,
+          baseAmount:baseAmount,
+          location:location,
+          bookingId:bookingId,
+          time:time,
+      message: finalSuccess
+        ? "Booking confirmed successfully."
+        : bookingResponse?.data?.message ||
+          "Booking failed. Please contact support.",
     });
-  
-    try {
-        let { data: res } = await CoOwnerBookingverification(payload);
-       // console.log('fghj',res);
-        if (res?.success) {
-       
 
-        }
-    } catch (error) {
-        if (error?.response) {
-            // console.log('Response Error', error?.response?.data);
-            Alert.alert('Response ErrorPPP', `${error?.response?.data?.message}`);
-        } else if (error?.request) {
-            // console.log('Request error:', ${JSON.stringify(error?.request)});
-            Alert.alert('Request Error:', 'Please Check Your Internet Connection');
-            // Alert.alert('Request error:', ${JSON.stringify(error?.request)});
-        } else {
-            //  console.log('error');
-            Alert.alert('Error:', `${error}`);
-        }
-    }
+  } catch (error) {
+    navigation.replace("PaymentSummary", {
+      success: false,
+      paymentStatus,
+      txnId: TxnID,
+      property: Property,
+        totalAmount:totalAmount,
+          taxAmount:taxAmount,
+          Number:Number,
+          baseAmount:baseAmount,
+          location:location,
+          bookingId:bookingId,
+          time:time,
+      message:
+        error?.response?.data?.message ||
+        "Something went wrong. Please try again.",
+    });
+  }
 };
 
-
- 
-
-  const handleNavigationStateChange = (state) => {
-    // Track the URL when the page changes
-   // console.log(state.url);
-    if(state.url=='https://test.bunknbeyond.com/paymentfailure'){
-      let data='Failed'
-      HandlePayUPaymentVerify(data);
-      Alert.alert(
-        'Booking Failed!',"Oops! Your payment has been failed. Any refund amount detucted will be credited to the source account within 5-6 Working days",
-      );
-      navigation.navigate('Home',{details:globalState?.ProDetails});
-      
-    }if(state.url=='https://test.bunknbeyond.com/paymentsuccess'){
-      let data='Success'
-      HandlePayUPaymentVerify(data);
-      Alert.alert(
-        'Booking Completed!',"Our team is currently reviewing your booking status. Please allow us upto 24 hours to confirm your fraction booking status.",
-      );
-    
-      navigation.navigate('Home',{details:globalState?.ProDetails});   
-    }
-    
-    setPageUrl(state.url);
-  };
+const handleNavigationStateChange = (state) => {
+  if (state.url.includes("paymentfailure")) {
+    HandlePayUPaymentVerify("Failed");
+  }
+  if (state.url.includes("paymentsuccess")) {
+    HandlePayUPaymentVerify("Success");
+  }
+  setPageUrl(state.url);
+};
 
   const handlePageLoad = () => {
-    // This is called when the page has finished loading
     setLoading(false);
   };
   

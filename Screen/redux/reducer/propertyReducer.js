@@ -16,7 +16,8 @@ const initialState = {
   shareLink:'',
   referralLinkfront:"",
   referralData:{},
-  altairaPromoData:{}
+  altairaPromoData:{},
+  paymentData:[]
 };
 
 export const fetchNewUpdates = createAsyncThunk(
@@ -190,12 +191,55 @@ export const altairaPropertyPromo = createAsyncThunk("altairaPropertyPromo",
   }
 );
 
+export const paymentReview = createAsyncThunk(
+  'property/paymentReview',
+  async ({email,
+        propertyName,
+        propertyId,
+        Price,
+        FC_Price,
+        fractionValue,
+        numberOfFractions,
+        totalBookingAmount,
+        termsAndConditions}, { rejectWithValue }) => {
+    try {
+      const payload = {
+        email,
+        propertyName,
+        propertyId,
+        Price,
+        FC_Price,
+        fractionValue,
+        numberOfFractions,
+        totalBookingAmount,
+        termsAndConditions
+      };
+      const response = await axios.post(
+        'https://apitest.fracspace.com/api/users/reviewData',
+        payload,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': 'Fracspace@2024',
+          },
+        }
+      );
+    //  console.log(response?.data,"=======res====res===")
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error?.response?.data || 'Something went wrong'
+      );
+    }
+  }
+);
+
 const propertySlice = createSlice({
   name: 'propertySlice',
   initialState,
   reducers: {
       resetProfileState: state => {
-      state.profileDetails = null;
+      state.PropertyDetailsById = null;
     },
   },
   extraReducers: builder => {
@@ -293,6 +337,20 @@ const propertySlice = createSlice({
       }) 
       .addCase(altairaPropertyPromo.rejected, (state, action) => {
         state.newUpdatesLoading = false;
+        state.newUpdatesError = action.payload;
+      });
+      builder
+      .addCase(paymentReview.pending, state => {
+        state.loading = true;
+        state.newUpdatesError = null;
+      })
+      .addCase(paymentReview.fulfilled, (state, action) => {
+        state.loading = false;
+        state.paymentData = action.payload;
+     // console.log(state.altairaPromoData,"=========promo===")
+      }) 
+      .addCase(paymentReview.rejected, (state, action) => {
+        state.loading = false;
         state.newUpdatesError = action.payload;
       });
   },

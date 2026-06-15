@@ -21,12 +21,18 @@ import { GetAllCustomer } from './Services/UserApi';
 import Footer from './Footer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QuarterlyBarChart from './components/QuarterlyBarChart ';
+import { profileDetails } from './redux/reducer/profileReducer';
 
 export default function Owned() {
   const { globalState, setGlobalState } = useContext(AppContext);
   const [value, setValue] = useState(null);
   const { width, height } = Dimensions.get('window');
-  const [OwnedData, setOwnedData] = useState(globalState?.userDetails?.ownedProperties || []);
+  // const [OwnedData, setOwnedData] = useState(globalState?.userDetails?.ownedProperties || []);
+  const [OwnedData, setOwnedData] = useState(
+    globalState?.userDetails?.ownedProperties?.filter(
+      item => item?.status === 'active'
+    ) || []
+  );
   const navigation = useNavigation();
   const investedAmount = 1500000;
   const data = globalState?.userDetails?.addProfit?.map(change => investedAmount + change);
@@ -101,9 +107,9 @@ export default function Owned() {
       })}
     </G>
   );
-
+// console.log("====", profile?.verification,"====dd")
   return (
-    <SafeAreaView style={{ flex: 1, }}>
+    <SafeAreaView style={{ flex: 1,backgroundColor:profile?.verification ? '#F6F6F6':"#C7E5FD"}}>
       {profile?.verification ?
 
         <View style={{ flex: 1 }}>
@@ -220,10 +226,14 @@ export default function Owned() {
                         key={index}
                         onPress={() => {
                           //console.log(item?.propertyDetails?.location);
-                          navigation.navigate('Dashboard', {
-                            ownedProDetails: item,
+                          if(item?.exitStatus == 'requested' || item?.exitStatus == 'inProgress'){
+                            
+                          }else{
+                            navigation.navigate('Dashboard', {
+                              ownedProDetails: item,
 
-                          });
+                            });
+                          }
                           // navigation.navigate('PropertyDetails');
                         }}
                         style={{
@@ -362,6 +372,13 @@ export default function Owned() {
                             </View>
                           </View>
                         </View>
+                        {(item?.exitStatus == 'requested' || item?.exitStatus == 'inProgress') &&
+                          <View style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'#000000b0',borderRadius:10,alignItems:'center',justifyContent:'center'}}>
+                            <Text style={{fontFamily:'WorkSans-Medium',fontSize:16,color:'#FFF'}}>
+                              {item?.exitStatus == 'requested' ? 'Exit request is in process' : 'Transfer request is in process'}
+                            </Text>
+                          </View>
+                        }
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -391,26 +408,80 @@ export default function Owned() {
           }
         </View>
         :
-        <View style={{ flex: 1, backgroundColor: '#FFF' }}>
-          <LinearGradient colors={['#C7E5FD', '#FFF']} style={{ width: width, height: height * 0.3, padding: 20, alignItems: 'center' }}>
-          </LinearGradient>
-          <View style={{ position: 'absolute', top: height * 0.25, backfaceVisibility: 'visible', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', }}>
-            <View style={{ alignItems: 'center', marginHorizontal: 40 }}>
-              <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/PortfolioEmpty.png' }} style={{ width: width * 0.5, height: height * 0.21 }} />
-              <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 20, color: '#0F1130', textAlign: 'center', marginTop: 10 }}>Your property portfolio is empty.</Text>
-              <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 13, color: '#00000070', textAlign: 'center', marginVertical: 15 }}>
-                Start exploring exclusive properties and grow your real estate assets with shared ownership
-              </Text>
-              <TouchableOpacity onPress={() => {
-                //  GgoToYosemite(PropertiesArray?.Location);
-                navigation.navigate('Home', { details: globalState?.ProDetails });
-                // navigation.navigate('Home');
-              }} style={{ backgroundColor: '#021265', borderRadius: 30, paddingHorizontal: 50, marginTop: 15, paddingVertical: 10, borderColor: '#C0D5F3', borderWidth: 1 }}>
-                <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 16, color: '#FFFFFF' }}>Explore </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
+    <View style={{ flex: 1 }}>
+  
+  {/* Background Gradient */}
+  <LinearGradient
+    colors={['#C7E5FD', '#FFF','#FFF']}
+    style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 }}>
+    <View style={{ alignItems: 'center' }}>
+      {/* Image */}
+      <Image
+        source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/PortfolioEmpty.png' }}
+        style={{
+          width: width * 0.5,
+          height: height * 0.22,
+          resizeMode: 'contain',
+        }}
+      />
+
+      {/* Title */}
+      <Text
+        style={{
+          fontFamily: 'WorkSans-SemiBold',
+          fontSize: 20,
+          color: '#0F1130',
+          textAlign: 'center',
+          marginTop: 20,
+        }}
+      >
+        Your property portfolio is empty
+      </Text>
+
+      {/* Description */}
+      <Text
+        style={{
+          fontFamily: 'Montserrat-SemiBold',
+          fontSize: 13,
+          color: '#00000070',
+          textAlign: 'center',
+          marginTop: 10,
+          lineHeight: 18,
+        }}
+      >
+        Start exploring exclusive properties and grow your real estate
+        assets with shared ownership.
+      </Text>
+
+      {/* Button */}
+      <TouchableOpacity
+        onPress={() =>
+          navigation.navigate('Home', { details: globalState?.ProDetails })
+        }
+        style={{
+          backgroundColor: '#021265',
+          borderRadius: 30,
+          paddingHorizontal: 50,
+          paddingVertical: 12,
+          marginTop: 25,
+        }}
+      >
+        <Text
+          style={{
+            fontFamily: 'WorkSans-SemiBold',
+            fontSize: 16,
+            color: '#FFFFFF',
+          }}
+        >
+          Explore
+        </Text>
+      </TouchableOpacity>
+
+    </View>
+
+  </LinearGradient>
+
+</View>
       }
     </SafeAreaView>
   );

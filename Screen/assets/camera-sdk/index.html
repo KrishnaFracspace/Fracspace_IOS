@@ -1,0 +1,268 @@
+<!-- Licensed under a BSD license. See license.html for license -->
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+	<!-- <title>test</title> -->
+	<!-- <link type="text/css" href="resources/webgl-tutorials.css" rel="stylesheet" /> -->
+	<style>
+		html,
+		body {
+			width: 100%;
+			height: 100%;
+			/* overflow: auto; */
+			background: #fff;
+
+		}
+
+		/* body{
+			position:fixed;
+			top: 0;
+			left: 0;
+			display: flex;
+			flex-direction: column;
+			overflow-y:auto;
+
+		} */
+
+		canvas {
+			width: 380px;
+			height: 500px;
+			margin: 2px;
+			border: 1px solid black;
+		}
+	</style>
+	<script src="./Decoder.js"></script>
+	<script src="./libde265.js"></script>
+	<script src="./glutils.js"></script>
+	<script src="./connector.js"></script>
+	<script src="./play.js"></script>
+	<script src="./audioplay.js"></script>
+	<script>
+	</script>
+</head>
+
+<body onload="init();">
+	<span>Device ID:</span>
+	<input type="text" id="dev_id" value="">
+	<span>username:</span>
+	<input type="text" id="user" value="admin">
+	<span>password:</span>
+	<input type="text" id="pwd">
+	<select id="streamtype" style="width:100px">
+		<option value=0>main stream</option>
+		<option value=1 selected>sub stream</option>
+	</select>
+	<select id="channel" style="width:100px">
+		<option value=0>channel1</option>
+		<option value=1>channel2</option>
+		<option value=2>channel3</option>
+		<option value=3>channel4</option>
+	</select>
+	<br />
+	<span>preview</span>
+	<br />
+	<button onclick="connect()" style="width:140px">connect device</button>
+	<button onclick="disconnect()" style="width:140px">disconnect device</button>
+	<button onclick="openvideo()" style="width:100px">open stream</button>
+	<!--button onclick="playnext()" style="width:100px">next video</button-->
+	<button onclick="changestream()" style="width:110px">change stream</button>
+	<button onclick="closevideo()" style="width:100px">close stream</button>
+	<!-- <button onclick="showPlayInfo()" style="width:100px">show playinfo</button> -->
+	<button onmouseup="ptz_ctrl_stop()" onmousedown="ptz_ctrl_up()" style="width:100px">ptz up</button>
+	<button onmouseup="ptz_ctrl_stop()" onmousedown="ptz_ctrl_down()" style="width:100px">ptz down</button>
+	<button onmouseup="ptz_ctrl_stop()" onmousedown="ptz_ctrl_left()" style="width:100px">ptz left</button>
+	<button onmouseup="ptz_ctrl_stop()" onmousedown="ptz_ctrl_right()" style="width:100px">ptz right</button>
+	<br />
+	<span>playback</span>
+	<br />
+	<span>Current playback recording time</span>
+	<span id="startTime"></span>
+	<span>-</span>
+	<span id="endTime"></span>
+	<br />
+	<button onclick="searchrecord()" style="width:160px">retrieve recordings</button>
+	<button onclick="playback()" style="width:220px">Play back the first record</button>
+	<button onclick="playbacknext()" style="width:120px">next record</button>
+	<button onclick="playbackprev()" style="width:120px">previous record</button>
+	<button onclick="playbackpause()" style="width:100px">Pause</button>
+	<button onclick="playbackcontinue()" style="width:100px">continue</button>
+	<button onclick="stopplayback()" style="width:100px">stop playback</button>
+	
+	<!-- <button onclick="playback()" style="width:100px">play back</button> -->
+	<!-- <button onclick="stopplayback()" style="width:100px">stop playback</button> -->
+	<!-- <button onclick="playback_pause()" style="width:100px">pause/continue</button> -->
+	<!-- <button onclick="playback_fast()" style="width:100px">fast</button> -->
+	<!-- <button onclick="playback_slow()" style="width:100px">slow</button> -->
+	<!-- <button onclick="playback_reset()" style="width:100px">reset</button> -->
+	
+
+	<table style="border:0px; width:720px">
+		<tr>
+			<td>
+				<canvas id="canvas1" width="702" height="576"></canvas>
+			</td>
+			<!-- <td>
+                    <canvas id="canvas2"></canvas>
+            </td> -->
+		</tr>
+		<!-- <tr>
+                <td>
+                        <canvas id="canvas3"></canvas>
+                </td>
+                <td>
+                        <canvas id="canvas4"></canvas>
+                </td>
+            </tr>         -->
+	</table>
+
+
+</body>
+<script>
+	var playbackNum = 0;
+	function test_clock_ms() {
+		return (new Date()).valueOf();
+	}
+	//init canvas player
+	function init() {
+		let canvas = document.getElementById("canvas1")
+		Player.init([canvas]);
+		window.onorientationchange = function() {
+          alert(1)
+        };
+	}
+
+	function connect() {
+		var devid = document.getElementById("dev_id").value;
+		var user = document.getElementById("user").value;
+		var pwd = document.getElementById("pwd").value;
+		var streamid = parseInt(document.getElementById("streamtype").value);
+		var channel = parseInt(document.getElementById("channel").value);
+		Player.ConnectDevice(devid, '', user, pwd, 0, 80, 0, channel, streamid)
+	}
+	function disconnect(params) {
+		var devid = document.getElementById("dev_id").value;
+		Player.DisConnectDevice(devid)
+	}
+	function openvideo() {
+		var streamid = parseInt(document.getElementById("streamtype").value);
+		var channel = parseInt(document.getElementById("channel").value);
+		document.getElementById("channel").disabled = true;
+		var devid = document.getElementById("dev_id").value;
+		Player.OpenStream(devid, '', channel, streamid, 0);
+	}
+
+	function closevideo() {
+		
+		Player.CloseStream(0)
+	}
+
+	function changestream() {
+		//closevideo();
+		var obj = document.getElementById("streamtype");
+		if (obj.value == 0) {
+			obj.value = 1;
+		} else {
+			obj.value = 0;
+		}
+		//openvideo();
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.ChangeStream(devid, '', channel, obj.value)
+	}
+	function ptz_ctrl_up() {
+		console.log(1111);
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.ptz_ctrl(devid, '', channel, 2, 6)
+	}
+	function ptz_ctrl_down() {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.ptz_ctrl(devid, '', channel, 3, 6)
+	}
+	function ptz_ctrl_left() {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.ptz_ctrl(devid, '', channel, 4, 6)
+	}
+	function ptz_ctrl_right() {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.ptz_ctrl(devid, '', channel, 5, 6)
+	}
+	function ptz_ctrl_stop() {
+		console.log(2222);
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.ptz_ctrl(devid, '', channel, 0, 0)
+	}
+	function searchrecord() {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		var date = new Date()
+		var YY = date.getFullYear().toString();
+		var MM = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1).toString();
+		var DD = (date.getDate() < 10 ? '0' + (date.getDate()) : date.getDate()).toString();
+		var begintime = new Date(YY + '-' + MM + '-' + DD + ' 00:00:00');
+		var endtime = new Date(YY + '-' + MM + '-' + DD + ' 23:59:59');
+		begintime = parseInt(begintime.getTime()/1000) - new Date().getTimezoneOffset() *60
+		endtime = parseInt(endtime.getTime()/1000) - new Date().getTimezoneOffset() *60
+		
+		Player.SreachRecord(devid, '', channel, begintime, endtime, 15)
+	}
+	function playback() {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		var list = getRecordList();
+		playbackNum = 0;
+		var startTime = list[playbackNum].file_begintime
+		var endTime = list[playbackNum].file_endtime
+		// var startTime = list[playbackNum].file_begintime - new Date().getTimezoneOffset() *60
+		// var endTime = list[playbackNum].file_endtime - new Date().getTimezoneOffset() *60
+		document.getElementById("startTime").innerHTML = new Date((startTime+ new Date().getTimezoneOffset() *60) * 1000).toLocaleString();
+		document.getElementById("endTime").innerHTML = new Date((endTime+ new Date().getTimezoneOffset() *60) * 1000).toLocaleString();
+		Player.StartPlayBack(devid, '', channel, startTime, endTime,list[playbackNum].file_type, 0, false)
+	}
+	function playbacknext(params) {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		var list = getRecordList();
+		playbackNum = playbackNum + 1;
+		var startTime = list[playbackNum].file_begintime
+		var endTime = list[playbackNum].file_endtime
+		document.getElementById("startTime").innerHTML = new Date((startTime+ new Date().getTimezoneOffset() *60) * 1000).toLocaleString();
+		document.getElementById("endTime").innerHTML = new Date((endTime+ new Date().getTimezoneOffset() *60) * 1000).toLocaleString();
+		Player.StartPlayBack(devid, '', channel, startTime, endTime,list[playbackNum].file_type, 0, false)
+	}
+	function playbackprev(params) {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		var list = getRecordList();
+		if(playbackNum > 0){
+			playbackNum = playbackNum - 1;
+		}
+		var startTime = list[playbackNum].file_begintime
+		var endTime = list[playbackNum].file_endtime
+		document.getElementById("startTime").innerHTML = new Date((startTime+ new Date().getTimezoneOffset() *60) * 1000).toLocaleString();
+		document.getElementById("endTime").innerHTML = new Date((endTime+ new Date().getTimezoneOffset() *60) * 1000).toLocaleString();
+		Player.StartPlayBack(devid, '', channel, startTime, endTime,list[playbackNum].file_type, 0, false)
+	}
+	function playbackpause() {
+		var devid = document.getElementById("dev_id").value;
+		Player.PausePlayBack(devid)
+	}
+	function playbackcontinue() {
+		var devid = document.getElementById("dev_id").value;
+		Player.ContinuePlayBack(devid)
+	}
+	function stopplayback() {
+		var devid = document.getElementById("dev_id").value;
+		var channel = document.getElementById("channel").value;
+		Player.StopPlayBack(devid, '', channel)
+	}
+</script>
+
+</html>

@@ -1,212 +1,255 @@
-import React, { useContext, useEffect, useMemo } from 'react';
-import {
-  View,
-  Text,
-  Image,
-  TouchableOpacity,
-  Linking,
-  PermissionsAndroid,
-  Platform,
-  Alert,
-  Dimensions,
-  StyleSheet,
-  FlatList,
-} from 'react-native';
-import moment from 'moment';
-import RNFS from 'react-native-fs';
+import { View, Text, Image, ScrollView, TouchableOpacity, Linking, PermissionsAndroid, Platform, Alert, Dimensions } from 'react-native'
+import React, { useCallback, useContext, useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import { useDispatch, useSelector } from 'react-redux';
-import LinearGradient from 'react-native-linear-gradient';
+import Ico from 'react-native-vector-icons/Feather';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import RNFS from 'react-native-fs';
+import moment from 'moment';
+import { DeleteNotification, GetAllNotification, MonitorNotification } from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
-import { fetchAllNotifications } from '../redux/reducer/homeReducer';
-import { MonitorNotification } from '../Services/UserApi';
-
-const HEADER_HEIGHT = 60;
-
-export default function NotificationsScreen() {
-  const navigation = useNavigation();
-  const dispatch = useDispatch();
-  const { globalState } = useContext(AppContext);
-  const { width, height } = Dimensions.get('window');
-  const notifications = useSelector(state => state.home.notifications);
-  const loading = useSelector(state => state.home.loading);
-  const OwnedData = globalState?.userDetails?.ownedProperties || [];
-
-  useEffect(() => {
-    dispatch(fetchAllNotifications({ email: globalState?.userEmail }));
-  }, []);
+import { SafeAreaView } from 'react-native-safe-area-context';
+import LinearGradient from 'react-native-linear-gradient';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 
-  const filteredNotifications = useMemo(() => {
-    if (!notifications?.length) return [];
+export default function NotificationsScreen(props) {
+    const { globalState, setGlobalState } = useContext(AppContext);
+    const [OwnedData, setOwnedData] = useState(globalState?.userDetails?.ownedProperties || [])
+    // console.log("DTA: ",globalState?.userDetails?.ownedProperties);
+    const [notification, setNotification] = useState([]);
+    const navigation = useNavigation();
+    const {width, height} = Dimensions.get('window');
+    const [expandedItems, setExpandedItems] = useState({});
+    const appVersion = '2.1.9';
+    const liveVersion = globalState?.liveVersion;
 
-    const hasI = OwnedData.some(
-      n => n?.propertyDetails?.name === 'FRACSPACE ABODE-I');
-    const hasII = OwnedData.some(
-      n => n?.propertyDetails?.name === 'FRACSPACE ABODE-II');
-    if (!hasI || !hasII) {
-      return notifications.filter(
-        n =>
-          n?.relatedTo !== 'FRACSPACE ABODE-I' &&
-          n?.relatedTo !== 'FRACSPACE ABODE-II'
-      );
+    useEffect(() => {
+        FetchAllNotification();
+    }, []);
+    
+    // useFocusEffect(
+    //     useCallback(() => {
+    //         FetchAllNotification();
+    //     }, [])
+    // );
+
+    const FetchAllNotification = async () => {
+        let payload = JSON.stringify(
+            {
+                email: globalState?.userEmail
+            }
+        );
+        try {
+            let { data: res } = await GetAllNotification(payload);
+            // console.log(res);
+            const filteredNumbers = OwnedData.filter(number => number?.propertyDetails?.name == 'FRACSPACE ABODE-II');
+            const filteredNumbers1 = OwnedData.filter(number => number?.propertyDetails?.name == 'FRACSPACE ABODE-I');
+            if (filteredNumbers?.length == 0 || filteredNumbers1?.length == 0) {
+                const filteredNumbers = res?.data.filter(number => number?.relatedTo != 'FRACSPACE ABODE-II' && number?.relatedTo != 'FRACSPACE ABODE-I');
+                // console.log(filteredNumbers);
+                setNotification(filteredNumbers);
+
+            } else {
+                setNotification(res?.data);
+            }
+        } catch (error) {
+            console.error("Error in Fetching All Notification: ", error);
+        }
     }
-    return notifications;
-  }, [notifications, OwnedData]);
 
-  const unreadCount = filteredNotifications.filter(
-    item =>
-      !item.buttonClicks.some(
-        click => click.email === globalState?.userEmail
-      )
-  ).length;
+    const deleteNotification = async(notificationId) => {
+        let payload = JSON.stringify({
+            notificationId: notificationId
+        });
+        console.log("Payload: ", payload);
+        try {
+            let {data: res} = await DeleteNotification(payload);
+            if(res?.success){
+                console.log("Notification deleted successfully");
+            }
+        } catch (error) {
+            console.log('Error in deleting notification: ', error?.response?.message || error?.response?.data);
+        }
+    }
 
+    const handleNotification = async (notificationId, item) => {
+        let payload = JSON.stringify(
+            {
+                notificationId: notificationId,
+                email: globalState?.userEmail,
+                type: "click"
+            }
+        );
+        // console.log(payload);
 
-  const groupedData = useMemo(() => {
-    const groups = {};
-    filteredNotifications.forEach(item => {
-      const date = moment(item.date || item.createdAt);
-      let title = date.isSame(moment(), 'day')
-        ? 'Today'
-        : date.isSame(moment().subtract(1, 'day'), 'day')
-        ? 'Yesterday'
-        : date.format('MMMM D, YYYY');
-      if (!groups[title]) groups[title] = [];
-      groups[title].push(item);
+        try {
+            let { data: res } = await MonitorNotification(payload);
+            //  let { data: res } = await Like(payload);
+            // console.log("Reponse Monitor: ", res);
+            const fileUrl = item?.buttonLink;
+            if (res?.success) {
+                if (item?.relatedTo === 'newsletter') {
+                    downloadFile(fileUrl);
+                } else if (item?.relatedTo == 'FRACSPACE ABODE-I') {
+                    if (globalState?.userDetails?.verification) {
+                        //handleNotification(notificationId);
+                        const filteredNumbers = OwnedData.filter(number => number?.propertyDetails?.name == 'FRACSPACE ABODE-I');
+                        navigation.navigate('Dashboard', { ownedProDetails: filteredNumbers[0] });
+                    }
+                } else if (item?.relatedTo == 'FRACSPACE ABODE-II') {
+                    if (globalState?.userDetails?.verification) {
+                       // handleNotification(notificationId);
+                        const filteredNumbers = OwnedData.filter(number => number?.propertyDetails?.name == 'FRACSPACE ABODE-II');
+                        //  console.log('check', filteredNumbers);
+                        navigation.navigate('Dashboard', { ownedProDetails: filteredNumbers[0] });
+                    }
+                } else if (item?.relatedTo == 'Stories') {
+                   // handleNotification(notificationId);
+                    navigation.navigate('Blogs', { Blogfor: 'VaranasiBlog' });
+                } else if (item?.relatedTo == 'Wallet') {
+                   // handleNotification(notificationId);
+                    navigation.navigate('WalletAmount');
+                } else if (item?.relatedTo == 'appUpdate') {
+                    //handleNotification(notificationId,item);
+                    Linking.openURL(item?.sourceLink);
+                    if(appVersion == liveVersion){
+                        deleteNotification(notificationId);
+                    }
+                } else if (item?.relatedTo == 'inAppNav') {
+                    navigation.navigate(item?.screen);
+                } else {
+                    Linking.openURL(item?.buttonLink);
+                }
+            }
+        } catch (error) {
+            console.error("Error in Monitoring Notification: ", error);
+            if (error?.response) {
+                console.log('Response Error', `${error?.response?.data?.message}`);
+                Alert.alert('Response Error', `${error?.response?.data?.message}`);
+            } else if (error?.request) {
+                console.log('Response Error', `${error?.request?.data?.message}`);
+                Alert.alert('Request error:', 'Please Check Your Internet Connection');
+            } else {
+                Alert.alert('Error:', `${error?.message}`);
+            }
+        }
+    }
+
+    const unreadCount = notification.filter(item =>
+        !item.buttonClicks.some(click => click.email === globalState?.userEmail)
+    )?.length;
+
+    const filteredNotifications = notification.filter(item => {
+        const createdDate = moment(item.date || item.createdAt);
+        const daysDiff = moment().diff(createdDate, 'days');
+
+        return daysDiff <= 45;
     });
 
-    return Object.entries(groups).map(([sectionTitle, data]) => ({
-      sectionTitle,
-      data,
-    }));
-  }, [filteredNotifications]);
+    const groupedNotifications = {};
 
- 
-  const handleNotification = async notificationId => {
-    try {
-      await MonitorNotification(
-        JSON.stringify({
-          notificationId,
-          email: globalState?.userEmail,
-          type: 'click',
-        })
-      );
-    } catch (e) {
-      console.log(e);
-    }
-  };
+    filteredNotifications.forEach(item => {
+        const date = moment(item.date || item.createdAt);
+        const today = moment();
+        const yesterday = moment().subtract(1, 'days');
 
-  const downloadFile = async (url, name = 'file.pdf') => {
-    try {
-      if (Platform.OS === 'android' && Platform.Version < 33) {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return;
-      }
-      const path =
-        Platform.OS === 'android'
-          ? `${RNFS.DownloadDirectoryPath}/${name}`
-          : `${RNFS.DocumentDirectoryPath}/${name}`;
+        let sectionTitle;
+        if (date.isSame(today, 'day')) {
+            sectionTitle = 'Today';
+        } else if (date.isSame(yesterday, 'day')) {
+            sectionTitle = 'Yesterday';
+        } else {
+            sectionTitle = date.format('MMMM D, YYYY');
+        }
 
-      await RNFS.downloadFile({ fromUrl: url, toFile: path }).promise;
-      Alert.alert('Downloaded', path);
-    } catch (e) {
-      Alert.alert('Error', e.message);
-    }
-  };
+        if (!groupedNotifications[sectionTitle]) {
+            groupedNotifications[sectionTitle] = [];
+        }
 
-  const Header = () => (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => navigation.goBack()}>
-        <Icon name="chevron-left" size={22} />
-      </TouchableOpacity>
+        groupedNotifications[sectionTitle].push(item);
+    });
 
-      <Text style={styles.headerTitle}>Notifications</Text>
 
-      {unreadCount > 0 ? (
-        <View style={styles.badge}>
-          <Text style={styles.badgeText}>{unreadCount}</Text>
-        </View>
-      ) : (
-        <View style={{ width: 30 }} />
-      )}
-    </View>
-  );
+    // const downloadFile = async (fileUrl, fileName = 'downloaded_file.pdf') => {
+    //     try {
+    //         // Ask for permission on Android < 13 (API 33)
+    //         const isAndroid = Platform.OS === 'android';
+    //         const androidVersion = Platform.Version;
 
-const Skeleton = () => (
-  <FlatList
-    data={[1, 2, 3, 4, 5]}
-    keyExtractor={i => i.toString()}
-    contentContainerStyle={{
-      paddingTop: HEADER_HEIGHT + 10,
-      paddingBottom: 30,
-    }}
-    renderItem={() => (
-      <View style={styles.skeletonCard}>
-        <View style={styles.skeletonIcon} />
-        <View style={styles.skeletonText}>
-          <View style={styles.skeletonLineLarge} />
-          <View style={styles.skeletonLineSmall} />
-        </View>
-      </View>
-    )}
-  />
-);
+    //         if (isAndroid && androidVersion < 33) {
+    //             const granted = await PermissionsAndroid.request(
+    //                 PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+    //                 {
+    //                     title: 'Storage Permission Required',
+    //                     message: 'App needs access to your storage to download files',
+    //                     buttonNeutral: 'Ask Me Later',
+    //                     buttonNegative: 'Cancel',
+    //                     buttonPositive: 'OK',
+    //                 }
+    //             );
 
-  const renderSection = ({ item }) => (
-    <View>
-      <Text style={styles.sectionTitle}>{item.sectionTitle}</Text>
+    //             if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+    //                 Alert.alert('Permission Denied', 'Storage permission is required to save the file.');
+    //                 return;
+    //             }
+    //         }
 
-      {item.data.map(n => {
-        const isUnread = !n.buttonClicks.some(
-          c => c.email === globalState?.userEmail
-        );
+    //         // Save to public Downloads folder (visible in file manager)
+    //         const downloadDest = isAndroid
+    //             ? `${RNFS.DownloadDirectoryPath}/${fileName}`
+    //             : `${RNFS.DocumentDirectoryPath}/${fileName}`;
 
-        return (
-          <View key={n._id}>
-            <View style={styles.card}>
-              <View style={styles.iconWrap}>
-                <Image
-                  source={require('../assets/Logo.png')}
-                  style={styles.icon}
-                />
-                {isUnread && <View style={styles.dot} />}
-              </View>
+    //         const options = {
+    //             fromUrl: fileUrl,
+    //             toFile: downloadDest,
+    //         };
 
-              <View style={styles.textWrap}>
-                <Text style={styles.title}>{n.title}</Text>
-                <Text style={styles.desc}>{n.description}</Text>
-              </View>
+    //         const result = await RNFS.downloadFile(options).promise;
 
-              <View style={styles.right}>
-                <Text style={styles.time}>
-                  • {moment(n.date || n.createdAt).fromNow()}
-                </Text>
+    //         if (result.statusCode === 200) {
+    //             Alert.alert('Success', `File saved to: ${downloadDest}`);
+    //         } else {
+    //             Alert.alert('Failed', `Download failed with code: ${result.statusCode}`);
+    //         }
+    //     } catch (err) {
+    //         console.error('Download error:', err);
+    //         Alert.alert('Error', err.message);
+    //     }
+    // };
 
-                <TouchableOpacity
-                  style={styles.button}
-                  onPress={() => {
-                    handleNotification(n._id);
-                    if (n.relatedTo === 'newsletter') downloadFile(n.buttonLink);
-                    else if (n.sourceLink) Linking.openURL(n.sourceLink);
-                  }}
-                >
-                  <Text style={styles.buttonText}>{n.buttonText}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.divider} />
-          </View>
-        );
-      })}
-    </View>
-  );
+    const downloadFile = async (fileUrl, fileName = 'news_letter.pdf') => {
+        try{
+            console.log('Downloading =>', fileUrl);
+            const {config, fs } = ReactNativeBlobUtil;
+            const downloads = fs.dirs.DownloadDir;
+            const path = `${downloads}/${fileName}`;
+            const res = await config({
+                fileCache: true,
+                appendExt: 'pdf',
+                path,
+                addAndroidDownloads: {
+                    useDownloadManager: true,
+                    notification: true,
+                    title: fileName,
+                    description: 'Downloading file...',
+                    mime: 'application/pdf',
+                    mediaScannable: true,
+                    path,
+                },
+            }).fetch('GET', fileUrl);
+            console.log('File saved: ', res?.path());
+            Alert.alert('Download Complete', 'File saved in Downloads folder');
+        }catch(error) {
+            console.log('Download Error => ', error);
+            Alert.alert('Download Failed: ', error?.message);
+        }
+    };
 
-  const EmptyState = () => (
-    <View style={{flex:1,backgroundColor:'#FFF',alignItems:'center'}}>
+    return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#021265' }}>
+            <View style={{ backgroundColor: '#FFFFFF', flex: 1 }}>
+                {notification?.length === 0 ?
+                    <View style={{flex:1,backgroundColor:'#FFF',alignItems:'center'}}>
                         <LinearGradient colors={['#C7E5FD', '#FFF']} style={{width: width, height: height*0.3,padding:20,}}>
                             <View style={{alignItems:'center',flexDirection:'row',justifyContent:'space-between',paddingVertical:20}}>
                                 <TouchableOpacity onPress={() => {
@@ -231,135 +274,120 @@ const Skeleton = () => (
                             </TouchableOpacity>
                         </View>
                     </View>
-  );
+                    :
+                    <>
+                        <View style={{ backgroundColor: '#FFFFFF', padding: 20, flexDirection: 'row', alignItems: 'center', elevation: 5 }}>
+                            <TouchableOpacity onPress={() => {
+                                // navigation.navigate('HomePage');
+                                navigation.goBack();
+                            }}>
+                                <Icon name={'chevron-left'} size={20} color={'#000000'} />
+                            </TouchableOpacity>
+                            <Text style={{ fontFamily: 'Poppins-SemiBold', fontSize: 18, color: '#505050', marginLeft: 20 }}>Notifications</Text>
+                            {unreadCount > 0 &&
+                                <View style={{ width: 30, height: 30, borderRadius: 30, backgroundColor: '#F6F6F6', borderColor: '#E4E1E2', alignItems: 'center', marginLeft: 10, borderWidth: 1, justifyContent: 'center' }}>
+                                    <Text style={{ fontFamily: 'Poppins-SemiBold', fontSize: 13, color: '#5F5F5F' }}>{unreadCount}</Text>
+                                </View>
+                            }
+                        </View>
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      {/* <Header /> */}
+                        <ScrollView style={{}}>
+                            {Object.entries(groupedNotifications)?.map(([sectionTitle, sectionItems]) => (
+                                <View key={sectionTitle}>
+                                    <View style={{ marginVertical: 10, marginTop: 30, paddingHorizontal: 20 }}>
+                                        <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 14, color: '#0000009C' }}>{sectionTitle}</Text>
+                                    </View>
 
-      {loading ? (
-        <Skeleton />
-      ) : filteredNotifications.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <>
-        <Header/>
-        <FlatList
-          data={groupedData}
-          keyExtractor={item => item.sectionTitle}
-          renderItem={renderSection}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          removeClippedSubviews
-          initialNumToRender={5}
-          windowSize={7}
-        />
-        </>
-      )}
-    </SafeAreaView>
-  );
+                                    {sectionItems?.map((item, index) => {
+                                        const notificationId = item?._id;
+                                        const fileUrl = item?.buttonLink;
+                                        const isUnread = !item.buttonClicks.some(click => click.email === globalState?.userEmail);
+
+                                        const words = item?.description?.split(' ') || [];
+                                        const isLong = words.length > 20;
+                                        const isExpanded = expandedItems[item._id];
+
+                                        const displayText = isLong && !isExpanded
+                                            ? words.slice(0, 20).join(' ') + '...'
+                                            : item?.description;
+
+                                        return (
+                                            <View key={index}>
+                                                <View style={{
+                                                    flexDirection: 'row', padding: 20,
+                                                    backgroundColor: item?.relatedTo === 'alert' ? '#F418182E' : ''
+                                                }}>
+                                                    <View style={{ backgroundColor: '#021265', borderColor: '#DCDCDC', borderWidth: 1, width: 50, height: 50, borderRadius: 50, alignItems: 'center', justifyContent: 'center' }}>
+                                                        <Image source={require('../assets/Logo.png')} style={{ width: 45, height: 45 }} />
+                                                        {isUnread &&
+                                                            <View style={{ backgroundColor: '#11B414', width: 10, height: 10, borderRadius: 10, borderColor: '#FFFFFF', borderWidth: 1, position: 'absolute', right: 0, bottom: 3 }} />
+                                                        }
+                                                    </View>
+
+                                                    <View style={{ paddingHorizontal: 10,flex:1 }}>
+                                                        <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                                                            <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 15, color: '#000000' }}>
+                                                                {item?.title}
+                                                            </Text>
+
+                                                            <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 11, color: '#000000AD' }}>
+                                                                • {moment(item.date || item.createdAt).fromNow()}
+                                                            </Text>
+                                                        </View>
+                                                        {/* <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 12, color: '#000000B8', marginTop: 5 }}>
+                                                            {item?.description}
+                                                        </Text> */}
+
+                                                        <View style={{flex:1, justifyContent: 'space-between', alignItems: 'flex-end', flexDirection:'row' }}>
+                                                            <View style={{flex:1}}>
+                                                                <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 12, color: '#000000B8', marginTop: 5 }}>
+                                                                    {displayText}
+                                                                </Text>
+
+                                                                {isLong && (
+                                                                    <TouchableOpacity
+                                                                        onPress={() =>
+                                                                            setExpandedItems(prev => ({
+                                                                                ...prev,
+                                                                                [item._id]: !prev[item._id],
+                                                                            }))
+                                                                        }
+                                                                    >
+                                                                        <Text style={{color: '#0424CB',fontSize: 12,marginTop: 3,fontFamily: 'WorkSans-SemiBold'}}>
+                                                                            {isExpanded ? 'Show less' : 'Read more'}
+                                                                        </Text>
+                                                                    </TouchableOpacity>
+                                                                )}
+                                                            </View>
+
+                                                            {item?.buttonText &&
+                                                                <TouchableOpacity
+                                                                    onPress={() => {
+                                                                        handleNotification(notificationId, item);
+                                                                        FetchAllNotification();
+                                                                    }}
+                                                                    style={{ backgroundColor: '#0424CB', borderColor: '#0421B4', borderWidth: 1, paddingHorizontal: 7, paddingVertical: 5, borderRadius: 10, width: 80,alignItems:'center' }}
+                                                                >
+                                                                    <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 10, color: '#FFFFFF' }}>{item?.buttonText}</Text>
+                                                                </TouchableOpacity>
+                                                            }
+                                                        </View>
+                                                        
+                                                    </View>
+
+                                                    
+                                                </View>
+                                                <View style={{ borderTopColor: '#F0EFFB', borderTopWidth: 1 }} />
+                                            </View>
+                                        );
+                                    })}
+                                </View>
+                            ))}
+
+                        </ScrollView>
+                    </>
+                }
+            </View>
+        </SafeAreaView>
+    )
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#FFF' },
-  header: {
-    height: HEADER_HEIGHT,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    backgroundColor: '#FFF',
-    elevation: 4,
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontFamily: 'WorkSans-SemiBold',
-  },
-  badge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: '#F6F6F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  badgeText: { fontSize: 12, fontWeight: '600' },
-  listContainer: { paddingBottom: 30 },
-  sectionTitle: {
-    marginTop: 30,
-    marginBottom: 10,
-    paddingHorizontal: 20,
-    fontSize: 14,
-    color: '#0000009C',
-    fontFamily: 'WorkSans-SemiBold',
-  },
-  card: {
-    flexDirection: 'row',
-    padding: 20,
-    backgroundColor: '#FFF',
-  },
-  iconWrap: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#021265',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  icon: { width: 45, height: 45 },
-  dot: {
-    width: 10,
-    height: 10,
-    backgroundColor: '#11B414',
-    borderRadius: 5,
-    position: 'absolute',
-    right: 0,
-    bottom: 2,
-  },
-  textWrap: { flex: 1, paddingHorizontal: 10 },
-  title: { fontSize: 15, fontFamily: 'WorkSans-SemiBold' },
-  desc: { fontSize: 12, color: '#000000B8', marginTop: 5 },
-  right: { alignItems: 'flex-end', justifyContent: 'space-between' },
-  time: { fontSize: 11, color: '#000000AD' },
-  button: {
-    marginTop: 10,
-    backgroundColor: '#0424CB',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  buttonText: { fontSize: 10, color: '#FFF' },
-  divider: { height: 1, backgroundColor: '#F0EFFB' },
-  skeletonCard: {
-    flexDirection: 'row',
-    padding: 20,
-  },
-  skeletonIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#EAEAEA',
-  },
-  skeletonText: { flex: 1, paddingHorizontal: 10 },
-  skeletonLineLarge: {
-    height: 14,
-    width: '70%',
-    backgroundColor: '#EAEAEA',
-    borderRadius: 6,
-  },
-  skeletonLineSmall: {
-    height: 10,
-    width: '90%',
-    backgroundColor: '#EAEAEA',
-    borderRadius: 6,
-    marginTop: 8,
-  },
-  empty: {
-    alignItems: 'center',
-    marginTop: -1,
-  },
-  emptyImg: { width: 220, height: 180 },
-  emptyTitle: { fontSize: 20, marginTop: 10 },
-  emptyDesc: { fontSize: 13, color: '#00000099' },
-});

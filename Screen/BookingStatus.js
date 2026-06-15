@@ -1,264 +1,174 @@
+import React, { useState, useMemo, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   Dimensions,
-  ScrollView,
   TouchableOpacity,
+  Animated,
+  FlatList,
 } from 'react-native';
-import React, {useState} from 'react';
-import Swiper from 'react-native-swiper';
-import {Image} from 'react-native-animatable';
-import {useNavigation} from '@react-navigation/native';
-const {width, height} = Dimensions.get('window');
-import Icon from 'react-native-vector-icons/FontAwesome5';
+import { Image } from 'react-native-animatable';
+import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Icon from 'react-native-vector-icons/Ionicons';
+
+const { width, height } = Dimensions.get('window');
 
 export default function BookingStatus(props) {
- // console.log(props?.route?.params?.Image);
-  const [ImageData, setImageData] = useState(props?.route?.params?.Image);
   const navigation = useNavigation();
-  const [CountDis, setCountDis] = useState(0);
-  const [Imagedis, setImagedis] = useState(props?.route?.params?.Image?.Image1);
+  const imageObj = props?.route?.params?.Image;
+
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const flatListRef = useRef(null);
+
+  // Convert object → array
+  const images = useMemo(() => {
+    return Object.keys(imageObj || {})
+      .filter(key => imageObj[key])
+      .map(key => imageObj[key]);
+  }, [imageObj]);
+
+  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Carousel sizes
+  const ITEM_WIDTH = width * 0.28;
+  const SPACING = 12;
+  const SIDE_SPACING = (width - ITEM_WIDTH) / 2;
+
+  const handlePress = index => {
+    setActiveIndex(index);
+    flatListRef.current?.scrollToOffset({
+      offset: index * (ITEM_WIDTH + SPACING),
+      animated: true,
+    });
+  };
+
   return (
-        <SafeAreaView style={{flex: 1}}>
-      <View style={{flex: 5}}>
+    <SafeAreaView style={styles.container}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="chevron-back-outline" size={28} color="#240c3c" />
+        </TouchableOpacity>
+      {/* 🔝 MAIN IMAGE */}
+      <View style={styles.topContainer}>
         <Image
+          key={activeIndex}
+          animation="fadeIn"
+          duration={400}
+          style={styles.mainImage}
+          source={{ uri: images[activeIndex] }}
           resizeMode='contain'
-          style={{width, height,}}
-          source={{uri: Imagedis}}
         />
-       <TouchableOpacity style={{marginTop:50,marginLeft:10,position:'absolute'}} onPress={() => {
-        navigation.goBack();     
-          }}>
-          <Icon name="arrow-circle-left" size={28} color="#252B5C" />
-          </TouchableOpacity>
       </View>
-      <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
-        <ScrollView horizontal={true}>
-          <View style={{flexDirection: 'row'}}>
-            <TouchableOpacity
-              onPress={() => {
-                setImagedis(ImageData?.Image1);
-                setCountDis(0);
-              }}>
-              <Image
-                //  resizeMode="stretch"
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderColor: CountDis == 0 ? '#043862' : '#FFFFFF',
-                  borderRadius: 10,
-                  borderWidth: 5,
-                  margin: 5,
-                }}
-                source={{uri: ImageData?.Image1}}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setImagedis(ImageData?.Image2);
-                setCountDis(1);
-              }}>
-            <Image
-              //resizeMode="stretch"
-              style={{
-                width: 100,
-                height: 100,
-                borderColor: CountDis == 1 ? '#043862' : '#FFFFFF',
-                borderRadius: 10,
-                borderWidth: 5,
-                margin: 5,
-              }}
-              source={{uri: ImageData?.Image2}}
-            />
-             </TouchableOpacity>
-             <TouchableOpacity
-              onPress={() => {
-                setImagedis(ImageData?.Image3);
-                setCountDis(2);
-              }}>
-            <Image
-              //resizeMode="stretch"
-              style={{
-                width: 100,
-                height: 100,
-                borderColor: CountDis == 2 ? '#043862' : '#FFFFFF',
-                borderRadius: 10,
-                borderWidth: 5,
-                margin: 5,
-              }}
-              source={{uri: ImageData?.Image3}}
-            />
-               </TouchableOpacity>
-               <TouchableOpacity
-              onPress={() => {
-                setImagedis(ImageData?.Image4);
-                setCountDis(3);
-              }}>
 
-            <Image
-              //resizeMode="stretch"
-              style={{
-                width: 100,
-                height: 100,
-                borderColor: CountDis == 3 ? '#043862' : '#FFFFFF',
-                borderRadius: 10,
-                borderWidth: 5,
-                margin: 5,
-              }}
-              source={{uri: ImageData?.Image4}}
-            />
-              </TouchableOpacity>
+      {/* 🔽 CAROUSEL */}
+      <View style={styles.carouselContainer}>
+        <Animated.FlatList
+          ref={flatListRef}
+          data={images}
+          keyExtractor={(_, index) => index.toString()}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          bounces={false}
+          decelerationRate="fast"
+          snapToInterval={ITEM_WIDTH + SPACING}
+          contentContainerStyle={{
+            paddingHorizontal: SIDE_SPACING,
+            alignItems: 'center',
+          }}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          onMomentumScrollEnd={ev => {
+            const index = Math.round(
+              ev.nativeEvent.contentOffset.x / (ITEM_WIDTH + SPACING)
+            );
+            setActiveIndex(index);
+          }}
+          renderItem={({ item, index }) => {
+            const inputRange = [
+              (index - 1) * (ITEM_WIDTH + SPACING),
+              index * (ITEM_WIDTH + SPACING),
+              (index + 1) * (ITEM_WIDTH + SPACING),
+            ];
 
-            {ImageData?.Image5 && (
+            const scale = scrollX.interpolate({
+              inputRange,
+              outputRange: [0.8, 1.15, 0.8],
+              extrapolate: 'clamp',
+            });
+
+            const translateY = scrollX.interpolate({
+              inputRange,
+              outputRange: [20, 0, 20],
+              extrapolate: 'clamp',
+            });
+
+            return (
               <TouchableOpacity
-              onPress={() => {
-                setImagedis(ImageData?.Image5);
-                setCountDis(4);
-              }}>
-
-              <Image
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderColor: CountDis == 4 ? '#043862' : '#FFFFFF',
-                  borderRadius: 10,
-                  borderWidth: 5,
-                  margin: 5,
-                }}
-                source={{uri: ImageData?.Image5}}
-              />
+                activeOpacity={0.8}
+                onPress={() => handlePress(index)}
+              >
+                <Animated.Image
+                  source={{ uri: item }}
+                  style={[
+                    styles.thumbnail,
+                    {
+                      width: ITEM_WIDTH,
+                      height: ITEM_WIDTH,
+                      marginHorizontal: SPACING / 2,
+                      transform: [{ scale }, { translateY }],
+                      borderColor:
+                        activeIndex === index ? '#043862' : '#fff',
+                    },
+                  ]}
+                />
               </TouchableOpacity>
-            )}
-            {ImageData?.Image6 && (
-               <TouchableOpacity
-               onPress={() => {
-                 setImagedis(ImageData?.Image6);
-                 setCountDis(5);
-               }}>
-              <Image
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderColor: CountDis == 5 ? '#043862' : '#FFFFFF',
-                  borderRadius: 10,
-                  borderWidth: 5,
-                  margin: 5,
-                }}
-                source={{uri: ImageData?.Image6}}
-              />
-              </TouchableOpacity>
-            )}
-            {ImageData?.Image7 && (
-                 <TouchableOpacity
-                 onPress={() => {
-                   setImagedis(ImageData?.Image7);
-                   setCountDis(6);
-                 }}>
-              <Image
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderColor: CountDis == 6 ? '#043862' : '#FFFFFF',
-                  borderRadius: 10,
-                  borderWidth: 5,
-                  margin: 5,
-                }}
-                source={{uri: ImageData?.Image7}}
-              />
-               </TouchableOpacity>
-            )}
-            {ImageData?.Image8 && (
-                 <TouchableOpacity
-                 onPress={() => {
-                   setImagedis(ImageData?.Image8);
-                   setCountDis(7);
-                 }}>
-              <Image
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderColor: CountDis == 7 ? '#043862' : '#FFFFFF',
-                  borderRadius: 10,
-                  borderWidth: 5,
-                  margin: 5,
-                }}
-                source={{uri: ImageData?.Image8}}
-              />
-               </TouchableOpacity>
-            )}
-            {ImageData?.Image9 && (
-                 <TouchableOpacity
-                 onPress={() => {
-                   setImagedis(ImageData?.Image9);
-                   setCountDis(8);
-                 }}>
-              <Image
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderColor: CountDis == 8 ? '#043862' : '#FFFFFF',
-                  borderRadius: 10,
-                  borderWidth: 5,
-                  margin: 5,
-                }}
-                source={{uri: ImageData?.Image9}}
-              />
-               </TouchableOpacity>
-            )}
-          </View>
-        </ScrollView>
+            );
+          }}
+        />
       </View>
     </SafeAreaView>
   );
 }
-const styles = StyleSheet.create({
-  maskGroupIconLayout: {
-    width: width * 0.2,
-    height: height * 0.12,
-  },
-  maskGroupIconLayout1: {
-    width: width * 0.2,
-    height: height * 0.12,
-  },
-  customModal: {
-    width: '100%',
-    // paddingBottom: 20,
-  },
-  modal: {
-    // paddingTop: hp(2),
-    // height: hp(70),
-    width: '100%',
-    alignSelf: 'center',
-    borderColor: '#DADADA',
-    borderWidth: 0,
-    borderTopEndRadius: 20,
-    borderTopStartRadius: 20,
-    //backgroundColor: '#8A8A8A',
-    //opacity:0.7,
-    // marginBottom: hp(6),
-    //  borderBottomWidth: 0,
-    //borderColor:'red',
-    // borderWidth:3,
-    marginHorizontal: 20,
-    paddingHorizontal: 25,
-    //paddingVertical:hp(2),
-  },
 
-  iconLayout1: {
-    height: 16,
-    width: 16,
-    overflow: 'hidden',
-    left: -8,
-    // marginLeft: 10,
-  },
-  image: {
-    width,
-    flex: 1,
-  },
-  wrapper: {flex: 2},
+const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#fff',
+  },
+
+  topContainer: {
+    flex: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mainImage: {
+    width: '100%',
+    height: height*0.60,
+   // borderBottomLeftRadius: 20,
+    //borderBottomRightRadius: 20,
+  },
+
+  backButton: {
+ //   position: 'absolute',
+   // top: 50,
+    left: 10,
+    marginTop:15
+  },
+
+  carouselContainer: {
+    flex: 1.5,
+    justifyContent: 'center',
+  },
+
+  thumbnail: {
+    borderRadius: 16,
+    borderWidth: 3,
   },
 });

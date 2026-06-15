@@ -1,13 +1,13 @@
 
 
-import { View, Text, ScrollView, Image, Dimensions, TouchableOpacity, Modal, TextInput, Alert, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Image, Dimensions, TouchableOpacity, Modal, TextInput, Alert, Linking, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import Icon from 'react-native-vector-icons/Entypo';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Video from 'react-native-video';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppContext } from '../Context/AppContext';
-import { UploadEnquiry } from '../Services/UserApi';
+import { PropertyDetails, UploadEnquiry } from '../Services/UserApi';
 
 export default function LablePropertyDis(prop) {
     const { globalState, setGlobalState } = useContext(AppContext);
@@ -18,7 +18,7 @@ export default function LablePropertyDis(prop) {
     //     email: 'krishna@fracspace.com',
     //     phone: '6307006215'
     // };
-
+//console.log(propertyDetails,"==90=======")
     const { width } = Dimensions.get('window');
     const navigation = useNavigation();
     const [viewAll, setViewAll] = useState(false);
@@ -111,7 +111,7 @@ export default function LablePropertyDis(prop) {
                         <View style={{ backgroundColor: '#f6f6f6', padding: 15, borderRadius: 10, width: width * 0.7, alignItems: 'center' }}>
                             <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#0B2C0B' }}>{propertyDetails?.name}</Text>
                             <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 12, color: '#000', textAlign: 'center', marginTop: 6 }}>
-                                Perched 2000 ft above sea level - where serenity meets strategy
+                              {propertyDetails?.cardDescription}
                             </Text>
                         </View>
                     </View>
@@ -285,6 +285,14 @@ export default function LablePropertyDis(prop) {
 
 
                 <Modal visible={viewEnquiry} transparent animationType='fade'>
+                    <KeyboardAvoidingView
+                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                        style={{
+                        flex: 1,
+                        width:'100%',
+                        //justifyContent: 'center',
+                        //alignItems: 'center',
+                        }}>
                     <View style={{ flex: 1, backgroundColor: '#000000b3' }}>
                         <TouchableOpacity onPress={() => {
                             setViewEnquiry(false);
@@ -310,7 +318,7 @@ export default function LablePropertyDis(prop) {
                                             placeholderTextColor={'#00000086'}
                                             value={name}
                                             onChangeText={setName}
-                                            style={{ fontFamily: 'Montserrat-Medium',padding:10, fontSize: 12, color: '#000', marginLeft: 8, marginVertical: -3 }}
+                                            style={{ fontFamily: 'Montserrat-Medium',paddingVertical:15, paddingHorizontal: 5, fontSize: 12, color: '#000', marginLeft: 8, marginVertical: -3 }}
                                         />
                                     </View>
                                 </View>
@@ -326,7 +334,7 @@ export default function LablePropertyDis(prop) {
                                                 value={phone}
                                                 onChangeText={setPhone}
                                                 keyboardType='number-pad'
-                                                style={{ fontFamily: 'Montserrat-Medium',padding:10, fontSize: 12, color: '#000', marginLeft: 8, marginVertical: -3 }}
+                                                style={{ fontFamily: 'Montserrat-Medium',paddingVertical:15, paddingHorizontal: 5, fontSize: 12, color: '#000', marginLeft: 8, marginVertical: -3 }}
                                             />
                                         </View>
                                     </View>
@@ -339,7 +347,7 @@ export default function LablePropertyDis(prop) {
                                                 placeholderTextColor={'#00000086'}
                                                 value={email}
                                                 onChangeText={setEmail}
-                                                style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#000', marginLeft: 8,padding:10, marginVertical: -3 }}
+                                                style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#000', marginLeft: 8,paddingVertical:15, paddingHorizontal: 5, marginVertical: -3 }}
                                             />
                                         </View>
                                     </View>
@@ -350,12 +358,12 @@ export default function LablePropertyDis(prop) {
 
                                     <View style={{ borderWidth: 0.5, borderColor: '#00000099', borderRadius: 5, marginTop: 10 }}>
                                         <TextInput
-                                            // placeholder='Enter Message'
+                                            placeholder='Enter Message'
                                             placeholderTextColor={'#00000086'}
                                             numberOfLines={5}
                                             value={message}
                                             onChangeText={setMessage}
-                                            style={{ fontFamily: 'Montserrat-Medium',padding:10, fontSize: 12, color: '#000', marginLeft: 8, marginVertical: -3 }}
+                                            style={{ fontFamily: 'Montserrat-Medium',paddingVertical:30, paddingHorizontal: 5, fontSize: 12, color: '#000', marginLeft: 8, marginVertical: -3 }}
                                         />
                                     </View>
                                 </View>
@@ -410,6 +418,7 @@ export default function LablePropertyDis(prop) {
                             </View>
                         </View>
                     </View>
+                    </KeyboardAvoidingView>
                 </Modal>
 
                 <Modal visible={viewSchedule} transparent animationType='fade'>

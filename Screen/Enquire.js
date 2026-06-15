@@ -70,7 +70,7 @@ export default function Enquire(props) {
 
 
   return (
-       <SafeAreaView style={{flex: 1}}>
+       <SafeAreaView style={{flex: 1,}}>
     <Back title={"Complimentary Stay"}/>
     <ScrollView
       contentContainerStyle={{

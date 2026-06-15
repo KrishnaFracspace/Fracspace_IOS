@@ -150,7 +150,7 @@ export default function Chat() {
    }
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
+    <SafeAreaView style={{ flex: 1,backgroundColor:"#021265" }}>
     <View style={{flex:1}}>
        <Back title={'Chat'} />
     <ScrollView ref={scrollViewRef}

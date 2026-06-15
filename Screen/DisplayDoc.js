@@ -49,22 +49,10 @@ export default function DisplayDoc(props) {
           width: '100%',
           paddingHorizontal: 15,
           paddingVertical: 30,
-          backgroundColor: '#1E2135',
+          backgroundColor: '#021265',
         }}>
           <TouchableOpacity
           onPress={() => {
-           // requestStoragePermission();
-            // setModalVisible(!modalVisible);
-          //   if(props?.route?.params?.screen=="Doc"){
-          //     navigation.navigate('Profile');
-
-          //   }
-          //   else if (props?.route?.params?.screen=="Rev"){
-          //     navigation.navigate('Review');
-
-          //   }else{
-          //   navigation.navigate('Dashboard');
-          // }
           navigation.goBack();
           }}>
         <Icon name="arrow-back-outline" size={25} color="#ffff" />
@@ -89,7 +77,7 @@ export default function DisplayDoc(props) {
           console.log(`Number of pages: ${numberOfPages}`);
         }}
         onPageChanged={(page, numberOfPages) => {
-          console.log(`Current page: ${page}`);
+          // console.log(`Current page: ${page}`);
         }}
         onError={error => {
           console.log(error);

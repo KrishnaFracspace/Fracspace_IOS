@@ -10,6 +10,7 @@ import {
   Alert,
   Animated,
   FlatList,
+  Modal,
 } from 'react-native';
 import React, {Children, useContext, useEffect, useRef, useState} from 'react';
 import Icon from 'react-native-vector-icons/FontAwesome6';
@@ -29,7 +30,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { nearByStaysApi, upComingProjectApi } from '../redux/reducer/propertyReducer';
 import DreamScapeHomeSkeleton from '../components/DreanScapeHomeSkeleton';
 
-export default function DreamscapeHome() {
+export default function DreamscapeHome(props) {
   const {globalState, setGlobalState} = useContext(AppContext);
   const {width, height} = Dimensions.get('window');
   const [guestModal, setGuestModal] = useState(false);
@@ -44,20 +45,16 @@ export default function DreamscapeHome() {
   const [like, setLike] = useState([]);
   const navigation = useNavigation();
   const [HotelDetails, setHotelDetails] = useState([]);
- //const [UpComingDetails, setUpComingDetails] = useState([]);
-  const data = [
-    {label: 'Hyderabad', value: 'Hyderabad'},
-    {label: 'Munnar', value: 'Munnar'},
-     {label: 'Varanasi', value: 'Varanasi'},
-    // { label: 'Banjara Hills, Hyderabad', value: 'Banjara Hills, Hyderabad' },
-    // { label: 'Banjara Hills, Hyderabad', value: 'Banjara Hills, Hyderabad' },
-  ];
-
+  const [locations, setLocations] = useState([]);
+  const [ourStays, setOurStays] = useState(globalState?.ourStays || []);
+  const [selectedLocation, setSelectedLocation] = useState('');  
+  const [allHotels, setAllHotels] = useState([]);
   const dispatch = useDispatch();
   const UpComingDetails  = useSelector(state => state.property.upComingProjects);
   const nearByStaysDetails = useSelector((state)=> state.property.nearByStays)
-    const loading = useSelector((state)=> state.property.loading)
-  //console.log(nearByStaysDetails,"======comingProjects=====")
+  const loading = useSelector((state)=> state.property.loading)
+
+
   useEffect(()=>{
   dispatch(upComingProjectApi())
   dispatch(nearByStaysApi({}))
@@ -113,24 +110,64 @@ export default function DreamscapeHome() {
     );
   };
 
-  const handleListedHotels = async () => {
-    try {
-      let {data: res} = await DreamscapeHotels();
-     // console.log(res,"=======res===")
-      // console.log(nearByStaysDetails,"=======stay==")
-      const hyderbadHotels = res?.hotels.filter(
-        hotel => hotel.location.city === 'Hyderabad',
-      );
-      const munnarHotels = res?.hotels.filter(
-        hotel => hotel.location.city === 'Munnar',
-      );
-      // setHotelDetails([...hyderbadHotels, ...munnarHotels]);
-      setHotelDetails(res?.hotels);
-    } catch (error) {
-      console.log('Errorin Listed Hotels: ', error);
-    }
-  };
+const handleListedHotels = async () => {
+  try {
+    const { data: res } = await DreamscapeHotels();
 
+    const availableHotels = res?.hotels?.filter(
+      hotel => hotel?.availabilityStatus
+    );
+
+    setHotelDetails(availableHotels);
+
+    const locationList = [];
+    const citySet = new Set();
+
+    availableHotels?.forEach(hotel => {
+      const city = hotel?.location?.city;
+
+      if (!citySet.has(city)) {
+        citySet.add(city);
+
+        locationList.push({
+          label: city,              // for dropdown
+          value: city,              // for dropdown
+          image: hotel?.locationImage // for OurStays section
+        });
+      }
+    });
+
+    setLocations(locationList); // 🔴 this was missing
+
+  } catch (error) {
+    console.log('Error in Listed Hotels:', error);
+  }
+};
+
+const handleListedHotels1 = async () => {
+  try {
+    const { data: res } = await DreamscapeHotels();
+
+    setHotelDetails(res?.hotels || []);
+
+    const uniqueLocations = [
+      ...new Set(res?.hotels?.map(hotel => hotel?.location?.city))
+    ];
+
+   // setLocations(uniqueLocations);
+
+  } catch (error) {
+    console.log('Error in Listed Hotels:', error);
+  }
+};
+
+const filterHotelsByLocation = (city) => {
+  const filteredHotels = hotelDetails?.filter(
+    hotel => hotel?.location?.city === city
+  );
+
+  setHotelDetails(filteredHotels);
+};
   const handleUpcomingHotels = async () => {
     try {
       let {data: res} = await UpComingHotels();
@@ -183,9 +220,7 @@ export default function DreamscapeHome() {
       <ScrollView style={{width: '100%'}}>
         <ImageBackground
           resizeMode="cover"
-          source={{
-            uri: 'https://duixj37yn5405.cloudfront.net/appImages/Dreamscape1.png',
-          }}
+          source={{uri: 'https://duixj37yn5405.cloudfront.net/appImages/Dreamscape1.png'}}
           style={{width: '100%', height: height * 0.31}}>
           <View
             style={{
@@ -197,7 +232,14 @@ export default function DreamscapeHome() {
             }}>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate('HomePage');
+                if(props?.route?.params?.from === 'HomePage'){
+                  navigation.navigate('HomePage');
+                }else{
+                  navigation.navigate('BottomNavigations', {
+                    screen: 'HomePage'
+                  })
+                }
+                // navigation.popToTop();
               }}>
               <AntDesign name={'left'} size={20} color={'#FFFFFF'} />
             </TouchableOpacity>
@@ -264,6 +306,7 @@ export default function DreamscapeHome() {
                 }}>
                 Select a Location
               </Text>
+
               <Dropdown
                 style={styles.dropdown}
                 itemTextStyle={{
@@ -281,7 +324,7 @@ export default function DreamscapeHome() {
                   fontSize: 12,
                   color: '#0D1E36',
                 }}
-                data={data}
+                data={locations}
                 maxHeight={300}
                 labelField="label"
                 valueField="value"
@@ -291,6 +334,7 @@ export default function DreamscapeHome() {
                   setValue(item.value);
                 }}
               />
+
             </View>
             <View
               style={{
@@ -565,12 +609,13 @@ export default function DreamscapeHome() {
             marginTop: 10,
             flexDirection: 'row',
             justifyContent: 'space-between',
+            flex:1,
           }}>
           <View>
             <Text
               style={{
                 fontFamily: 'Montserrat-Bold',
-                fontSize: 16,
+                fontSize: 14,
                 color: '#000000',
               }}>
               {item?.name}
@@ -578,7 +623,7 @@ export default function DreamscapeHome() {
             <View style={{flexDirection: 'row', marginTop: 5}}>
               <Ionicons
                 name="location-outline"
-                size={15}
+                size={12}
                 color="#262D3D"
               />
               <Text
@@ -622,7 +667,7 @@ export default function DreamscapeHome() {
               Our Stays
             </Text>
           </View>
-
+{/* 
           <View
             //horizontal={true}
             style={{flexDirection: 'row'}}>
@@ -692,87 +737,126 @@ export default function DreamscapeHome() {
                 Varanasi
               </Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
-          <View style={{marginTop: 30}}>
-            <Text
-              style={{
-                fontFamily: 'Poppins-SemiBold',
-                fontSize: 16,
-                color: '#000000',
-              }}>
-              Coming Soon
-            </Text>
-          </View>
+   
 
-       <FlatList
-  data={UpComingDetails}
+  <FlatList
+  data={ourStays}
   horizontal
   keyExtractor={(item, index) => index.toString()}
   showsHorizontalScrollIndicator={false}
   renderItem={({item}) => (
-    <View
-      style={{
-        backgroundColor: '#FFFFFF',
-        padding: 10,
-        marginRight: 20,
-        borderRadius: 25,
-      }}>
-      <View>
-        <Image
-          source={{uri: item?.images[0]}}
-          style={{
-            width: width * 0.5,
-            height: height * 0.178,
-            borderRadius: 20,
-          }}
-        />
-        <View style={{position: 'absolute', bottom: 10, right: 10}}>
-          <LinearGradient
-            colors={['#0000006B', '#9999996B']}
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 40,
-              justifyContent: 'center',
-              alignItems: 'center',
-              borderColor: '#FFFFFF',
-              borderWidth: 1,
-            }}>
-            <Entypo name="map" color="#DD9D3B" size={18} />
-          </LinearGradient>
-        </View>
-      </View>
 
-      <View style={{marginLeft: 5, marginTop: 10}}>
-        <Text
-          style={{
-            fontFamily: 'Montserrat-Bold',
-            fontSize: 15,
-            color: '#000000',
-          }}>
-          {item?.propertyName}
-        </Text>
-        <View style={{flexDirection: 'row'}}>
-          <Ionicons
-            name="location-outline"
-            size={15}
-            color="#262D3D"
-          />
-          <Text
-            style={{
-              fontFamily: 'Montserrat-Regular',
-              fontSize: 12,
-              color: '#000000',
-              marginLeft: 3,
-            }}>
-            {item?.location}
-          </Text>
-        </View>
-      </View>
-    </View>
+ <TouchableOpacity
+              onPress={() => {
+                navigation.navigate('Ourstay', {location: item.city});
+              }}
+              style={{alignItems: 'center', paddingRight: 18}}>
+              <Image
+                resizeMode="stretch"
+                source={{
+                  uri:item.locationImage,
+                }}
+                style={{width: 90, height: 90}}
+              />
+
+              <Text
+                style={{
+                  fontFamily: 'Montserrat-Medium',
+                  fontSize: 11,
+                  color: '#000000',
+                  marginTop: 10,
+                }}>
+           {item.city}
+              </Text>
+            </TouchableOpacity>
   )}
 />
+
+          {UpComingDetails.length > 0 &&
+          <View>
+            <View style={{marginTop: 30}}>
+              <Text
+                style={{
+                  fontFamily: 'Poppins-SemiBold',
+                  fontSize: 16,
+                  color: '#000000',
+                }}>
+                Coming Soon
+              </Text>
+            </View>
+
+            <FlatList
+              data={UpComingDetails}
+              horizontal
+              keyExtractor={(item, index) => index.toString()}
+              showsHorizontalScrollIndicator={false}
+              renderItem={({item}) => (
+                <View
+                  style={{
+                    backgroundColor: '#FFFFFF',
+                    padding: 10,
+                    marginRight: 20,
+                    borderRadius: 25,
+                  }}>
+                  <View>
+                    <Image
+                      source={{uri: item?.images[0]}}
+                      style={{
+                        width: width * 0.5,
+                        height: height * 0.178,
+                        borderRadius: 20,
+                      }}
+                    />
+                    <View style={{position: 'absolute', bottom: 10, right: 10}}>
+                      <LinearGradient
+                        colors={['#0000006B', '#9999996B']}
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 40,
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                          borderColor: '#FFFFFF',
+                          borderWidth: 1,
+                        }}>
+                        <Entypo name="map" color="#DD9D3B" size={18} />
+                      </LinearGradient>
+                    </View>
+                  </View>
+
+                  <View style={{marginLeft: 5, marginTop: 10}}>
+                    <Text
+                      style={{
+                        fontFamily: 'Montserrat-Bold',
+                        fontSize: 15,
+                        color: '#000000',
+                      }}>
+                      {item?.propertyName}
+                    </Text>
+                    <View style={{flexDirection: 'row'}}>
+                      <Ionicons
+                        name="location-outline"
+                        size={15}
+                        color="#262D3D"
+                      />
+                      <Text
+                        style={{
+                          fontFamily: 'Montserrat-Regular',
+                          fontSize: 12,
+                          color: '#000000',
+                          marginLeft: 3,
+                        }}>
+                        {item?.location}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            />
+          </View>
+          }
 
           <View style={{marginTop: 30}}>
             <Text
@@ -1117,307 +1201,314 @@ export default function DreamscapeHome() {
       </ScrollView>
 
       {guestModal && (
-        <CustomModal visible={true} modalStyle={{width: '100%'}}>
-          <ScrollView
-            style={{
-              backgroundColor: '#FFFFFF',
-              borderTopLeftRadius: 40,
-              borderTopRightRadius: 40,
-              padding: 30,
-            }}>
-            <View>
-              <Text
-                style={{
-                  fontFamily: 'Poppins-SemiBold',
-                  fontSize: 18,
-                  color: '#000000',
-                }}>
-                Select Guests and Rooms
-              </Text>
-            </View>
+        <Modal visible={true} transparent animationType='fade' modalStyle={{width: '100%'}}>
+          <View style={{flex:1,backgroundColor:'#00000065'}}>
+            <TouchableOpacity onPress={() => {setGuestModal(false)}} style={{flex:1}}/>
             <View
               style={{
-                paddingVertical: 20,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
+                position:'absolute',bottom:0,left:0,right:0,
+                backgroundColor: '#FFFFFF',
+                borderTopLeftRadius: 40,
+                borderTopRightRadius: 40,
+                padding: 30,
               }}>
               <View>
                 <Text
                   style={{
-                    fontFamily: 'Poppins-Medium',
-                    fontSize: 16,
+                    fontFamily: 'Poppins-SemiBold',
+                    fontSize: 18,
                     color: '#000000',
                   }}>
-                  Adults
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 12,
-                    color: '#262626CC',
-                  }}>
-                  Age 18 or above
+                  Select Guests and Rooms
                 </Text>
               </View>
               <View
                 style={{
+                  paddingVertical: 20,
                   flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 100,
                   justifyContent: 'space-between',
                 }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (adult > 0) setAdult(adult - 1);
-                  }}
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 16,
+                      color: '#000000',
+                    }}>
+                    Adults
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 12,
+                      color: '#262626CC',
+                    }}>
+                    Age 18 or above
+                  </Text>
+                </View>
+                <View
                   style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     alignItems: 'center',
+                    width: 100,
+                    justifyContent: 'space-between',
                   }}>
-                  <AntDesign name={'minus'} size={15} color={'#0D2038'} />
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                  }}>
-                  {adult}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (adult < 20) setAdult(adult + 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#0D2038',
-                  }}>
-                  <AntDesign name={'plus'} size={15} color={'#E09E3B'} />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (adult > 0) setAdult(adult - 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <AntDesign name={'minus'} size={15} color={'#0D2038'} />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                    }}>
+                    {adult}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (adult < 20) setAdult(adult + 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#0D2038',
+                    }}>
+                    <AntDesign name={'plus'} size={15} color={'#E09E3B'} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            <View
-              style={{flexDirection: 'row', justifyContent: 'space-between'}}>
-              <View>
-                <Text
+              <View
+                style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 16,
+                      color: '#000000',
+                    }}>
+                    Children
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 12,
+                      color: '#262626CC',
+                    }}>
+                    Age 0-17 years old
+                  </Text>
+                </View>
+                <View
                   style={{
-                    fontFamily: 'Poppins-Medium',
-                    fontSize: 16,
-                    color: '#000000',
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    width: 100,
+                    justifyContent: 'space-between',
                   }}>
-                  Children
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 12,
-                    color: '#262626CC',
-                  }}>
-                  Age 0-17 years old
-                </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (children > 0) setChildren(children - 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <AntDesign name={'minus'} size={15} color={'#0D2038'} />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                    }}>
+                    {children}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (children < 20) setChildren(children + 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#0D2038',
+                    }}>
+                    <AntDesign name={'plus'} size={15} color={'#E09E3B'} />
+                  </TouchableOpacity>
+                </View>
               </View>
               <View
                 style={{
+                  paddingVertical: 20,
                   flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 100,
                   justifyContent: 'space-between',
                 }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (children > 0) setChildren(children - 1);
-                  }}
+                <View>
+                  <Text
+                    style={{
+                      fontFamily: 'Poppins-Medium',
+                      fontSize: 16,
+                      color: '#000000',
+                    }}>
+                    Rooms
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 12,
+                      color: '#262626CC',
+                    }}>
+                    No.of rooms
+                  </Text>
+                </View>
+                <View
                   style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
+                    flexDirection: 'row',
                     alignItems: 'center',
+                    width: 100,
+                    justifyContent: 'space-between',
                   }}>
-                  <AntDesign name={'minus'} size={15} color={'#0D2038'} />
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                  }}>
-                  {children}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (children < 20) setChildren(children + 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#0D2038',
-                  }}>
-                  <AntDesign name={'plus'} size={15} color={'#E09E3B'} />
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (rooms > 0) setRooms(rooms - 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                    }}>
+                    <AntDesign name={'minus'} size={15} color={'#0D2038'} />
+                  </TouchableOpacity>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 14,
+                      color: '#000000',
+                    }}>
+                    {rooms}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (rooms < 20) setRooms(rooms + 1);
+                    }}
+                    style={{
+                      borderWidth: 0.6,
+                      borderColor: '#62626233',
+                      width: 30,
+                      height: 30,
+                      borderRadius: 30,
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: '#0D2038',
+                    }}>
+                    <AntDesign name={'plus'} size={15} color={'#E09E3B'} />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-            <View
-              style={{
-                paddingVertical: 20,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-              }}>
-              <View>
+              <TouchableOpacity
+                onPress={() => {
+                  setGuestModal(!guestModal);
+                }}
+                style={{
+                  backgroundColor: '#0D2038',
+                  borderRadius: 30,
+                  padding: 10,
+                  alignItems: 'center',
+                  marginHorizontal: 60,
+                  marginVertical: 20,
+                }}>
                 <Text
                   style={{
-                    fontFamily: 'Poppins-Medium',
+                    fontFamily: 'Montserrat-SemiBold',
                     fontSize: 16,
-                    color: '#000000',
+                    color: '#FFFFFF',
                   }}>
-                  Rooms
+                  Apply
                 </Text>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 12,
-                    color: '#262626CC',
-                  }}>
-                  No.of rooms
-                </Text>
-              </View>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  width: 100,
-                  justifyContent: 'space-between',
-                }}>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (rooms > 0) setRooms(rooms - 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                  }}>
-                  <AntDesign name={'minus'} size={15} color={'#0D2038'} />
-                </TouchableOpacity>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-Medium',
-                    fontSize: 14,
-                    color: '#000000',
-                  }}>
-                  {rooms}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    if (rooms < 20) setRooms(rooms + 1);
-                  }}
-                  style={{
-                    borderWidth: 0.6,
-                    borderColor: '#62626233',
-                    width: 30,
-                    height: 30,
-                    borderRadius: 30,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    backgroundColor: '#0D2038',
-                  }}>
-                  <AntDesign name={'plus'} size={15} color={'#E09E3B'} />
-                </TouchableOpacity>
-              </View>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={() => {
-                setGuestModal(!guestModal);
-              }}
-              style={{
-                backgroundColor: '#0D2038',
-                borderRadius: 30,
-                padding: 10,
-                alignItems: 'center',
-                marginHorizontal: 60,
-                marginVertical: 20,
-              }}>
-              <Text
-                style={{
-                  fontFamily: 'Montserrat-SemiBold',
-                  fontSize: 16,
-                  color: '#FFFFFF',
-                }}>
-                Apply
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </CustomModal>
+          </View>
+        </Modal>
       )}
 
       {showCalendar && (
-        <CustomModal visible={true} modalStyle={{width: '100%'}}>
-          <View
-            style={{
-              backgroundColor: '#FFFFFF',
-              paddingHorizontal: 30,
-              paddingVertical: 10,
-              borderWidth: 1,
-              borderTopLeftRadius: 30,
-              borderTopRightRadius: 30,
-            }}>
+        <Modal transparent animationType='fade' visible={true} modalStyle={{width: '100%'}}>
+          <View style={{backgroundColor:'#00000065',flex:1}}>
+            <TouchableOpacity onPress={() => {setShowCalendar(false)}} style={{flex:1}}/>
             <View
               style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                marginVertical: 10,
-                alignItems: 'center',
+                position:'absolute', bottom:0, left:0, right:0,
+                backgroundColor: '#FFFFFF',
+                paddingHorizontal: 30,
+                paddingVertical: 10,
+                borderTopLeftRadius: 30,
+                borderTopRightRadius: 30,
               }}>
-              <View style={{flex: 1}}></View>
-              <Text
+              <View
                 style={{
-                  flex: 1,
-                  fontFamily: 'Montserrat-SemiBold',
-                  fontSize: 17,
-                  color: '#000000',
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  marginVertical: 10,
+                  alignItems: 'center',
                 }}>
-                Select Date
-              </Text>
-              <TouchableOpacity
-                style={{paddingVertical: 5, flex: 1, alignItems: 'flex-end'}}
-                onPress={() => {
-                  setShowCalendar(!showCalendar);
-                }}>
-                <Entypo name={'cross'} size={20} color={'#000000'} />
-              </TouchableOpacity>
-            </View>
-            <View style={{}}>
-              <Calendar
-                onDayPress={handleDayPress}
-                markingType="period"
-                markedDates={selectedDates}
-                minDate={moment().format('YYYY-MM-DD')}
-              />
+                <View style={{flex: 1}}></View>
+                <Text
+                  style={{
+                    flex: 1,
+                    fontFamily: 'Montserrat-SemiBold',
+                    fontSize: 17,
+                    color: '#000000',
+                  }}>
+                  Select Date
+                </Text>
+                <TouchableOpacity
+                  style={{paddingVertical: 5, flex: 1, alignItems: 'flex-end'}}
+                  onPress={() => {
+                    setShowCalendar(!showCalendar);
+                  }}>
+                  <Entypo name={'cross'} size={20} color={'#000000'} />
+                </TouchableOpacity>
+              </View>
+              <View style={{}}>
+                <Calendar
+                  onDayPress={handleDayPress}
+                  markingType="period"
+                  markedDates={selectedDates}
+                  minDate={moment().format('YYYY-MM-DD')}
+                />
+              </View>
             </View>
           </View>
-        </CustomModal>
+        </Modal>
       )}
     </SafeAreaView>
   );

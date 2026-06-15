@@ -27,8 +27,8 @@ export default function PaidSuccessfully(props) {
     })
 
   return (
-    <SafeAreaView style={{flex:1}}>
-        <ScrollView>
+    <SafeAreaView style={{flex:1, backgroundColor:'#C7E5FD'}}>
+        <ScrollView style={{flex:1, backgroundColor:'#FFF'}}>
             <LinearGradient colors={['#C7E5FD','#FFFFFF']} style={{paddingBottom:70}}>
                 <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:20}}>
                     <TouchableOpacity onPress={() => {

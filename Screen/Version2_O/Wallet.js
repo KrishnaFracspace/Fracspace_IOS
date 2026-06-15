@@ -8,14 +8,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function Wallet() {
     const navigation = useNavigation();
 
-
-
     return (
         <SafeAreaView style={{ flex: 1 ,backgroundColor:'#C7E5FD'}}>
             <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
                 <LinearGradient colors={['#C7E5FD', '#FFFFFF']}
-                    style={{ flex: 1 }}
-                >
+                    style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', padding: 20, alignItems: 'center', justifyContent: 'space-between' }}>
                         <TouchableOpacity
                         onPress={() => {
@@ -35,12 +32,6 @@ export default function Wallet() {
                             <Text style={{ fontFamily: 'Poppins-SemiBold', fontSize: 14, color: '#2AA804' }}>---</Text>
                             <Text style={{ fontFamily: 'Poppins-SemiBold', fontSize: 16, color: '#000000E5', marginLeft: 10 }}>Last Payout</Text>
                         </View>
-                        {/* <View style={{backgroundColor:'#021265',borderRadius:50,paddingHorizontal:20,paddingVertical:10,borderColor:'#FFFFFF',borderWidth:1,flexDirection:'row',alignItems:'center'}}>
-                        <Text style={{fontFamily:'Poppins-Medium',fontSize:14,color:'#FFFFFF'}}>Withdraw </Text>
-                        <View style={{backgroundColor:'#FFFFFF',borderRadius:20,padding:5,marginLeft:5}}>
-                            <Icon name={'arrow-up-right'} size={15} color={'#000000'}/>
-                        </View>
-                    </View> */}
                         <FastImage
                             source={require('./assets/WalletAnim.gif')}
                             style={{ width: 180, height: 100 }}

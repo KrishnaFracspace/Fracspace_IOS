@@ -15,6 +15,7 @@ import {useNavigation} from '@react-navigation/native';
 import {CallRecord} from './Services/UserApi';
 import {AppContext} from './Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Back from './Back';
 const {width, height} = Dimensions.get('window');
 
 export default function MyProfile(props) {
@@ -65,8 +66,10 @@ export default function MyProfile(props) {
   };
 
   return (
- <SafeAreaView style={{flex: 1,}}>
+ <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
     <ScrollView style={{backgroundColor: '#FAFAFF'}}>
+      <Back title={"Help Line"}/>
+{/*       
       <TouchableOpacity
         onPress={() => {
           navigation.goBack();
@@ -75,7 +78,7 @@ export default function MyProfile(props) {
           flexDirection: 'row',
           justifyContent: 'space-between',
           padding: 25,
-          backgroundColor: '#FFFFFF',
+          backgroundColor: '#021265',
         }}>
         <Icon name={'left'} size={20} color={'#000000'} />
         <Text
@@ -86,9 +89,9 @@ export default function MyProfile(props) {
           }}>
           Helpline
         </Text>
-        {/* <IconI name={'headphones'} size={20} color={'#000000'}/> */}
         <View></View>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
+      
       <View style={{paddingHorizontal: 20, paddingVertical: 30}}>
         <Text
           style={{
@@ -162,7 +165,7 @@ export default function MyProfile(props) {
 
           <TouchableOpacity
             onPress={() => {
-              const Phone = '+919154867608';
+              const Phone = '+919154867618';
               handleCallRecord(Phone);
             }}
             style={{
@@ -202,7 +205,7 @@ export default function MyProfile(props) {
                   color: '#1939E4',
                   textDecorationLine: 'underline',
                 }}>
-                +91-9154867608
+                +91-9154867618
               </Text>
             </View>
           </TouchableOpacity>

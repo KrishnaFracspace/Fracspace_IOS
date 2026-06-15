@@ -29,7 +29,6 @@ export default function InteriorFSec() {
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                  
                     width: '100%'
                 }}>
                     <TouchableOpacity style={{ flex: 1 ,paddingVertical: 15,}}

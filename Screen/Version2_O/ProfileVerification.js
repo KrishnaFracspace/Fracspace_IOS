@@ -8,6 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../Context/AppContext';
 import { ProfileDetails, Verification } from '../Services/UserApi';
 import { launchImageLibrary } from 'react-native-image-picker'
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileVerification() {
     const { width, height } = Dimensions.get('window');
@@ -75,23 +76,50 @@ const pickDocuments= async (doc) => {
     }
   }
 };
+const allDocumentsUploaded = uploadedDocs?.aadhaar && uploadedDocs?.pan && uploadedDocs?.cheque;
 
-    const UploadDoc = async () => {
-        const { aadhaar, pan, cheque } = uploadedDocs;
 
-        // 1️⃣ Validate all documents
-        // if (!aadhaar || !pan || !cheque) {
-        //     Alert.alert('Error', 'Please upload all required documents');
-        //     return;
-        // }
+  const UploadDoc = async () => {
+    const { aadhaar, pan, cheque } = uploadedDocs;
+if(phoneNumber.startsWith("+91")){
+    if (!aadhaar || !pan || !cheque) {
+        Alert.alert('Error', 'Please upload all required documents: Aadhaar, PAN & Cheque');
+        return;
+    }
+     if (aadhaar.type !== 'application/pdf') {
+        Alert.alert('Invalid File', 'Aadhaar must be a PDF file');
+        return;
+    }
+}
+    // Validation
+    // if (aadhaar?.type !== 'application/pdf') {
+    //     Alert.alert('Invalid File', 'Aadhaar must be a PDF file');
+    //     return;
+    // }
 
-        // 2️⃣ Optional safety check for Aadhaar (PDF only)
-        // if (aadhaar.type !== 'application/pdf') {
-        //     Alert.alert('Invalid File', 'Aadhaar must be a PDF file');
-        //     return;
-        // }
+    // const formData = new FormData();
+    // formData.append('email', email);
 
-        const formData = new FormData();
+    // // Append files safely
+    // formData.append('aadhar', {
+    //     uri: aadhaar?.uri,
+    //     name: aadhaar?.name || 'aadhaar.pdf',
+    //     type: aadhaar?.type,
+    // });
+
+    // formData.append('pan', {
+    //     uri: pan?.uri,
+    //     name: pan?.name || 'pan.jpg',
+    //     type: pan?.type,
+    // });
+
+    // formData.append('chequebook', {
+    //     uri: cheque?.uri,
+    //     name: cheque?.name || 'cheque.jpg',
+    //     type: cheque?.type,
+    // });
+
+    const formData = new FormData();
 
         // 3️⃣ Append email or userId
         formData.append('email', email);
@@ -112,42 +140,47 @@ const pickDocuments= async (doc) => {
 
         // 6️⃣ Append Cheque
         formData.append('chequebook', {
-            uri: cheque.uri,
-            name: cheque.name || 'cheque.jpg',
-            type: cheque.type,
+            uri: cheque?.uri,
+            name: cheque?.name || 'cheque.jpg',
+            type: cheque?.type,
         });
-        setIsUploading(true);
-        Animated.timing(animatedWidth, {
-            toValue: 1,
-            duration: 3000,
-            useNativeDriver: false,
-        }).start();
 
-        try {
-            const { data: res } = await Verification(formData);
-            if (res?.success) {
-                console.log('Uploaded Successfully: ', res);
-                handleProfile();
-                setShowSuccess(true);
-            }
-        } catch (error) {
-            console.error(
-                '❌ Upload error:',
-                error?.response?.data || error.message
-            );
+    setIsUploading(true);
+    Animated.timing(animatedWidth, {
+        toValue: 1,
+        duration: 3000,
+        useNativeDriver: false,
+    }).start();
 
-            Alert.alert(
-                'Upload Failed',
-                'Server rejected the upload. Please try again.'
-            );
-        } finally {
-            setTimeout(() => {
-                setIsUploading(false);
-                animatedWidth.setValue(0);
-            }, 300);
+    try {
+        const response = await Verification(formData);        // ← Don't destructure here
+        const res = response?.data;                           // ← Get data safely
+
+      //  console.log('Full Response:', response);
+      //  console.log('Response Data:', res);
+
+        if (res?.success) {
+            console.log('Uploaded Successfully');
+            handleProfile();
+            setShowSuccess(true);
+        } else {
+            Alert.alert('Upload Failed', res?.message || 'Server rejected the upload.');
         }
-    };
+    } catch (error) {
+        console.error('❌ Upload error:', error?.response?.data || error.message || error);
 
+        const errorMsg = error?.response?.data?.message 
+            || error.message 
+            || 'Something went wrong. Please try again.';
+
+        Alert.alert('Upload Failed', errorMsg);
+    } finally {
+        setTimeout(() => {
+            setIsUploading(false);
+            animatedWidth.setValue(0);
+        }, 300);
+    }
+};
     const handleProfile = async () => {
         const tokenid = await AsyncStorage.getItem('mytoken');
         const emailId = await AsyncStorage.getItem('Email');
@@ -156,10 +189,10 @@ const pickDocuments= async (doc) => {
         });
     
         try {
-          let { data: res } = await ProfileDetails(payload, tokenid);
-          //console.log(res);
+          let response = await ProfileDetails(payload, tokenid);
+           const res = response?.data;   
     
-    
+    console.log( res,"=========res123",response)
           if (res?.success) {
             setGlobalState(prevState => ({
               ...prevState,
@@ -260,7 +293,7 @@ const pickDocuments= async (doc) => {
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
-            {profile?.documents?.length == 0 && profile?.verification == false ?
+            {profile?.documents?.length === 0 && profile?.verification == false ?
                 <ScrollView style={{ backgroundColor: '#FFF' }}>
                     <LinearGradient colors={['#C7E5FD', '#FFFFFF']}
                         style={{ width: width, padding: 20, alignItems: 'center' }}
@@ -351,7 +384,9 @@ const pickDocuments= async (doc) => {
                     <TouchableOpacity disabled={isUploading} activeOpacity={0.8} onPress={() => {
                         UploadDoc();
                     }} style={{ backgroundColor: '#021265', padding: 10, borderRadius: 5, alignItems: 'center', marginHorizontal: 20, marginBottom: 100, }}>
-                        <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 18, color: '#FFF' }}>Submit</Text>
+                        <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 18, color: '#FFF' }}> <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 18, color: '#FFF' }}>
+        {isUploading ? 'Uploading...' : 'Submit'}
+    </Text></Text>
 
                         {isUploading && (
                             <Animated.View style={[styles.overlay, { width: interpolatedWidth }]} />

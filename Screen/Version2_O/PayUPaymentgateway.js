@@ -12,6 +12,8 @@ export default function PayUPaymentgateway(props) {
   const [pageUrl, setPageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
   const [TxnID,setTxnID]=useState(props?.route?.params?.TxnID);
+
+
   const HandlePayUPaymentVerify = async () => {
     let payload = JSON.stringify({
        txnID:TxnID
@@ -20,8 +22,6 @@ export default function PayUPaymentgateway(props) {
     try {
         let { data: res } = await PayUPaymentVerify(payload);
         if (res?.success) {
-       
-
         }
     } catch (error) {
         if (error?.response) {

@@ -25,12 +25,8 @@ const {width, height} = Dimensions.get('window');
 
 export default function Review(props) {
   const navigation = useNavigation();
-  const [propertyImage, setPropertyImage] = useState(
-    props?.route?.params?.PropertyImage,
-  );
-  const [property, setProperty] = useState(
-    props?.route?.params?.proprtyDetails?.data,
-  );
+  const [propertyImage, setPropertyImage] = useState(props?.route?.params?.PropertyImage);
+  const [property, setProperty] = useState(props?.route?.params?.proprtyDetails?.data,);
   const [modalVisible, setModalVisible] = useState(false);
   const [SelectPic, setSelectPic] = useState(0);
   const {globalState, setGlobalState} = useContext(AppContext);
@@ -38,6 +34,7 @@ export default function Review(props) {
   const [PanDoc, setPanDoc] = useState('');
   const [AadharDoc, setAadharDoc] = useState('');
   const [ChequeDoc, setChequeDoc] = useState('');
+
 
   const first = () => {
     for (let index = 0; index < Docs.length; index++) {
@@ -51,13 +48,12 @@ export default function Review(props) {
     }
   };
 
-  const handlePayment = async () => {
+  const handlePayment1 = async () => {
     let id = `tnxnid-fracspace-app-${Date.now()}-${Math.floor(
       Math.random() * 10000,
     )}`;
     let payload = JSON.stringify({
       amount: property?.totalBookingAmount + 300*property?.numberOfFractions,
-      // amount:1,
       productinfo: 'Co-ownership Product',
       firstname: globalState?.userName,
       email: globalState?.userDetails?.email,
@@ -86,12 +82,57 @@ export default function Review(props) {
     }
   };
 
+  const handlePayment = async () => {
+  try {
+    const txnid = `fracspace${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const totalAmount =
+      (Number(property?.totalBookingAmount) || 0) +
+      300 * (Number(property?.numberOfFractions) || 0);
+
+    if (!globalState?.userDetails?.email || !globalState?.userDetails?.phoneNumber) {
+      Alert.alert('Error', 'Email or Phone number is missing');
+      return;
+    }
+
+    const payload = JSON.stringify({
+      amount: totalAmount.toFixed(2),
+      productinfo: 'Co-ownership Product',
+      firstname: globalState?.userName || 'User',
+      email: globalState?.userDetails?.email,
+      phone: globalState?.userDetails?.phoneNumber,
+      txnid: txnid,
+      surl: 'https://test.bunknbeyond.com/paymentsuccess',
+      furl: 'https://test.bunknbeyond.com/paymentfailure',
+    });
+
+    let { data: res } = await PaymentPayU(payload);
+//console.log(res,"=================res=======review===")
+    if (res?.success && res?.form) {
+      navigation.navigate('PaymentPage', {
+        Link: res?.form,
+        TxnID: txnid,
+        property: property,
+      });
+    } else {
+      Alert.alert('Payment Error', res?.message || 'Unable to initiate payment');
+    }
+  } catch (error) {
+    if (error?.response) {
+      Alert.alert('Response Error', error?.response?.data?.message || 'Server Error');
+    } else if (error?.request) {
+      Alert.alert('Network Error', 'Please check your internet connection');
+    } else {
+      Alert.alert('Error', error?.message || 'Something went wrong');
+    }
+  }
+};
+
   useEffect(() => {
     first();
   }, []);
 
   return (
-     <SafeAreaView style={{flex: 1,}}>
+     <SafeAreaView style={{flex: 1,backgroundColor:"#021265"}}>
       <Back title={'Review'} />
       <ScrollView style={styles.reviewBeforePayment}>
         <Image
@@ -99,7 +140,6 @@ export default function Review(props) {
           resizeMode="cover"
           source={{uri: propertyImage}}
         />
-
         <View
           style={{
             backgroundColor: '#FFFFFF',
@@ -113,10 +153,8 @@ export default function Review(props) {
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              // alignItems: 'center',
               paddingBottom: 8,
               width: '100%',
-              // borderWidth:1
             }}>
             <Text style={[styles.text4Typo, {flex: 1}]}>Property Name</Text>
             <Text style={[styles.serenityHeights, {flex: 1}]}>
@@ -289,7 +327,7 @@ export default function Review(props) {
                 color: '#000000',
                 paddingLeft: 10,
               }}>
-              {globalState?.userDetails?.postalAddress},{' '}
+              {globalState?.userDetails?.postalAddress}{'Not Availble'},
               {globalState?.userDetails?.pincode}
               {/* Yorem ipsum dolor sit amet, consectetur adipiscing elit. */}
             </Text>
@@ -397,13 +435,7 @@ export default function Review(props) {
             </TouchableOpacity>
           )}
         </View>}
-
         <View></View>
-
-    
-
-      
-
         <Modal
           animationType="slide"
           transparent={true}

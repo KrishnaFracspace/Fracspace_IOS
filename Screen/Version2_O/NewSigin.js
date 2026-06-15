@@ -23,8 +23,8 @@ import {
   OtpLoginWithEmail,
   verifyOtpLogin,
 } from '../Services/UserApi';
-
 import { AppContext } from '../Context/AppContext';
+import analytics from '@react-native-firebase/analytics';
 
 export default function NewSigin() {
   const navigation = useNavigation();
@@ -38,7 +38,7 @@ export default function NewSigin() {
   const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India' });
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const inputRefs = useRef([]);
-const route = useRoute();
+  const route = useRoute();
 
   const handleChange = (text, index) => {
     const updated = [...otpDigits];
@@ -89,7 +89,6 @@ const route = useRoute();
         phoneNumber: phone,
         smsCountry: true,
       });
-
       if (res?.success) {
         setVisible1(false);
         setVisible2(true);
@@ -105,7 +104,6 @@ const route = useRoute();
   const handleLoginWithEmail = async () => {
     try {
       const { data: res } = await OtpLoginWithEmail({ email });
-
       if (res?.success) {
         setVisible1(false);
         setVisible2(true);
@@ -117,91 +115,107 @@ const route = useRoute();
       );
     }
   };
+const handleOTPLogin = async () => {
+  const otp = otpDigits.join('');
 
-  const handleOTPLogin = async () => {
-    const otp = otpDigits.join('');
+  if (otp.length !== 6) {
+    Alert.alert('Invalid OTP', 'Enter 6 digit OTP');
+    return;
+  }
 
-    if (otp.length !== 6) {
-      Alert.alert('Invalid OTP', 'Enter 6 digit OTP');
-      return;
+  try {
+    let response;
+
+    if (selectedCode.code === '+91') {
+      response = await GetOtpForLoginWithNumber({
+        phoneNumber: phone,
+        otp,
+        smsCountry: true,
+      });
+    } else {
+      response = await verifyOtpLogin({
+        email,
+        otp,
+      });
     }
 
-    try {
-      let response;
+    if (response?.data?.success) {
+      const token = response.data.data;
+      console.log('[OTP Login Success] Token received:', token);
 
-      if (selectedCode.code === '+91') {
-        response = await GetOtpForLoginWithNumber({
-          phoneNumber: phone,
-          otp,
-          smsCountry: true,
+      // Save auth data
+      await AsyncStorage.setItem('mytoken', token);
+      await AsyncStorage.setItem('Email', email);
+
+      if(selectedCode.code === '+91'){
+        analytics().logEvent('newUser_signin_indian', {
+          user_id: res?.email
         });
-      } else {
-        response = await verifyOtpLogin({
-          email,
-          otp,
+      }else {
+        analytics().logEvent('newUser_signin_international', {
+          user_id: res?.email
         });
       }
 
-  if (response?.data?.success) {
-  const token = response.data.data;
+      setGlobalState(prev => ({
+        ...prev,
+        token,
+        userEmail: email,
+        userName: response.data.userName,
+      }));
 
-  await AsyncStorage.setItem('mytoken', token);
-  await AsyncStorage.setItem('Email', email);
+      console.log('[OTP Login Success] Auth data saved', token);
 
-  setGlobalState(prev => ({
-    ...prev,
-    token,
-    userEmail: email,
-    userName: response.data.userName,
-  }));
+      // ==================== DEEP LINK REDIRECT LOGIC ====================
+      let targetRoute = { name: 'BottomNavigations' };
 
-  const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
-  const redirect = route?.params?.redirectAfterLogin;
+      // Check for pending deep link from storage
+      const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
 
-    if (!redirect && pendingJson) {
-    redirect = JSON.parse(pendingJson);
-    await AsyncStorage.removeItem('pendingDeepLink');
-  }
+      if (pendingJson) {
+        try {
+          const pending = JSON.parse(pendingJson);
+          if (pending?.screen) {
+            targetRoute = {
+              name: pending.screen,
+              params: pending.params || {},
+            };
+            console.log('[OTP Login] Redirecting to pending deep link:', pending.screen);
+          }
+          await AsyncStorage.removeItem('pendingDeepLink'); // Clean up
+        } catch (e) {
+          console.warn('Invalid pending deep link JSON', e);
+        }
+      }
 
-  if (redirect) {
-    navigation.reset({
-      index: 0,
-      routes: [
-        { name: 'BottomNavigations' },
-        {
-          name: redirect.screen,
-          params: redirect.params,
-        },
-      ],
-    });
-  } else {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'BottomNavigations' }],
-    });
-  }
-}
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Invalid OTP'
-      );
+      // Final Navigation Reset
+      navigation.reset({
+        index: 0,
+        routes: [
+          { name: 'BottomNavigations' },
+          targetRoute,
+        ],
+      });
     }
+  } catch (error) {
+    Alert.alert(
+      'Error',
+      error?.response?.data?.message || 'Invalid OTP'
+    );
   }
+};
 
   return (
     <SafeAreaView style={{ flex: 1}}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}
-      >
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 70 : 0}>
         <ScrollView
           contentContainerStyle={{ flexGrow: 1 }}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
-          style={{paddingTop:70 }}
-        >
+          style={{paddingTop:70 }}>
           <View style={{ backgroundColor: '#E8E8E8', flex: 1 }}>
             <View
               style={{
@@ -211,22 +225,28 @@ const route = useRoute();
                 flex: 1,
                 paddingBottom: 40,
                 
-              }}
-            >
-
+              }}>
               {visible1 && (
                 <View style={{ padding: 20 }}>
-
                   <View style={{ paddingTop: 20 }}>
                     <TouchableOpacity
-                      onPress={() => navigation.navigate('NewLogin')}
+                    onPress={() => {
+    const redirect = route.params?.redirectAfterLogin;
+    if (redirect) {
+      navigation.navigate('NewLogin', {
+        redirectAfterLogin: redirect,   // Pass deep link data to Login too
+      });
+    } else {
+      navigation.navigate('NewLogin');
+    }
+  }}
+
                       style={{
                         backgroundColor: '#EFF3F9',
                         padding: 7,
                         borderRadius: 5,
                         alignSelf: 'flex-start',
-                      }}
-                    >
+                      }}> 
                       <Icon name="arrowleft" size={20} color="#160D1F" />
                     </TouchableOpacity>
                   </View>
@@ -235,7 +255,7 @@ const route = useRoute();
                     Welcome to FRACSPACE
                   </Text>
 
-                  <View style={{ marginTop: 30 }}>
+                <View style={{ marginTop: 30 }}>
                     <Text style={styles.title}>Your Name</Text>
                     <TextInput
                       placeholder="Enter your name"
@@ -243,9 +263,8 @@ const route = useRoute();
                       onChangeText={setName}
                       style={styles.input}
                       placeholderTextColor={'#B2B8BD'}
-                    />
+                />
                   </View>
-
                   <View style={{ marginTop: 15 }}>
                     <Text style={styles.title}>Email</Text>
                     <TextInput
@@ -267,8 +286,7 @@ const route = useRoute();
                         onPress={() => {
                           Keyboard.dismiss();
                           setShowPicker(true);
-                        }}
-                      >
+                        }}>
                         <Text style={styles.title}>{selectedCode.code} ▼</Text>
                       </TouchableOpacity>
 
@@ -286,8 +304,7 @@ const route = useRoute();
 
                   <TouchableOpacity
                     style={styles.button}
-                    onPress={handleRegister}
-                  >
+                    onPress={handleRegister}>
                     <Text style={{ color: '#fff', fontWeight: '600',fontFamily: 'Montserrat-SemiBold', }}>
                       Register
                     </Text>
@@ -295,23 +312,27 @@ const route = useRoute();
                 </View>
               )}
 
-                <TouchableOpacity onPress={() => {
-                  navigation.navigate('NewLogin');
-                }} style={{ alignSelf: 'center', marginTop: 40 }}>
+                <TouchableOpacity 
+            onPress={() => {
+    const redirect = route.params?.redirectAfterLogin;
+
+    if (redirect) {
+      navigation.navigate('NewLogin', {
+        redirectAfterLogin: redirect,   // Pass deep link data to Login too
+      });
+    } else {
+      navigation.navigate('NewLogin');
+    }
+  }}
+
+                 style={{ alignSelf: 'center', marginTop: 40 }}>
                   <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#8E9398' }}>
                     Already have an account? <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#000000' }}> Sign in</Text>
                   </Text>
                 </TouchableOpacity>
               {visible2 && (
                 <View style={{ padding: 20 }}>
-                  {/* <TouchableOpacity
-                    onPress={() => {
-                      setVisible2(false);
-                      setVisible1(true);
-                    }}
-                  >
-                    <Icon name="arrowleft" size={22} />
-                  </TouchableOpacity> */}
+                
 
                   <View style={{ paddingTop: 20 }}>
                     <TouchableOpacity
@@ -329,8 +350,6 @@ const route = useRoute();
                       <Icon name="arrowleft" size={20} color="#160D1F" />
                     </TouchableOpacity>
                   </View>
-
-
                   <Text style={{ marginTop: 30 }}>
                     Enter OTP sent to{' '}
                     {selectedCode.code === '+91' ? phone : email}
@@ -342,6 +361,9 @@ const route = useRoute();
                         key={i}
                         ref={(ref) => (inputRefs.current[i] = ref)}
                         style={styles.otpInput}
+                        textContentType="oneTimeCode"
+                       autoComplete="sms-otp"
+                        importantForAutofill="yes"
                         keyboardType="numeric"
                         maxLength={1}
                         value={otpDigits[i]}
@@ -366,14 +388,14 @@ const route = useRoute();
         </ScrollView>
 
         <CountryPicker
-       enableModalAvoiding={false}           // ← disable keyboard avoiding in modal
-  disableBackdrop={false}               // keep backdrop so user knows it's modal
+       enableModalAvoiding={false}         
+  disableBackdrop={false}            
   style={{
     modal: {
       borderTopLeftRadius: 20,
       borderTopRightRadius: 20,
       paddingTop: 10,
-      maxHeight: '70%',               // ← limit height so it doesn't feel too intrusive
+      maxHeight: '70%',             
     },
     itemsList: { maxHeight: 400 },
   }}

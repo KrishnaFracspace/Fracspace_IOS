@@ -51,13 +51,13 @@ const interestButton = async () => {
   }
 };
 
-
   const block1 = Properties?.block1
   const block2 = Properties?.block2
   const block3 = Properties?.block3
   const block4 = Properties?.block4
   const block5 = Properties?.block5
   const block6 = Properties?.block6
+// console.log(block5,"=====55")
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -88,7 +88,6 @@ const interestButton = async () => {
             activeOpacity={0.7}>
             <Icon name="chevron-left" size={20} color="#fff" />
           </TouchableOpacity>
-
           <Text style={styles.heroTitle}>{block1?.subTitle}</Text>
           <Text style={styles.heroSubtitle}>{block1?.description}</Text>
         </View>
@@ -191,11 +190,12 @@ const interestButton = async () => {
       )}
 
       {!block5?.hide && (
-        <View style={styles.section1}>
+        <View style={[styles.section1,{paddingTop:0}]}>
           <Text style={[styles.sectionTitle]}>{block5?.heading.toUpperCase()}</Text>
           <ImageBackground source={{ uri:block5?.logo}} style={{ height: 200, width: '100%', borderRadius: 10, alignItems: "center" }} imageStyle={styles.imageStyle}>
-            <TouchableOpacity onPress={()=> navigation.navigate("PdfViewer")} style={{ top: 150, alignItems: "center", backgroundColor: "rgba(255, 255, 255, 0.2)", padding: 10, width: 100 }}>
-              <Text style={styles.ctaText}>View Plan →</Text>
+            <Text style={{top:40,color:"#fff",fontFamily:"Work Sans",fontSize:14,fontWeight:500}}>{block5?.subHeading}</Text>
+            <TouchableOpacity onPress={()=> navigation.navigate("PdfViewer",{pdf:block5?.conceptPlan})} style={{ top: 130, alignItems: "center", backgroundColor: "rgba(255, 255, 255, 0.2)", padding: 10, width: 100,borderRadius:5 }}>
+              <Text style={styles.ctaText}>{block5?.button}</Text>
             </TouchableOpacity>
           </ImageBackground>
         </View>
@@ -211,17 +211,13 @@ const interestButton = async () => {
     </TouchableOpacity>
   </View>
 )} */}
-
-
+    {!block6?.hide && (
       <View style={styles.section1}>
         <Text style={[styles.sectionTitle, { textAlign: "center" }]}>
-          CONTACT US
+         {block6?.heading}
         </Text>
 
-        <Text style={styles.contactDesc}>
-          Altaira is offered through a private, application-led process.
-          {"\n"}Share your details and our team will reach out with next steps.
-        </Text>
+        <Text style={styles.contactDesc}>{block6?.subHeading} </Text>
 
         <TouchableOpacity
          onPress={() => {
@@ -232,9 +228,12 @@ const interestButton = async () => {
             { backgroundColor: "rgba(99, 78, 54, 1)", marginBottom: 20 }
           ]}
         >
-          <Text style={styles.ctaText}>I’m Interested →</Text>
+          <Text style={styles.ctaText}>{block6?.button} →</Text>
         </TouchableOpacity>
       </View>
+      )}
+
+     
 <Modal
   visible={showModal}
   transparent
@@ -263,9 +262,6 @@ const interestButton = async () => {
     </View>
   </View>
 </Modal>
-
-
-
     </ScrollView>
   );
 };

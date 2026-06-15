@@ -24,7 +24,10 @@ const AppProvider = ({children}) => {
     HotelUserDetails:{},
     userType: '',
     AuditData: [], 
-  });
+    HotelDetails: [],
+    ourStays: [],
+    liveVersion: "",
+  }); 
   
   return (
     <AppContext.Provider value={{globalState, setGlobalState}}>

@@ -26,29 +26,40 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
-
-<key>CFBundleURLTypes</key>
-<array>
-  <dict>
-    <key>CFBundleTypeRole</key>
-    <string>Editor</string>
-    <key>CFBundleURLName</key>
-    <string>com.fracspace.fracspace</string>
-    <key>CFBundleURLSchemes</key>
-    <array>
-      <string>fracspace</string>
-	  <string>fsapp</string>
-    </array>
-	<key>CFBundleURLPath</key>
-    <string>/</string> <!-- optional -->
-  </dict>
-</array>
-
-
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.fracspace.fracspace</string>
+			<key>CFBundleURLPath</key>
+			<string>/</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fracspace</string>
+				<string>fsapp</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSApplicationCategoryType</key>
-	<string></string>
+	<string>public.app-category.finance</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>phonepe</string>
+		<string>gpay</string>
+		<string>tez</string>
+		<string>paytmmp</string>
+		<string>bhim</string>
+		<string>upi</string>
+		<string>paytm</string>
+		<string>credpay</string>
+		<string>whatsapp</string>
+	</array>
 	<key>LSMinimumSystemVersion</key>
 	<string>12.0.0</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -56,6 +67,8 @@
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsArbitraryLoadsInWebContent</key>
 		<true/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
@@ -72,6 +85,10 @@
 	<string>app Required Location Access for show property Location</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>App required Photo Library access to upload photo for profile pic</string>
+	<key>StallionAppToken</key>
+	<string>spb_vPNkIXBSnVeXpOuTmcYt-0gwX-IFfbUMWQ-v4a4xRH</string>
+	<key>StallionProjectId</key>
+	<string>69cba954415f18f959d46499</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>AntDesign.ttf</string>
@@ -237,6 +254,13 @@
 		<string>futura medium condensed bt.ttf</string>
 		<string>Cormorant Garamond.ttf</string>
 	</array>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict/>
+	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
@@ -260,12 +284,5 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>UIApplicationSceneManifest</key>
-<dict>
-  <key>UIApplicationSupportsMultipleScenes</key>
-  <false/>
-  <key>UISceneConfigurations</key>
-  <dict/>
-</dict>
 </dict>
 </plist>
