@@ -105,8 +105,8 @@ const [summaryModal, setSummaryModal] = useState(false);
       }
   
       const payload = JSON.stringify({
-        // amount: totalAmount,
-        amount: Property?.offer ? totalAmountFromBackend : totalAmount,
+        amount: 1,
+        // amount: Property?.offer ? totalAmountFromBackend : totalAmount,
         productinfo: 'Co-ownership Product',
         firstname: globalState?.userName || 'User',
         email: globalState?.userDetails?.email,
@@ -115,10 +115,12 @@ const [summaryModal, setSummaryModal] = useState(false);
         surl: 'https://test.bunknbeyond.com/paymentsuccess',
         furl: 'https://test.bunknbeyond.com/paymentfailure',
       });
+      console.log('Payload for PayU:', payload);
   
       let { data: res } = await PaymentPayU(payload);
       if (res?.success && res?.form) {
        //.log(Property,"===23======")
+       console.log('PayU Response:', res);
   
         navigation.navigate('PaymentPage', {
           Link: res?.form,

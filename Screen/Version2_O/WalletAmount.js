@@ -1052,10 +1052,10 @@ const handleOtpVerification = async () => {
                                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flex: 1 }}>
                                         <View style={{ flex: 1 }}>
                                             <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 14, color: '#000000' }}>
-                                                Quarter {index + 1}
+                                                Quarter
                                             </Text>
                                             <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 14, color: '#000000' }}>
-                                                Period: {item?.quarterName}
+                                                {item?.quarterName}
                                             </Text>
                                         </View>
 

@@ -13,7 +13,7 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
-  Animated,
+  Animated as Ani
 } from 'react-native';
 //import { ScrollView } from 'react-native-virtualized-view';
 import { useState, useContext, useEffect, useCallback, useRef } from 'react';
@@ -62,6 +62,12 @@ import InvestmentCards from './components/propertyDEtails.js/InvestMentcards';
 import PaymentPlan from './components/propertyDEtails.js/PaymentPlan';
 import analytics from '@react-native-firebase/analytics';
 import CardConverter from './components/CardConverter';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
 
 export default function Property(props) {
@@ -106,7 +112,7 @@ export default function Property(props) {
 
   const [open, setOpen] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
-  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollY = useRef(new Ani.Value(0)).current;
   const [actionsActive, setActionsActive] = useState(true);
     const [visible, setVisible] = useState(false);
   const actionsOpacity = scrollY.interpolate({
@@ -142,6 +148,24 @@ export default function Property(props) {
   const GgoToYosemite = location => {
     openMap({ query: location });
   };
+
+  const translateX = useSharedValue(-150);
+
+  const animatedStyle = useAnimatedStyle(() => {
+        return {
+            transform: [{ translateX: translateX.value }],
+        };
+    });
+
+    useEffect(() => {
+        translateX.value = withRepeat(
+            withTiming(width, {
+                duration: 3000,
+            }),
+            -1,
+            false
+        );
+    }, []);
 
 
 useFocusEffect(
@@ -433,6 +457,8 @@ useEffect(() => {
       return null;
     }
   };
+
+  const availableFrac = (PropertiesArray?.TotalFractions - PropertiesArray?.AvailableFractions)/(PropertiesArray?.TotalFractions) * 100;
 
 
   const VideoImgData = () => {
@@ -997,176 +1023,80 @@ useEffect(() => {
             </View>
           </View>
 
-          <View style={{ marginTop: 15, }}>
+          <View style={{ marginTop: 0, }}>
             <Text
               style={{
                 fontSize: 16,
                 fontFamily: "WorkSans-SemiBold",
                 color: "#000",
-                marginBottom: 15,
+                marginBottom: 0,
               }}
             >
               Investment Breakdown
             </Text>
 
-            {/* <View
-              style={{
-                backgroundColor: "#0E1F66",
-                borderRadius: 12,
-                padding: 18,
-              }}
-            >
-              <Text style={{ color: "#AAB3E3", fontSize: 12 }}>
-                TOTAL PROPERTY VALUE
-              </Text>
-
-              <Text
-                style={{
-                  color: "white",
-                  fontSize: 22,
-                  fontFamily: "WorkSans-Bold",
-                  marginVertical: 8,
-                }}
-              >
-                ₹{PropertiesArray?.Price ?? "0,00,00,000"}
-              </Text>
-
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: PropertiesArray?.SPV ? "space-between" : "flex-start",
-                  // flexWrap:"wrap",
-                  marginTop: 10,
-                }}
-              >
-                <View style={{ flexDirection: "row" }}>
-                  <View style={styles.verticalDivider} />
-                  <View>
-                    <Text style={{ color: "#AAB3E3", fontSize: 11 }}>FRAC VALUE</Text>
-                    <Text style={{ color: "white", fontSize: 14 }}>
-                      ₹{PropertiesArray?.FC_Price ?? "10,00,000"}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={{ flexDirection: "row", }}>
-                  <View style={[styles.verticalDivider, { marginLeft: PropertiesArray?.SPV ? 0 : 20 }]} />
-                  <View>
-                    <Text style={{ color: "#AAB3E3", fontSize: 11 }}>BOOKING VALUE</Text>
-                    <Text style={{ color: "white", fontSize: 14 }}>
-                      {isSpecialProperty ? '$' : '₹'}{PropertiesArray?.BookingAmt ?? "00,000"}
-                    </Text>
-                  </View>
-                </View>
-
-
-                {PropertiesArray?.SPV ? (<>
-                  <View style={{ flexDirection: "row" }}>
-                    <View style={styles.verticalDivider} />
-                    <View>
-                      <Text style={{ color: "#AAB3E3", fontSize: 11 }}>SPV VALUE</Text>
-                      <Text style={{ color: "white", fontSize: 14 }}>
-                        ₹{PropertiesArray?.spvValue ?? "25,000"}
-                      </Text>
-                    </View>
-                  </View>
-
-                </>
-                ) : null}
-
-              </View>
-            </View> */}
-
             <CardConverter PropertiesArray={PropertiesArray}/>
 
           </View>
 
+          <View style={{marginTop:15,borderColor:'#00000080',borderWidth:0.5,borderRadius:10,padding:20,backgroundColor:'#FFF'}}>
+              <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000000BF'}}>AVAILABILITY</Text>
 
-          <View
-            style={{
-              backgroundColor: "white",
-              marginVertical: 20,
-              padding: 18,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: "#E6E6E6",
-            }}
-          >
-            <Text style={{ fontSize: 12, color: "#7B7B7B" }}>AVAILABILITY</Text>
+              <View style={{flexDirection:'row',alignItems:'center',marginTop:15}}>
+                  <Text style={{fontFamily:'WorkSans-Medium',fontSize:16,color:'#000'}}>Only</Text>
+                  <View style={{overflow: 'hidden',borderRadius: 20,alignSelf: 'flex-start',marginHorizontal:5}}>
+                      <LinearGradient
+                              colors={['#021265', '#7c8de1', '#363b8f']}
+                              start={{ x: 0, y: 0 }}
+                              end={{ x: 1, y: 1 }}
+                              style={{borderRadius: 20,    paddingVertical: 5,paddingHorizontal:10,    flexDirection: 'row',    alignItems: 'center',    gap: 5,    overflow: 'hidden',}}
+                          >
+                              <Animated.View style={[{position: 'absolute',left: -100,top: 0,bottom: 0,width: 80,transform: [{ rotate: '20deg' }]}, animatedStyle]}>
+                                <LinearGradient
+                                    colors={[
+                                    'rgba(255,255,255,0)',
+                                    'rgba(255, 255, 255, 0.51)',
+                                    'rgba(255,255,255,0)',
+                                    ]}
+                                    start={{ x: 0, y: 0 }}
+                                    end={{ x: 1, y: 0 }}
+                                    style={{flex:1}}
+                                />
+                              </Animated.View>
 
-            {(PropertiesArray?.TotalFractions / 2 || 5) < PropertiesArray?.AvailableFractions ? (
-              <Text style={{ fontSize: 16, fontFamily: "WorkSans-SemiBold", marginVertical: 6 }}>
-                <Text style={{ color: "#FF3B30" }}>
-                  {PropertiesArray?.AvailableFractions ?? "-"} {PropertiesArray?.name == "ALTAIRA – VILLA" ? "Villas" : "Fracs"}
-                </Text>{" "}
-                left!
-              </Text>
-            ) : PropertiesArray?.AvailableFractions === 0 ? (
-              <Text style={{ color: "#FF3B30", fontSize: 16, fontFamily: "WorkSans-SemiBold", marginVertical: 6 }} >
-                0 {PropertiesArray?.name == "ALTAIRA – VILLA" ? "Villas" : "Fracs"}
-              </Text>
-            ) : (
-              <Text style={{ fontSize: 16, fontFamily: "WorkSans-SemiBold", marginVertical: 6 }}>
-                Only{" "}
-                <Text style={{ color: "#FF3B30" }}>
-                  {PropertiesArray?.AvailableFractions ?? "-"} {PropertiesArray?.name == "ALTAIRA – VILLA" ? "Villas" : "Fracs"}
-                </Text>{" "}
-                left!
-              </Text>
-            )}
+                              {availableFrac < 100 && availableFrac > 10 ?
+                                  <Text style={{fontFamily: 'WorkSans-SemiBold',fontSize: 12,color: '#FFF'}}>{PropertiesArray?.AvailableFractions} {PropertiesArray?.name == "ALTAIRA – VILLA" ?  "Villas" : "Frac"}</Text>
+                                  :
+                                  <Text style={{fontFamily: 'WorkSans-SemiBold',fontSize: 12,color: '#FFF'}}>{PropertiesArray?.AvailableFractions} {PropertiesArray?.name == "ALTAIRA – VILLA" ?  "Villas" : "Frac"}</Text>
+                              }
+                      </LinearGradient>
+                  </View>
+                  <Text style={{fontFamily:'WorkSans-Medium',fontSize:16,color:'#000'}}>left!</Text>
+              </View>
 
-
-            {/* Progress Bar */}
-            <View
-              style={{
-                height: 6,
-                backgroundColor: "#E5E7EB",
-                borderRadius: 5,
-                marginTop: 10,
-              }}
-            >
-              <View
-                style={{
-                  width: `${FracPer}%`,
-                  height: 6,
-                  backgroundColor: "#0E1F66",
-                  borderRadius: 5,
-                }}
-              />
-            </View>
-
-            {(PropertiesArray?.AvailableFractions !== PropertiesArray?.TotalFractions) ?
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: "#7B7B7B",
-                  marginTop: 6,
-                }}
-              >
-                {CompletedPercentage}% of the property is already owned by {CompletedFractions} investors
-              </Text> : <Text style={{
-                fontSize: 11,
-                color: "#7B7B7B",
-                marginTop: 6,
-              }}>Be among the first to own a frac in this property.</Text>}
+              <View style={{width:'100%',height:8,borderRadius:6,backgroundColor:'#02126533',marginTop:12}}>
+                  <View style={{width:`${availableFrac}%`,height:8,borderRadius:6,backgroundColor:'#021265'}}></View>
+              </View>
           </View>
 
-          {/* {PropertiesArray?.investmentDetails?.show ? <InvestmentCards
-            leftCard={{
-              icon: '$',
-              tag: PropertiesArray?.investmentDetails?.broi?.tenure,
-              value: PropertiesArray?.investmentDetails?.broi?.percentage,
-              title: PropertiesArray?.investmentDetails?.broi?.label,
-              subtitle: PropertiesArray?.investmentDetails?.broi?.description,
-            }}
-            rightCard={{
-              icon: '📈',
-              tag: PropertiesArray?.investmentDetails?.appreciation?.duration,
-              value: PropertiesArray?.investmentDetails?.appreciation?.expectedUpside,
-              title: PropertiesArray?.investmentDetails?.appreciation?.label,
-              subtitle: PropertiesArray?.investmentDetails?.appreciation?.entry,
-            }}
-          /> : null} */}
+          {PropertiesArray?.investmentDetails?.show &&
+            <View style={{marginTop:15}}>
+                <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:16,color:'#000'}}>Payment Plan</Text>
+                <View style={{backgroundColor:'#9DB2CE1A',padding:10,borderRadius:10,marginTop:10}}>
+                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',gap:10}}>
+                        {PropertiesArray?.investmentDetails?.paymentPlan?.map((item, index) => {
+                            const isFirst = index === 0;
+                            return (
+                              <View key={index} style={{backgroundColor:isFirst?'#021265':'#FFF',paddingHorizontal:20,paddingVertical:10,borderRadius:5,alignItems:'center',flex:1}}>
+                                  <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:isFirst?'#FFFFFF99':'#02126599'}}>{item?.timeline}</Text>
+                                  <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:16,color:isFirst?'#FFFFFF':'#021265',marginVertical:2}}>{item?.amount}</Text>
+                                  <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:isFirst?'#FFFFFF99':'#02126599',textAlign:'center'}}>{item?.description}</Text>
+                              </View>
+                        )})}
+                    </View>
+                </View>
+            </View>
+          }
 
           {PropertiesArray?.investmentDetails?.show &&
                 <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginTop:5}}>
@@ -1553,7 +1483,7 @@ useEffect(() => {
             />
           )}
      
-          <Animated.View
+          <Ani.View
           pointerEvents={actionsActive ? 'box-none' : 'none'}
           style={{
             position: 'absolute',
@@ -1634,7 +1564,7 @@ useEffect(() => {
             </View>
           )}
           <VideoImgData />
-        </Animated.View>
+        </Ani.View>
    </View>
            <View style={{backgroundColor:'#FFF',zIndex:10,borderTopLeftRadius:15,borderTopRightRadius:15}}>
           <ScrollData />

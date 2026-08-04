@@ -406,7 +406,7 @@ const handleLoginSuccess = async (resData) => {
                         key={index}
                         style={{ borderColor: '#E1E6EB', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8 }}
                       >
-                        <TextInput
+                        {/* <TextInput
                           ref={(ref) => (inputRefs.current[index] = ref)}
                           style={{ fontFamily: 'WorkSans-Medium', fontSize: 20, color: '#000000', textAlign: 'center', padding: 10 }}
                           keyboardType="number-pad"
@@ -417,7 +417,24 @@ const handleLoginSuccess = async (resData) => {
                           importantForAutofill="yes"
                           onChangeText={(text) => handleChange(text, index)}
                           onKeyPress={(e) => handleKeyPress(e, index)}
-                        />
+                        /> */}
+                        <TextInput
+                          ref={(ref) => (inputRefs.current[index] = ref)}
+                          style={{
+                            fontFamily: 'WorkSans-Medium',
+                            fontSize: 20,
+                            color: '#000000',
+                            textAlign: 'center',
+                            padding: 10,
+                          }}
+                          keyboardType="number-pad"
+                          maxLength={1}
+                          value={otpDigits[index]}
+                          textContentType="oneTimeCode"
+                          autoComplete="one-time-code"
+                          onChangeText={(text) => handleChange(text, index)}
+                          onKeyPress={(e) => handleKeyPress(e, index)}
+                      />
                         <View style={{ borderTopColor: '#8E9398', borderTopWidth: 1, marginBottom: 10 }}></View>
                       </View>
                     ))}
