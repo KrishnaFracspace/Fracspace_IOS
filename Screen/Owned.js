@@ -8,7 +8,6 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { AreaChart } from 'react-native-svg-charts';
 import * as shape from 'd3-shape';
 import { G, Text as SvgText } from 'react-native-svg';
 import Icon from 'react-native-vector-icons/AntDesign';

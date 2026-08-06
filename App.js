@@ -1,18 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Dimensions, Linking, Alert, AppState } from 'react-native';
+import { StyleSheet, Dimensions, Linking, Alert, AppState, Platform } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { Provider } from 'react-redux';
 import messaging from '@react-native-firebase/messaging';
 import Video from 'react-native-video';
 import appsFlyer from 'react-native-appsflyer';
 import NavigationStack from './Screen/Navigation/NavigationStack';
-import { AppProvider } from './Screen/Context/AppContext';
 import store from './Screen/redux/store/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setDeepLinkNav } from './Screen/redux/reducer/homeReducer';
 import Toast from 'react-native-toast-message';
-import { withStallion, useStallionUpdate, restart } from 'react-native-stallion';
+import { withStallion, useStallionUpdate, restart, sync } from 'react-native-stallion';
 import analytics from '@react-native-firebase/analytics';
+import DeviceInfo from 'react-native-device-info';
+import UpdatePopup from './components/UpdatePopup';
+import { getAppVersionConfig } from './Screen/Services/versionService';
+import { compareVersions } from './Screen/utils/versionUtils';
+import { AppProvider } from './Screen/Context/AppContext';
 const { width, height } = Dimensions.get('window');
 const navigationRef = createNavigationContainerRef();
 
@@ -36,6 +40,8 @@ const linking = {
 const App = () => {
   const pendingLinkRef = useRef(null);
   const [showSplash, setShowSplash] = useState(true);
+  const [updateConfig, setUpdateConfig] = useState(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const splashVideo = require('./Screen/assets/Demovideo.mp4');
 const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStallionUpdate();
 
@@ -63,52 +69,39 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
     sendEvent();
   }, []);
 
-useEffect(() => {
-  console.log('=== Stallion Debug ===');
-  console.log('isRestartRequired:', isRestartRequired);
-  // console.log('newReleaseBundle:', newReleaseBundle);
-  console.log('currentlyRunningBundle:', currentlyRunningBundle); 
-
-  if (isRestartRequired) {
-    Alert.alert(
-      'Update Available',
-      newReleaseBundle?.releaseNote || 'A new version of Fracspace is ready.',
-      [
-        { text: 'Later', style: 'cancel' },
-        { text: 'Restart Now', onPress: restart },
-      ]
-    );
-  }
-}, [isRestartRequired, newReleaseBundle]);
-
 // useEffect(() => {
 //   console.log('=== Stallion Debug ===');
 //   console.log('isRestartRequired:', isRestartRequired);
-//   console.log('newReleaseBundle:', newReleaseBundle);
-//   console.log('currentlyRunningBundle:', currentlyRunningBundle);
+//   // console.log('newReleaseBundle:', newReleaseBundle);
+//   console.log('currentlyRunningBundle:', currentlyRunningBundle); 
 
 //   if (isRestartRequired) {
-//     console.log('OTA update downloaded.');
-
-//     const handleAppStateChange = nextAppState => {
-//       if (nextAppState === 'background' || nextAppState === 'inactive') {
-//         console.log('Restarting app with new OTA bundle...');
-//         restart();
-//       }
-//     };
-
-//     const subscription = AppState.addEventListener(
-//       'change',
-//       handleAppStateChange,
+//     Alert.alert(
+//       'Update Available',
+//       newReleaseBundle?.releaseNote || 'A new version of Fracspace is ready.',
+//       [
+//         { text: 'Later', style: 'cancel' },
+//         { text: 'Restart Now', onPress: restart },
+//       ]
 //     );
-
-//     return () => {
-//       subscription.remove();
-//     };
 //   }
-// }, [isRestartRequired]);
+// }, [isRestartRequired, newReleaseBundle]);
 
+ useEffect(() => {
+    if (!__DEV__) {
+      sync();
+    }
+  }, []);
 
+  useEffect(() => {
+    console.log('=== Stallion Debug ===');
+    console.log('isRestartRequired:', isRestartRequired);
+    if (!__DEV__ && isRestartRequired) {
+      // console.log('newReleaseBundle:', newReleaseBundle);
+      console.log('currentlyRunningBundle:', currentlyRunningBundle); 
+      restart();
+    }
+  }, [isRestartRequired]);
 
   useEffect(() => {
     const getDeviceToken = async() => {
@@ -282,6 +275,61 @@ useEffect(() => {
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    if (!showSplash) {
+      const checkVersion = async () => {
+        try {
+          const config = await getAppVersionConfig();
+          if (!config) return;
+
+          const installedVersion = DeviceInfo.getVersion();
+          const targetVersion =
+            Platform.OS === 'ios'
+              ? config.iosCurrentVersion
+              : config.androidCurrentVersion;
+
+          if (
+            config.showPopup &&
+            targetVersion &&
+            compareVersions(installedVersion, targetVersion) < 0
+          ) {
+            setUpdateConfig(config);
+            setShowUpdateModal(true);
+          }
+        } catch (error) {
+          console.log('Error checking app update:', error);
+        }
+      };
+
+      checkVersion();
+    }
+  }, [showSplash]);
+
+  const handleUpdatePress = async () => {
+    if (!updateConfig) return;
+    const url =
+      Platform.OS === 'ios'
+        ? updateConfig.appStoreUrl
+        : updateConfig.playStoreUrl;
+
+    if (url) {
+      try {
+        const supported = await Linking.canOpenURL(url);
+        if (supported) {
+          await Linking.openURL(url);
+        } else {
+          await Linking.openURL(url);
+        }
+      } catch (err) {
+        console.log('Error opening store URL:', err);
+      }
+    }
+  };
+
+  const handleLaterPress = () => {
+    setShowUpdateModal(false);
+  };
+
   return (
     <>
       {showSplash ? (
@@ -297,11 +345,21 @@ useEffect(() => {
           <AppProvider>
             <NavigationContainer ref={navigationRef} linking={linking}>
               <NavigationStack />
+
+              <UpdatePopup
+        visible={showUpdateModal}
+        title={updateConfig?.title}
+        message={updateConfig?.message}
+        forceUpdate={updateConfig?.forceUpdate}
+        onLater={handleLaterPress}
+        onUpdate={handleUpdatePress}
+      />
             </NavigationContainer>
           </AppProvider>
         </Provider>
       )}
       <Toast />
+      
     </>
   );
 };

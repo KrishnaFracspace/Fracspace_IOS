@@ -38,6 +38,7 @@ import {
 import Contact from './Contact';
 import Back from './Back';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DeviceInfo from 'react-native-device-info';
 
 const {width, height} = Dimensions.get('window');
 
@@ -921,7 +922,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
               fontSize: 12,
               color: '#898585',
             }}>
-            V 2.1.9
+            V {DeviceInfo.getVersion()}
           </Text>
           <Text style={{fontFamily:'WorkSans-Medium',fontSize:14,color:'#021265',marginTop:5}}>Fracspace Private Limited</Text>
         </View>

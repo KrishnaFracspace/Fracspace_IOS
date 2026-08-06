@@ -85,6 +85,8 @@ import TranHisForEscape from '../Version2_O/escapeMembership/TranHisForEscape';
 import ViewAgreement from '../Version2_O/escapeMembership/ViewAgreement';
 import MembershipHome from '../Version2_O/escapeMembership/MembershipHome';
 import PackageDescription from '../Version2_O/PackageDescription';
+import AddressSearchScreen from '../Version2_O/AddressSearchScreen';
+import CompleteProfileScreen from '../Version2_O/CompleteProfileScreen';
 
 const { width, height } = Dimensions.get('window');
 
@@ -447,7 +449,16 @@ useLayoutEffect(() => {
           component={NewSigin}
           options={{ headerShown: false }}
         />
-
+        <Stack.Screen
+          name="AddressSearchScreen"
+          component={AddressSearchScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CompleteProfileScreen"
+          component={CompleteProfileScreen}
+          options={{ headerShown: false }}
+        />
      
         <Stack.Screen
           name="PopularDestination"

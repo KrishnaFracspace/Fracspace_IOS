@@ -109,6 +109,8 @@ export default function Property(props) {
   const [phone, setPhone] = useState(globalState?.userDetails?.phoneNumber);
   const [message, setMessage] = useState('');
   const [expandedIndex, setExpandedIndex] = useState(null);
+  const currentImageIndex = useRef(0);
+  const imageSliderRef = useRef(null);
 
   const [open, setOpen] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
@@ -156,6 +158,24 @@ export default function Property(props) {
             transform: [{ translateX: translateX.value }],
         };
     });
+
+    useEffect(() => {
+  if (images?.length <= 1) {
+    return;
+  }
+
+  const interval = setInterval(() => {
+    currentImageIndex.current =
+      (currentImageIndex.current + 1) % images.length;
+
+    imageSliderRef.current?.scrollToIndex({
+      index: currentImageIndex.current,
+      animated: true,
+    });
+  }, 3000);
+
+  return () => clearInterval(interval);
+}, [images]);
 
     useEffect(() => {
         translateX.value = withRepeat(
@@ -1476,11 +1496,35 @@ useEffect(() => {
               repeat={true}
             />
           ) : (
-            <Image
-              source={{ uri: images[0] }}
-              style={{ width: '100%',height: 360}}
-              resizeMode="cover"
-            />
+            // <Image
+            //   source={{ uri: images[0] }}
+            //   style={{ width: '100%',height: 360}}
+            //   resizeMode="cover"
+            // />
+                <FlatList
+                    data={images}
+                    ref={imageSliderRef}
+                    horizontal
+                    pagingEnabled
+                    showsHorizontalScrollIndicator={false}
+                    keyExtractor={(_, index) => index.toString()}
+                    onMomentumScrollEnd={(event) => {
+                    const index = Math.round(
+                        event.nativeEvent.contentOffset.x /
+                        event.nativeEvent.layoutMeasurement.width,
+                    );
+                    currentImageIndex.current = index;
+                    }}
+                    renderItem={({item}) => (
+                        <Image
+                        source={{uri: item}}
+                        style={{
+                            width,
+                            height: 360,
+                        }}
+                        />
+                    )}
+                  />
           )}
      
           <Ani.View

@@ -49,6 +49,7 @@ export const profileDetails = createAsyncThunk(
         }else{
           analytics().setUserProperty('user_type', 'normal');
         }
+        
 
         handleUserType(userType);
       }

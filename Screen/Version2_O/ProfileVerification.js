@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, ScrollView, Dimensions, Image, TouchableOpacity, Alert, Animated, StyleSheet, Modal } from 'react-native'
+import { View, Text, SafeAreaView, ScrollView, Dimensions, Image, TouchableOpacity, Alert, Animated, StyleSheet, Modal, TextInput } from 'react-native'
 import React, { useContext, useRef, useState } from 'react'
 import LinearGradient from 'react-native-linear-gradient'
 import Icon from 'react-native-vector-icons/Feather';
@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export default function ProfileVerification() {
     const { width, height } = Dimensions.get('window');
     const [uploadedDocs, setUploadedDocs] = useState({
+        profile: null,
         aadhaar: null,
         pan: null,
         cheque: null,
@@ -24,6 +25,9 @@ export default function ProfileVerification() {
     const animatedWidth = useRef(new Animated.Value(0)).current;
     const email = globalState?.userEmail;
     const phoneNumber = globalState?.userPhone;
+    const [address, setAddress] = useState('');
+    const displayAddress = globalState?.verificationAddress || address;
+    console.log('displayAddress:', displayAddress);
     // const phoneNumber = "7167678";
 
     const profile = globalState?.userDetails;
@@ -31,199 +35,204 @@ export default function ProfileVerification() {
         inputRange: [0, 1],
         outputRange: ['0%', '100%'],
     });
-  
-const pickDocuments= async (doc) => {
-  try {
-    if (doc.key === 'aadhaar') {
-      // Keep document picker for PDF-only
-      const result = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.pdf],   // be strict
-      });
-      setUploadedDocs(prev => ({ ...prev, [doc.key]: result }));
-    } else {
-      // PAN & Cheque → use image picker (supports jpg, png, also pdf in many cases)
-      const response = await new Promise((resolve, reject) => {
-        launchImageLibrary(
-          {
-            mediaType: 'photo',           // or 'mixed' if you want to allow PDF too
-            includeBase64: false,
-            selectionLimit: 1,
-          },
-          (res) => {
-            if (res.didCancel) reject('cancelled');
-            else if (res.errorCode) reject(res.errorMessage);
-            else resolve(res.assets?.[0]);
-          }
-        );
-      });
 
-      const image = response; // ImagePickerAsset
+    const pickDocuments = async (doc) => {
+        try {
+            if (doc.key === 'aadhaar') {
+                // Keep document picker for PDF-only
+                const result = await DocumentPicker.pickSingle({
+                    type: [DocumentPicker.types.pdf],   // be strict
+                });
+                setUploadedDocs(prev => ({ ...prev, [doc.key]: result }));
+            } else {
+                // PAN & Cheque → use image picker (supports jpg, png, also pdf in many cases)
+                const response = await new Promise((resolve, reject) => {
+                    launchImageLibrary(
+                        {
+                            mediaType: 'photo',           // or 'mixed' if you want to allow PDF too
+                            includeBase64: false,
+                            selectionLimit: 1,
+                        },
+                        (res) => {
+                            if (res.didCancel) reject('cancelled');
+                            else if (res.errorCode) reject(res.errorMessage);
+                            else resolve(res.assets?.[0]);
+                        }
+                    );
+                });
 
-      // Normalize shape to look similar to DocumentPicker result
-      const normalizedFile = {
-        uri: image.uri,
-        name: image.fileName || `${doc.key}.${image.type?.split('/')[1] || 'jpg'}`,
-        type: image.type || 'image/jpeg',
-        size: image.fileSize,
-      };
+                const image = response; // ImagePickerAsset
 
-      setUploadedDocs(prev => ({ ...prev, [doc.key]: normalizedFile }));
-    }
-  } catch (err) {
-    if (!DocumentPicker.isCancel(err) && err !== 'cancelled') {
-      console.log('Picker error:', err);
-      // Alert.user...
-    }
-  }
-};
-const allDocumentsUploaded = uploadedDocs?.aadhaar && uploadedDocs?.pan && uploadedDocs?.cheque;
+                // Normalize shape to look similar to DocumentPicker result
+                const normalizedFile = {
+                    uri: image.uri,
+                    name: image.fileName || `${doc.key}.${image.type?.split('/')[1] || 'jpg'}`,
+                    type: image.type || 'image/jpeg',
+                    size: image.fileSize,
+                };
+
+                setUploadedDocs(prev => ({ ...prev, [doc.key]: normalizedFile }));
+            }
+        } catch (err) {
+            if (!DocumentPicker.isCancel(err) && err !== 'cancelled') {
+                console.log('Picker error:', err);
+                // Alert.user...
+            }
+        }
+    };
+    const allDocumentsUploaded = uploadedDocs?.aadhaar && uploadedDocs?.pan && uploadedDocs?.cheque;
 
 
-  const UploadDoc = async () => {
-    const { aadhaar, pan, cheque } = uploadedDocs;
-if(phoneNumber.startsWith("+91")){
-    if (!aadhaar || !pan || !cheque) {
-        Alert.alert('Error', 'Please upload all required documents: Aadhaar, PAN & Cheque');
-        return;
-    }
-     if (aadhaar.type !== 'application/pdf') {
-        Alert.alert('Invalid File', 'Aadhaar must be a PDF file');
-        return;
-    }
-}
-    // Validation
-    // if (aadhaar?.type !== 'application/pdf') {
-    //     Alert.alert('Invalid File', 'Aadhaar must be a PDF file');
-    //     return;
-    // }
+    const UploadDoc = async () => {
+        const { profile: profileDoc, aadhaar, pan, cheque } = uploadedDocs;
+        const verificationAddress = globalState?.verificationAddress || address;
+        const verificationPincode = globalState?.verificationPincode || '';
+        console.log('verificationAddress:', verificationAddress);
 
-    // const formData = new FormData();
-    // formData.append('email', email);
+        if (phoneNumber?.startsWith("+91")) {
+            if (!profileDoc || !aadhaar || !pan || !cheque) {
+                Alert.alert('Error', 'Please upload all required documents: Passport Size Photo, Aadhaar, PAN & Cheque');
+                return;
+            }
+            if (aadhaar.type !== 'application/pdf') {
+                Alert.alert('Invalid File', 'Aadhaar must be a PDF file');
+                return;
+            }
+        } else {
+            if (!profileDoc || !cheque) {
+                Alert.alert('Error', 'Please upload all required documents: Passport Size Photo & Government Issued Photo Id');
+                return;
+            }
+        }
 
-    // // Append files safely
-    // formData.append('aadhar', {
-    //     uri: aadhaar?.uri,
-    //     name: aadhaar?.name || 'aadhaar.pdf',
-    //     type: aadhaar?.type,
-    // });
+        if (!verificationAddress || verificationAddress.trim() === '') {
+            Alert.alert('Error', 'Please select your address.');
+            return;
+        }
 
-    // formData.append('pan', {
-    //     uri: pan?.uri,
-    //     name: pan?.name || 'pan.jpg',
-    //     type: pan?.type,
-    // });
+        if (!verificationPincode || verificationPincode.trim() === '') {
+            Alert.alert('Error', 'Unable to determine your postal code. Please select a more specific address.');
+            return;
+        }
 
-    // formData.append('chequebook', {
-    //     uri: cheque?.uri,
-    //     name: cheque?.name || 'cheque.jpg',
-    //     type: cheque?.type,
-    // });
+        const formData = new FormData();
 
-    const formData = new FormData();
-
-        // 3️⃣ Append email or userId
+        // Append email
         formData.append('email', email);
 
-        // 4️⃣ Append Aadhaar
+        // Append Aadhaar
         formData.append('aadhar', aadhaar != null ? {
             uri: aadhaar.uri,
             name: aadhaar.name || 'aadhaar.pdf',
             type: aadhaar.type,
         } : null);
 
-        // 5️⃣ Append PAN
+        // Append PAN
         formData.append('pan', pan != null ? {
             uri: pan.uri,
             name: pan.name || 'pan.jpg',
             type: pan.type,
         } : null);
 
-        // 6️⃣ Append Cheque
-        formData.append('chequebook', {
-            uri: cheque?.uri,
-            name: cheque?.name || 'cheque.jpg',
-            type: cheque?.type,
-        });
+        // Append Cheque
+        formData.append('chequebook', cheque != null ? {
+            uri: cheque.uri,
+            name: cheque.name || 'cheque.jpg',
+            type: cheque.type,
+        } : null);
 
-    setIsUploading(true);
-    Animated.timing(animatedWidth, {
-        toValue: 1,
-        duration: 3000,
-        useNativeDriver: false,
-    }).start();
-
-    try {
-        const response = await Verification(formData);        // ← Don't destructure here
-        const res = response?.data;                           // ← Get data safely
-
-      //  console.log('Full Response:', response);
-      //  console.log('Response Data:', res);
-
-        if (res?.success) {
-            console.log('Uploaded Successfully');
-            handleProfile();
-            setShowSuccess(true);
-        } else {
-            Alert.alert('Upload Failed', res?.message || 'Server rejected the upload.');
+        // Append Profile Picture
+        if (profileDoc != null) {
+            formData.append('profile', {
+                uri: profileDoc.uri,
+                name: profileDoc.name || 'profile.jpg',
+                type: profileDoc.type || 'image/jpeg',
+            });
         }
-    } catch (error) {
-        console.error('❌ Upload error:', error?.response?.data || error.message || error);
 
-        const errorMsg = error?.response?.data?.message 
-            || error.message 
-            || 'Something went wrong. Please try again.';
+        // Append Postal Address & Pincode
+        formData.append('postalAddress', verificationAddress);
+        formData.append('pincode', verificationPincode);
 
-        Alert.alert('Upload Failed', errorMsg);
-    } finally {
-        setTimeout(() => {
-            setIsUploading(false);
-            animatedWidth.setValue(0);
-        }, 300);
-    }
-};
+        setIsUploading(true);
+        Animated.timing(animatedWidth, {
+            toValue: 1,
+            duration: 3000,
+            useNativeDriver: false,
+        }).start();
+
+        try {
+            const response = await Verification(formData);        // ← Don't destructure here
+            const res = response?.data;                           // ← Get data safely
+
+            //  console.log('Full Response:', response);
+            //  console.log('Response Data:', res);
+
+            if (res?.success) {
+                console.log('Uploaded Successfully');
+                handleProfile();
+                setShowSuccess(true);
+            } else {
+                Alert.alert('Upload Failed', res?.message || 'Server rejected the upload.');
+            }
+        } catch (error) {
+            console.error('❌ Upload error:', error?.response?.data || error.message || error);
+
+            const errorMsg = error?.response?.data?.message
+                || error.message
+                || 'Something went wrong. Please try again.';
+
+            Alert.alert('Upload Failed', errorMsg);
+        } finally {
+            setTimeout(() => {
+                setIsUploading(false);
+                animatedWidth.setValue(0);
+            }, 300);
+        }
+    };
     const handleProfile = async () => {
         const tokenid = await AsyncStorage.getItem('mytoken');
         const emailId = await AsyncStorage.getItem('Email');
         let payload = JSON.stringify({
-          email: emailId,
+            email: emailId,
         });
-    
+
         try {
-          let response = await ProfileDetails(payload, tokenid);
-           const res = response?.data;   
-    
-    console.log( res,"=========res123",response)
-          if (res?.success) {
-            setGlobalState(prevState => ({
-              ...prevState,
-            //   userName: res?.data?.userName,
-            //   userEmail: emailId,
-            //   userPhone: res?.data?.phoneNumber,
-            //   token: tokenid,
-              userDetails: res?.data,
-            //   userProfile: res?.data?.profilePicture,
-            }));
-    
-          }
-        } catch (error) {
-          if (error?.response) {
-            if (error?.response?.data?.message == 'Invalid token.') {
-              navigation.navigate('NewLogin');
-            } else {
-              Alert.alert(
-                'Response ErrorProfile',
-                `${error?.response?.data?.message}`,
-              );
+            let response = await ProfileDetails(payload, tokenid);
+            const res = response?.data;
+
+            console.log(res, "=========res123", response)
+            if (res?.success) {
+                setGlobalState(prevState => ({
+                    ...prevState,
+                    //   userName: res?.data?.userName,
+                    //   userEmail: emailId,
+                    //   userPhone: res?.data?.phoneNumber,
+                    //   token: tokenid,
+                    userDetails: res?.data,
+                    //   userProfile: res?.data?.profilePicture,
+                }));
+
             }
-          } else if (error?.request) {
-            //Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
-            //console.log('profilr',`${JSON.stringify(error?.request)}`);
-            //Alert.alert('Request error:', 'Please Check Your Internet Connection');
-          } else {
-            Alert.alert('Error:', `${error}`);
-          }
+        } catch (error) {
+            if (error?.response) {
+                if (error?.response?.data?.message == 'Invalid token.') {
+                    navigation.navigate('NewLogin');
+                } else {
+                    Alert.alert(
+                        'Response ErrorProfile',
+                        `${error?.response?.data?.message}`,
+                    );
+                }
+            } else if (error?.request) {
+                //Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
+                //console.log('profilr',`${JSON.stringify(error?.request)}`);
+                //Alert.alert('Request error:', 'Please Check Your Internet Connection');
+            } else {
+                Alert.alert('Error:', `${error}`);
+            }
         }
-      };
+    };
 
     const pickDocument = async (doc) => {
         try {
@@ -249,46 +258,64 @@ if(phoneNumber.startsWith("+91")){
     };
 
     const DOCUMENTS = phoneNumber?.startsWith("+91") ?
-    [
-        {
-            key: 'aadhaar',
-            docName: 'Aadhaar Card',
-            uploadName: 'Aadhaar Card',
-            fileFormat: 'PDF only',
-            size: '10 MB',
-            allowedTypes: ['public.pdf-document'],
-            logo: "https://duixj37yn5405.cloudfront.net/appImages/Aadhaar.png",
-        },
-        {
-            key: 'pan',
-            docName: 'PAN Card',
-            uploadName: 'PAN Card',
-            fileFormat: 'PDF / JPG / PNG',
-            size: '10 MB',
-            allowedTypes: ['public.pdf-document', 'public.jpeg', 'public.png'],
-            logo: "https://duixj37yn5405.cloudfront.net/appImages/Pan.png",
-        },
-        {
-            key: 'cheque',
-            docName: 'Cancelled Cheque',
-            uploadName: 'Cancelled Cheque',
-            fileFormat: 'PDF / JPG / PNG',
-            size: '10 MB',
-            allowedTypes: ['public.pdf-document', 'public.jpeg', 'public.png'],
-            logo: "https://duixj37yn5405.cloudfront.net/appImages/Cheque.png",
-        },
-    ]:
-    [
-        {
-            key: 'cheque',
-            docName: 'Goverment Issued Photo Id',
-            uploadName: 'Goverment Id',
-            fileFormat: 'PDF / JPG / PNG',
-            size: '10 MB',
-            allowedTypes: ['public.pdf-document', 'public.jpeg', 'public.png'],
-            logo: "https://duixj37yn5405.cloudfront.net/appImages/Cheque.png",
-        }
-    ]
+        [
+            {
+                key: "profile",
+                docName: "Passport Size Photo",
+                uploadName: "Passport Size Photo",
+                fileFormat: "JPG / PNG",
+                size: "10 MB",
+                allowedTypes: ["public.jpeg", "public.png"],
+                logo: "https://duixj37yn5405.cloudfront.net/appImages/pp1+1.png",
+            },
+            {
+                key: 'aadhaar',
+                docName: 'Aadhaar Card',
+                uploadName: 'Aadhaar Card',
+                fileFormat: 'PDF only',
+                size: '10 MB',
+                allowedTypes: ['public.pdf-document'],
+                logo: "https://duixj37yn5405.cloudfront.net/appImages/Aadhaar.png",
+            },
+            {
+                key: 'pan',
+                docName: 'PAN Card',
+                uploadName: 'PAN Card',
+                fileFormat: 'PDF / JPG / PNG',
+                size: '10 MB',
+                allowedTypes: ['public.pdf-document', 'public.jpeg', 'public.png'],
+                logo: "https://duixj37yn5405.cloudfront.net/appImages/Pan.png",
+            },
+            {
+                key: 'cheque',
+                docName: 'Cancelled Cheque',
+                uploadName: 'Cancelled Cheque',
+                fileFormat: 'PDF / JPG / PNG',
+                size: '10 MB',
+                allowedTypes: ['public.pdf-document', 'public.jpeg', 'public.png'],
+                logo: "https://duixj37yn5405.cloudfront.net/appImages/Cheque.png",
+            }
+        ] :
+        [
+            {
+                key: "profile",
+                docName: "Passport Size Photo",
+                uploadName: "Passport Size Photo",
+                fileFormat: "JPG / PNG",
+                size: "10 MB",
+                allowedTypes: ["public.jpeg", "public.png"],
+                logo: "https://duixj37yn5405.cloudfront.net/appImages/pp1+1.png",
+            },
+            {
+                key: 'cheque',
+                docName: 'Goverment Issued Photo Id',
+                uploadName: 'Goverment Id',
+                fileFormat: 'PDF / JPG / PNG',
+                size: '10 MB',
+                allowedTypes: ['public.pdf-document', 'public.jpeg', 'public.png'],
+                logo: "https://duixj37yn5405.cloudfront.net/appImages/Cheque.png",
+            }
+        ]
 
 
     return (
@@ -325,9 +352,9 @@ if(phoneNumber.startsWith("+91")){
                                         </View>
                                     </View>
 
-                                    <Text style={{ fontFamily: 'WorkSans-Regular', color: '#000', textAlign: 'center', marginTop: 10, fontSize: 16 }}>{item.docName}</Text>
+                                    <Text style={{ fontFamily: 'WorkSans-Regular', color: '#000', textAlign: 'center', marginTop: 0, fontSize: 16 }}>{item.docName}</Text>
 
-                                    <View style={{ borderTopWidth: 0.5, marginVertical: 20 }} />
+                                    <View style={{ borderTopWidth: 0.5, marginVertical: 10 }} />
 
                                     {/* Upload / File info */}
                                     <View
@@ -336,9 +363,9 @@ if(phoneNumber.startsWith("+91")){
                                         style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
                                     >
                                         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, paddingRight: 20 }}>
-                                            {uploadedFile && item?.key != "aadhaar" ? 
+                                            {uploadedFile && item?.key != "aadhaar" ?
                                                 <View>
-                                                    <Image source={{uri: uploadedFile?.uri}} style={{width:60,height:40}}/>
+                                                    <Image source={{ uri: uploadedFile?.uri }} style={{ width: 60, height: 40 }} />
                                                 </View>
                                                 :
                                                 <View style={{ backgroundColor: '#021265', width: 25, height: 25, borderRadius: 5, alignItems: 'center', justifyContent: 'center' }}>
@@ -381,12 +408,62 @@ if(phoneNumber.startsWith("+91")){
                         );
                     })}
 
+                    <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => navigation.navigate('AddressSearchScreen')}
+                        style={{ margin: 20 }}
+                    >
+                        <View style={{ borderWidth: 0.7, borderColor: '#000', borderRadius: 10, padding: 20, }}>
+
+                            {/* Logo */}
+                            <View style={{ position: 'absolute', top: -35, alignSelf: 'center', }}>
+                                <View style={{ backgroundColor: '#FFF', padding: 15, }}>
+                                    {/* <Ico name="location-on" size={30} color="#021265" /> */}
+                                    <Image source={{uri:'https://duixj37yn5405.cloudfront.net/appImages/ad+1.png'}} style={{ width: 60, height: 30 }} resizeMode="contain" />
+                                </View>
+                            </View>
+                            <Text style={{ fontFamily: 'WorkSans-Regular', color: '#000', textAlign: 'center', marginTop: 0, fontSize: 16, }}>
+                                Address
+                            </Text>
+                            <View style={{ borderTopWidth: 0.5, marginVertical: 10, }} />
+                            <TouchableOpacity
+                                activeOpacity={0.7}
+                                onPress={() => navigation.navigate('AddressSearchScreen')}
+                                style={{
+                                    borderWidth: 1,
+                                    borderColor: '#D9D9D9',
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    minHeight: 60,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    backgroundColor: '#FFFFFF',
+                                }}
+                            >
+                                <Text
+                                    style={{
+                                        flex: 1,
+                                        fontFamily: 'WorkSans-Regular',
+                                        fontSize: 14,
+                                        color: displayAddress ? '#000000' : '#999999',
+                                        marginRight: 10,
+                                    }}
+                                    numberOfLines={3}
+                                >
+                                    {displayAddress ? displayAddress : 'Search your residential address'}
+                                </Text>
+                                <Ico name="location-outline" size={20} color="#021265" />
+                            </TouchableOpacity>
+                        </View>
+                    </TouchableOpacity>
+
                     <TouchableOpacity disabled={isUploading} activeOpacity={0.8} onPress={() => {
                         UploadDoc();
                     }} style={{ backgroundColor: '#021265', padding: 10, borderRadius: 5, alignItems: 'center', marginHorizontal: 20, marginBottom: 100, }}>
                         <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 18, color: '#FFF' }}> <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 18, color: '#FFF' }}>
-        {isUploading ? 'Uploading...' : 'Submit'}
-    </Text></Text>
+                            {isUploading ? 'Uploading...' : 'Submit'}
+                        </Text></Text>
 
                         {isUploading && (
                             <Animated.View style={[styles.overlay, { width: interpolatedWidth }]} />

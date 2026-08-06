@@ -105,8 +105,8 @@ const [summaryModal, setSummaryModal] = useState(false);
       }
   
       const payload = JSON.stringify({
-        amount: 1,
-        // amount: Property?.offer ? totalAmountFromBackend : totalAmount,
+        // amount: 1,
+        amount: Property?.offer ? totalAmountFromBackend : totalAmount,
         productinfo: 'Co-ownership Product',
         firstname: globalState?.userName || 'User',
         email: globalState?.userDetails?.email,

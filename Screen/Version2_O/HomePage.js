@@ -1,6 +1,6 @@
 let hasShownHomePopup = false;
 import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ToastAndroid,FlatList} from 'react-native';
-import React, {useCallback,useContext,useEffect,useRef,useState,} from 'react';
+import React, {useCallback,useContext,useEffect,useMemo,useRef,useState,} from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconF from 'react-native-vector-icons/FontAwesome6';
 import IconI from 'react-native-vector-icons/AntDesign';
@@ -24,6 +24,7 @@ import CustomSwiper from '../components/CustomSwiper';
 import { profileDetails } from '../redux/reducer/profileReducer';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
+import CompleteProfilePopup from '../../components/CompleteProfilePopup';
 
 export default function HomePage() {
   const { globalState, setGlobalState } = useContext(AppContext);
@@ -49,6 +50,26 @@ export default function HomePage() {
   const scrollY = useRef(new Animated.Value(0)).current;
   const [carousel, setCarousel] = useState([])
   const popUp = useSelector(state => state.home.isPopupVisible);
+  // const userProfileData = useSelector(state => state.profile?.user);
+  const { user: userProfileData, loading: profileLoading } = useSelector(
+  state => state.profile
+);
+  const [showProfilePopup, setShowProfilePopup] = useState(true);
+
+  // console.log('User Profile Data:', userProfileData);
+  // const needsProfileCompletion = useMemo(() => {
+  //   if (!userProfileData) return false;
+  //   return userProfileData?.postalAddress == "" || userProfileData?.pincode == "";
+  // }, [userProfileData]);
+  const needsProfileCompletion = useMemo(() => {
+    if (!userProfileData) return false;
+
+    return (
+      userProfileData?.verification === true &&
+      (userProfileData?.postalAddress == "" || userProfileData?.pincode == "")
+    );
+  }, [userProfileData]);
+
   const isDeepLink = useSelector(state => state.home.isDepplinkNav);
   const UpComingDetails = useSelector(state => state.property.upComingProjects);
   const [locations, setLocations] = useState([]);
@@ -60,6 +81,8 @@ export default function HomePage() {
     handleListedHotels()
     getDeviceToken();
   }, []);
+
+  
 
   useEffect(() => {
     const unsubscribe = messaging().onTokenRefresh(async token => {
@@ -198,7 +221,7 @@ export default function HomePage() {
       setCarousel(res?.data);
       setGlobalState(prevState => ({
         ...prevState,
-        liveVersion: res?.data?.iosCurrentVersion
+        liveVersion: res?.data?.appVersion?.iosCurrentVersion
       }))
     } catch (error) {
       console.error("Error in fetching carousel: ", error?.response?.data || error?.response?.message);
@@ -1592,7 +1615,13 @@ const Categories = carousel?.category
             </ScrollView>
             
             <Modal
-              visible={popupData?.visibility === true && popUp}
+              // visible={popupData?.visibility === true && popUp && !needsProfileCompletion}
+              visible={
+                !profileLoading &&
+                popupData?.visibility === true &&
+                popUp &&
+                !needsProfileCompletion
+              }
               transparent
               animationType="fade">
               <View style={styles.overlay}>
@@ -1670,6 +1699,18 @@ const Categories = carousel?.category
                 </View>
               </View>
             </Modal>
+
+            <CompleteProfilePopup
+              visible={needsProfileCompletion && showProfilePopup && !profileLoading}
+              // visible={!profileLoading && needsProfileCompletion}
+              onComplete={() => {
+                setShowProfilePopup(false);
+                navigation.navigate('CompleteProfileScreen');
+              }}
+              onLater={() => {
+                setShowProfilePopup(false);
+              }}
+            />
 
 
           </ScrollView>

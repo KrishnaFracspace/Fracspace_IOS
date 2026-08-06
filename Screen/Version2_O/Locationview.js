@@ -83,7 +83,7 @@ export default function Locationview(props) {
     );
   };
   const GetAddress = (latitude, longitude) => {
-    Geocoder.init('AIzaSyA3ZlDDtq14fvyne4xX1eXDWn9QKsIRsjw');
+    Geocoder.init('AIzaSyBfg626Ov6GA68lNdJp36I9r11dxEG0K4Q');
     Geocoder.from(latitude, longitude)
       .then(json => {
         const addressComponents = json.results[0].address_components;

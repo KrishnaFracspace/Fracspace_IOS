@@ -10,6 +10,7 @@ import { AppContext } from '../Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import ReactNativeBlobUtil from 'react-native-blob-util';
+import DeviceInfo from 'react-native-device-info';
 
 
 export default function NotificationsScreen(props) {
@@ -20,7 +21,7 @@ export default function NotificationsScreen(props) {
     const navigation = useNavigation();
     const {width, height} = Dimensions.get('window');
     const [expandedItems, setExpandedItems] = useState({});
-    const appVersion = '2.1.9';
+    const appVersion = DeviceInfo.getVersion();
     const liveVersion = globalState?.liveVersion;
 
     useEffect(() => {

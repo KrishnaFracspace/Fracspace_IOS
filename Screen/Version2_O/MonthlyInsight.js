@@ -16,15 +16,6 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import CustomModal from '../CustomModal';
-// import { AreaChart } from 'react-native-svg-charts';
-// import * as shape from 'd3-shape';
-// import {
-//     Defs,
-//     G,
-//     Text as SvgText,
-//     LinearGradient as Linear,
-//     Stop,
-// } from 'react-native-svg';
 import Svg, { Text as SvgText } from 'react-native-svg';
 import { LineChart } from 'react-native-chart-kit';
 import { GetFeedbackFormForExit, SendConfirmationOTP, SendConfirmationOTPEmail, SubmitFeedbackForm, TransferProperty, VerifyOtpAndStoreMessage, VerifyOtpAndStoreMessageEmail } from '../Services/UserApi';
