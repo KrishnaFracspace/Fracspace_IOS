@@ -345,8 +345,12 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
           <AppProvider>
             <NavigationContainer ref={navigationRef} linking={linking}>
               <NavigationStack />
-
-              <UpdatePopup
+            </NavigationContainer>
+          </AppProvider>
+        </Provider>
+      )}
+      <Toast />
+      <UpdatePopup
         visible={showUpdateModal}
         title={updateConfig?.title}
         message={updateConfig?.message}
@@ -354,12 +358,6 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
         onLater={handleLaterPress}
         onUpdate={handleUpdatePress}
       />
-            </NavigationContainer>
-          </AppProvider>
-        </Provider>
-      )}
-      <Toast />
-      
     </>
   );
 };
