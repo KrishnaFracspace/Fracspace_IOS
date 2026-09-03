@@ -221,7 +221,9 @@ export default function HomePage() {
       setCarousel(res?.data);
       setGlobalState(prevState => ({
         ...prevState,
-        liveVersion: res?.data?.appVersion?.iosCurrentVersion
+        liveVersion: res?.data?.appVersion?.iosCurrentVersion,
+        walletNote: res?.data?.noteForWallet?.isVisible,
+        noteMessage: res?.data?.noteForWallet?.message,
       }))
     } catch (error) {
       console.error("Error in fetching carousel: ", error?.response?.data || error?.response?.message);

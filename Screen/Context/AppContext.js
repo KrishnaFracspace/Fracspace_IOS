@@ -31,6 +31,8 @@ const AppProvider = ({ children }) => {
         verificationLatitude: null,
         verificationLongitude: null,
         verificationPincode: '',
+        walletNote: false,
+        noteMessage: '',
     });
 
     return (

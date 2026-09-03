@@ -877,6 +877,26 @@ const handleOtpVerification = async () => {
         return Number(amount).toLocaleString('en-IN');
   };
 
+  const renderBoldText = text => {
+    if (typeof text !== 'string' || !text) {
+      return null;
+    }
+
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+
+    return parts.map((part, index) => {
+      const isBold = part.startsWith('**') && part.endsWith('**');
+
+      return (
+        <Text
+          key={index}
+          style={isBold ? styles.bold : styles.normal}>
+          {isBold ? part.slice(2, -2) : part}
+        </Text>
+      );
+    });
+  };
+
 
   return (
     <>
@@ -984,11 +1004,22 @@ const handleOtpVerification = async () => {
                               Time Left: {timeLeft}
                           </Text>
                       </View>
-                  )}
+                  )} 
+
+                  {globalState?.walletNote &&
+                      <View style={{backgroundColor: '#FFF4E5',marginTop: 15,borderRadius: 12,padding: 12,width: '90%',alignSelf: 'center', }}>
+                          <Text style={{fontFamily: 'Poppins-SemiBold',fontSize: 14,color: '#D97706', }}>
+                              Note :-
+                          </Text>
+                          <Text style={styles.normal}>
+                            {renderBoldText(globalState?.noteMessage || '')}
+                          </Text>
+                      </View>
+                  }
                 </LinearGradient>
               </View>
 
-              <View style={{flex: 2, paddingTop: 40}}>
+              <View style={{flex: 2, paddingTop: 20,marginBottom:80}}>
                 <View style={{flexDirection: 'row',alignItems: 'baseline',gap: 20,paddingHorizontal: 20, }}>
                   <TouchableOpacity
                     onPress={() => {
@@ -2445,5 +2476,14 @@ const styles = StyleSheet.create({
     left: 0,
     bottom: 0,
     zIndex: 1,
+  },
+  normal: {
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 14,
+  },
+
+  bold: {
+    fontFamily: 'WorkSans-SemiBold',
+    fontSize: 14,
   },
 });
