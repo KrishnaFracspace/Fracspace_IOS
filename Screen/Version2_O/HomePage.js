@@ -1,5 +1,5 @@
 let hasShownHomePopup = false;
-import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ToastAndroid,FlatList} from 'react-native';
+import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ToastAndroid,FlatList,Platform} from 'react-native';
 import React, {useCallback,useContext,useEffect,useMemo,useRef,useState,} from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconF from 'react-native-vector-icons/FontAwesome6';
@@ -16,7 +16,7 @@ import { AppContext } from '../Context/AppContext';
 const { width, height } = Dimensions.get('window');
 import Swiper from 'react-native-swiper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchAllNotifications, fetchPopularHotels, fetchProperties, hidePopup, showPopup, } from '../redux/reducer/homeReducer';
+import { fetchAllNotifications, fetchProperties, hidePopup, showPopup, } from '../redux/reducer/homeReducer';
 import HomeSkeleton from '../components/HomeSkeleton';
 import FastImage from 'react-native-fast-image';
 import EdgeFab from './altaira/FloatingButton';
@@ -28,16 +28,11 @@ import CompleteProfilePopup from '../../components/CompleteProfilePopup';
 
 export default function HomePage() {
   const { globalState, setGlobalState } = useContext(AppContext);
-  const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const navigation = useNavigation();
   const [selectCountry, setSelectCountry] = useState('India');
   const [Popular, setPopular] = useState([]);
-  const animatedValue = useRef(new Animated.Value(0)).current;
-  const placeholders = ['Hyderabad', 'Goa', 'Delhi', 'Bangalore'];
   const [modalVisibleRS, setModalVisibleRS] = useState(false);
   const [notification, setNotification] = useState([]);
-  const iconTranslateX = useRef(new Animated.Value(0)).current;
-  const iconOpacity = useRef(new Animated.Value(0.3)).current;
   const dispatch = useDispatch();
   const Offer = useSelector(state => state.home.offer);
   const Properties = useSelector(state => state.home.Properties);
@@ -76,7 +71,6 @@ export default function HomePage() {
 
   useEffect(() => {
     dispatch(fetchProperties());
-    dispatch(fetchPopularHotels());
     dispatch(profileDetails({ email: globalState?.userDetails?.email }))
     handleListedHotels()
     getDeviceToken();
@@ -176,41 +170,6 @@ export default function HomePage() {
     dispatch(showPopup());
   }, []);
 
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(iconTranslateX, {
-            toValue: 8, // move right
-            duration: 500,
-            easing: Easing.ease,
-            useNativeDriver: true,
-          }),
-          Animated.timing(iconTranslateX, {
-            toValue: 0,
-            duration: 500,
-            easing: Easing.ease,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(iconOpacity, {
-            toValue: 1,
-            duration: 500,
-            easing: Easing.ease,
-            useNativeDriver: true,
-          }),
-          Animated.timing(iconOpacity, {
-            toValue: 0.3,
-            duration: 500,
-            easing: Easing.ease,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]),
-    ).start();
-  }, []);
 
   const isValidUri = (uri) =>
     typeof uri === 'string' && uri.trim().length > 0;
@@ -355,20 +314,6 @@ const Categories = carousel?.category
     FetchAllNotification();
     fetchCarousel();
   }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      Animated.timing(animatedValue, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        setPlaceholderIndex(prevIndex => (prevIndex + 1) % placeholders.length);
-        animatedValue.setValue(0);
-      });
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [animatedValue]);
 
   const { width } = Dimensions.get('window');
   const [menuAnimation] = useState(new Animated.Value(-width * 0.8)); // Initially hidden off-screen
@@ -776,12 +721,6 @@ const Categories = carousel?.category
         : [...prevSelected, item],
     );
   };
-
-  useFocusEffect(
-    useCallback(() => {
-      fetchLikedProperty();
-    }, []),
-  );
 
   const renderItem = ({ item, index }) => {
     const route =

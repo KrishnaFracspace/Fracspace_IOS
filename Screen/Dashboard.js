@@ -611,6 +611,11 @@ const getSortLabel = () => {
   return '';
 };
 
+const formatIndianAmount = (amount) => {
+        if (amount == null) return '0';
+        return Number(amount).toLocaleString('en-IN');
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
       <ScrollView style={{ backgroundColor: '#FFFFFF' }}>
@@ -845,7 +850,8 @@ const getSortLabel = () => {
                   backgroundColor: '#FFFFFF',
                   padding: 10,
                   borderRadius: 10,
-                  marginVertical: 20,
+                  marginTop: 20,
+                  marginBottom: 12,
                   elevation: 5,
                   flexDirection: 'row',
                 }}>
@@ -939,11 +945,173 @@ const getSortLabel = () => {
                         color: '#081F62',
                       }}>
                       {' '}
-                      {'\u20B9'} {OwnedPropertyDetails?.totalInvestment}
+                      {'\u20B9'} {formatIndianAmount(OwnedPropertyDetails?.totalInvestment)}
                     </Text>
                   </View>
                 </View>
               </View>
+
+              {/* ---- Discount / Payment Breakdown (hardcoded for now, wire to API later) ---- */}
+              {OwnedPropertyDetails?.offer?.isAvailable &&
+              <View
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  borderRadius: 12,
+                  paddingHorizontal: 14,
+                  paddingTop: 14,
+                  paddingBottom: 0,
+                  marginBottom: 20,
+                  elevation: 5,
+                  borderWidth:0.5,
+                  overflow: 'hidden',
+                }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: 12,
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-SemiBold',
+                      fontSize: 14,
+                      color: '#0F1130',
+                    }}>
+                    Payment Summary
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: '#E8F6EE',
+                      paddingHorizontal: 8,
+                      paddingVertical: 4,
+                      borderRadius: 20,
+                    }}>
+                    <IconDown name="local-offer" size={12} color={'#12864B'} />
+                    <Text
+                      style={{
+                        fontFamily: 'Montserrat-SemiBold',
+                        fontSize: 10,
+                        color: '#12864B',
+                        marginLeft: 4,
+                        letterSpacing: 0.3,
+                      }}>
+                      OFFER APPLIED
+                    </Text>
+                  </View>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 7,
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 13,
+                      color: '#0F113075',
+                    }}>
+                    Fraction Value
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'WorkSans-Medium',
+                      fontSize: 13,
+                      color: '#0F113075',
+                      textDecorationLine: 'line-through',
+                    }}>
+                    {'₹'} {PropertiesArray?.FC_Price}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: 7,
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-Medium',
+                      fontSize: 13,
+                      color: '#0F113075',
+                    }}>
+                    Discount Applied
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'WorkSans-SemiBold',
+                      fontSize: 13,
+                      color: '#12864B',
+                    }}>
+                    - {'₹'} {formatIndianAmount(OwnedPropertyDetails?.offer?.amount)}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: '#0F113020',
+                    marginTop: 10,
+                    marginBottom: 4,
+                  }}
+                />
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'flex-end',
+                    justifyContent: 'space-between',
+                    paddingVertical: 8,
+                  }}>
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-SemiBold',
+                      fontSize: 14,
+                      color: '#0F1130',
+                    }}>
+                    Amount Paid
+                  </Text>
+                  <Text
+                    style={{
+                      fontFamily: 'WorkSans-SemiBold',
+                      fontSize: 17,
+                      color: '#081F62',
+                    }}>
+                    {'₹'} {formatIndianAmount(OwnedPropertyDetails?.totalInvestment)}
+                  </Text>
+                </View>
+
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    backgroundColor: '#E8F6EE',
+                    marginHorizontal: -14,
+                    paddingHorizontal: 14,
+                    paddingVertical: 8,
+                    marginTop: 6,
+                  }}>
+                  <IconDown name="check-circle" size={14} color={'#12864B'} />
+                  <Text
+                    style={{
+                      fontFamily: 'Montserrat-SemiBold',
+                      fontSize: 11,
+                      color: '#12864B',
+                      marginLeft: 6,
+                    }}>
+                    {/* You saved {'₹'} {formatIndianAmount(OwnedPropertyDetails?.offer?.amount)} on this investment */}
+                    {OwnedPropertyDetails?.offer?.message}
+                  </Text>
+                </View>
+              </View>
+              }
               <View
                 style={{
                   backgroundColor: '#FFFFFF',

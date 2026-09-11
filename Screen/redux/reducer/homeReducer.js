@@ -27,7 +27,14 @@ const initialState = {
   recommended: [],
   indianProperties: [],
   srilankaProperties: [],
+  // `loading` is now driven ONLY by fetchProperties (the screens that read
+  // state.home.loading all depend on properties). Other thunks use their own
+  // flag below so they can never blank out a screen that isn't waiting on them.
   loading: false,
+  hotelsLoading: false,
+  notificationsLoading: false,
+  paymentLoading: false,
+  packagesLoading: false,
   error: null,
   reducerHit: false,
   popularHotels: [],
@@ -241,68 +248,65 @@ setDeepLinkNav(state, action) {
       });
     builder
       .addCase(fetchPopularHotels.pending, state => {
-        state.loading = true;
+        state.hotelsLoading = true;
         state.error = null;
       })
       .addCase(fetchPopularHotels.fulfilled, (state, action) => {
-        state.loading = false;
+        state.hotelsLoading = false;
         const res = action.payload;
         if (!res?.success) return;
         // SAME AS: setPopular(res?.hotels)
         state.popularHotels = res.hotels;
       })
       .addCase(fetchPopularHotels.rejected, (state, action) => {
-        state.loading = false;
+        state.hotelsLoading = false;
         state.error = action.payload;
       });
 
     builder
       .addCase(fetchAllNotifications.pending, state => {
-        state.loading = true;
+        state.notificationsLoading = true;
         state.error = null;
       })
       .addCase(fetchAllNotifications.fulfilled, (state, action) => {
-        state.loading = false;
+        state.notificationsLoading = false;
         const res = action.payload?.data;
-         state.notifications = res;
+        state.notifications = res;
       })
-      .addCase(
-        fetchAllNotifications.rejected,
-        (state, action) => {
-          state.loading = false;
-          state.error = action.payload;
-        },
+      .addCase(fetchAllNotifications.rejected, (state, action) => {
+        state.notificationsLoading = false;
+        state.error = action.payload;
+      });
 
-        builder
-          .addCase(sendPaymentUPI.pending, state => {
-            state.loading = true;
-            state.error = null;
-            state.success = false;
-          })
-          .addCase(sendPaymentUPI.fulfilled, (state, action) => {
-            state.loading = false;
-            state.success = action.payload?.success;
-          })
-          .addCase(sendPaymentUPI.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-          }),
+    builder
+      .addCase(sendPaymentUPI.pending, state => {
+        state.paymentLoading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(sendPaymentUPI.fulfilled, (state, action) => {
+        state.paymentLoading = false;
+        state.success = action.payload?.success;
+      })
+      .addCase(sendPaymentUPI.rejected, (state, action) => {
+        state.paymentLoading = false;
+        state.error = action.payload;
+      });
 
-          builder
-          .addCase(getPackages.pending, state => {
-            state.loading = true;
-            state.error = null;
-            state.success = false;
-          })
-          .addCase(getPackages.fulfilled, (state, action) => {
-            state.loading = false;
-            state.Get_Packages = action.payload?.data;
-          })
-          .addCase(getPackages.rejected, (state, action) => {
-            state.loading = false;
-            state.error = action.payload;
-          }),      
-      );
+    builder
+      .addCase(getPackages.pending, state => {
+        state.packagesLoading = true;
+        state.error = null;
+        state.success = false;
+      })
+      .addCase(getPackages.fulfilled, (state, action) => {
+        state.packagesLoading = false;
+        state.Get_Packages = action.payload?.data;
+      })
+      .addCase(getPackages.rejected, (state, action) => {
+        state.packagesLoading = false;
+        state.error = action.payload;
+      });
   },
 });
 
