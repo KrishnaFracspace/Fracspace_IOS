@@ -437,8 +437,8 @@ const styles = StyleSheet.create({
   title: {
     color: T.text,
     fontFamily: 'WorkSans-Bold',
-    fontSize: 27,
-    lineHeight: 34,
+    fontSize: 20,
+    // lineHeight: 34,
   },
   subtitle: {
     color: T.textMuted,
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
   teaserTitle: {
     color: T.text,
     fontFamily: 'WorkSans-SemiBold',
-    fontSize: 14.5,
+    fontSize: 14,
   },
   teaserSub: {
     color: T.textMuted,
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   sectionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 28,
+    marginTop: 16,
     marginBottom: 14,
   },
   sectionLabel: {
@@ -595,13 +595,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.border,
     borderRadius: 14,
-    padding: 16,
+    padding: 12,
   },
   aboutText: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
     fontSize: 14,
-    lineHeight: 23,
+    lineHeight: 18,
   },
   aboutBold: {
     color: T.text,
@@ -614,7 +614,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     paddingHorizontal: 20,
-    paddingTop: 14,
+    paddingTop: 0,
     backgroundColor: T.bg,
     alignItems: 'center',
   },
@@ -629,26 +629,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 54,
-    borderRadius: 12,
+    height: 40,
+    borderRadius: 8,
   },
   ctaBtnDone: { borderWidth: 1, borderColor: T.gold },
   ctaText: {
     color: '#1A1206',
     fontFamily: 'WorkSans-Bold',
-    fontSize: 16,
+    fontSize: 14,
     marginLeft: 8,
   },
   ctaNote: {
     color: T.textDim,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 11.5,
-    marginTop: 10,
+    fontSize: 10,
+    marginTop: 6,
   },
   ctaCount: {
     color: T.gold,
     fontFamily: 'WorkSans-SemiBold',
-    fontSize: 12.5,
+    fontSize: 12,
     marginTop: 5,
   },
 });

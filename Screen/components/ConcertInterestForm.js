@@ -21,9 +21,13 @@ import { CONCERT_THEME as T } from '../utils/concertData';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9]{10}$/;
 
+const MIN_TICKETS = 1;
+const MAX_TICKETS = 10;
+const DEFAULT_TICKETS = 2;
+
 /**
- * "I'm Interested" bottom-sheet form.
- * City is pre-filled from the schedule selection (falls back to the first city).
+ * "Register your Interest" bottom sheet.
+ * City is pre-filled from the schedule selection (falls back to the default city).
  * TODO: wire submit to the register-interest API.
  */
 export default function ConcertInterestForm({
@@ -44,6 +48,7 @@ export default function ConcertInterestForm({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [cityId, setCityId] = useState(selectedCityId || fallbackCityId);
+  const [tickets, setTickets] = useState(DEFAULT_TICKETS);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -53,6 +58,9 @@ export default function ConcertInterestForm({
       setErrors({});
     }
   }, [visible, selectedCityId, fallbackCityId]);
+
+  const clearError = key =>
+    setErrors(e => (e[key] ? { ...e, [key]: null } : e));
 
   const validate = () => {
     const next = {};
@@ -74,9 +82,11 @@ export default function ConcertInterestForm({
       concertId: concert?.id,
       name: name.trim(),
       email: email.trim(),
+      countryCode: '+91',
       phoneNumber: phone.trim(),
       cityId,
       city: cities.find(c => c.id === cityId)?.city,
+      ticketsNeeded: tickets,
     };
 
     setSubmitting(true);
@@ -93,6 +103,7 @@ export default function ConcertInterestForm({
       setName('');
       setEmail('');
       setPhone('');
+      setTickets(DEFAULT_TICKETS);
       onClose?.(true);
     } catch (err) {
       Toast.show({
@@ -112,73 +123,110 @@ export default function ConcertInterestForm({
       animationType="slide"
       statusBarTranslucent
       onRequestClose={() => onClose?.(false)}>
-      <View style={styles.backdrop}>
+      <View style={styles.root}>
         <TouchableWithoutFeedback onPress={() => onClose?.(false)}>
-          <View style={styles.backdropTouch} />
+          <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}>
-          <View style={[styles.sheet, { paddingBottom: insets.bottom + 18 }]}>
-            <View style={styles.grabber} />
-
+          style={styles.kav}
+          pointerEvents="box-none"
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+            {/* ---------- header ---------- */}
             <View style={styles.headerRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.heading}>Register your interest</Text>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={styles.heading}>Register your Interest</Text>
                 <Text style={styles.subHeading}>
                   {concert?.title} • {concert?.artist}
                 </Text>
               </View>
               <TouchableOpacity
                 onPress={() => onClose?.(false)}
+                activeOpacity={0.8}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={styles.closeBtn}>
-                <Icon name="close" size={18} color={T.textMuted} />
+                <Icon name="close" size={19} color={T.text} />
               </TouchableOpacity>
             </View>
 
+            <View style={styles.divider} />
+
             <ScrollView
               keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}>
-              <Field
-                label="Full Name"
-                value={name}
-                onChangeText={t => {
-                  setName(t);
-                  if (errors.name) setErrors(e => ({ ...e, name: null }));
-                }}
-                placeholder="Enter your full name"
-                error={errors.name}
-              />
+              showsVerticalScrollIndicator={false}
+              bounces={false}>
+              {/* ---------- name + email ---------- */}
+              <View style={styles.twoCol}>
+                <View style={styles.col}>
+                  <Text style={styles.label}>FULL NAME</Text>
+                  <TextInput
+                    value={name}
+                    onChangeText={t => {
+                      setName(t);
+                      clearError('name');
+                    }}
+                    placeholder="Ashish G"
+                    placeholderTextColor={T.textDim}
+                    style={[styles.input, !!errors.name && styles.inputError]}
+                  />
+                  {!!errors.name && (
+                    <Text style={styles.errorText}>{errors.name}</Text>
+                  )}
+                </View>
 
-              <Field
-                label="Email Address"
-                value={email}
-                onChangeText={t => {
-                  setEmail(t);
-                  if (errors.email) setErrors(e => ({ ...e, email: null }));
-                }}
-                placeholder="you@example.com"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                error={errors.email}
-              />
+                <View style={styles.col}>
+                  <Text style={styles.label}>EMAIL ID</Text>
+                  <TextInput
+                    value={email}
+                    onChangeText={t => {
+                      setEmail(t);
+                      clearError('email');
+                    }}
+                    placeholder="ashishg@gmail.com"
+                    placeholderTextColor={T.textDim}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    style={[styles.input, !!errors.email && styles.inputError]}
+                  />
+                  {!!errors.email && (
+                    <Text style={styles.errorText}>{errors.email}</Text>
+                  )}
+                </View>
+              </View>
 
-              <Field
-                label="Phone Number"
-                value={phone}
-                onChangeText={t => {
-                  setPhone(t.replace(/[^0-9]/g, '').slice(0, 10));
-                  if (errors.phone) setErrors(e => ({ ...e, phone: null }));
-                }}
-                placeholder="10 digit mobile number"
-                keyboardType="number-pad"
-                maxLength={10}
-                error={errors.phone}
-              />
+              {/* ---------- mobile ---------- */}
+              <Text style={[styles.label, { marginTop: 18 }]}>
+                MOBILE NUMBER
+              </Text>
+              <View
+                style={[
+                  styles.phoneWrap,
+                  !!errors.phone && styles.inputError,
+                ]}>
+                <View style={styles.codeBox}>
+                  <Text style={styles.codeText}>+91</Text>
+                </View>
+                <TextInput
+                  value={phone}
+                  onChangeText={t => {
+                    setPhone(t.replace(/[^0-9]/g, '').slice(0, 10));
+                    clearError('phone');
+                  }}
+                  placeholder="9876543210"
+                  placeholderTextColor={T.textDim}
+                  keyboardType="number-pad"
+                  maxLength={10}
+                  style={styles.phoneInput}
+                />
+              </View>
+              {!!errors.phone && (
+                <Text style={styles.errorText}>{errors.phone}</Text>
+              )}
 
-              <Text style={styles.label}>City</Text>
+              {/* ---------- city (existing chip selector) ---------- */}
+              <Text style={[styles.label, { marginTop: 18 }]}>SELECT CITY</Text>
               <View style={styles.chipRow}>
                 {cities.map(city => {
                   const active = city.id === cityId;
@@ -186,7 +234,10 @@ export default function ConcertInterestForm({
                     <TouchableOpacity
                       key={city.id}
                       activeOpacity={0.85}
-                      onPress={() => setCityId(city.id)}
+                      onPress={() => {
+                        setCityId(city.id);
+                        clearError('cityId');
+                      }}
                       style={[styles.chip, active && styles.chipActive]}>
                       <Text
                         style={[
@@ -210,11 +261,69 @@ export default function ConcertInterestForm({
                 <Text style={styles.errorText}>{errors.cityId}</Text>
               )}
 
+              {/* ---------- tickets stepper ---------- */}
+              <View style={styles.ticketCard}>
+                <View style={{ flex: 1, paddingRight: 14 }}>
+                  <Text style={styles.ticketTitle}>
+                    Estimated Tickets Needed
+                  </Text>
+                  <Text style={styles.ticketNote}>
+                    You'll get priority window booking link for these tickets.
+                  </Text>
+                </View>
+
+                <View style={styles.stepper}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    disabled={tickets <= MIN_TICKETS}
+                    onPress={() => setTickets(v => Math.max(MIN_TICKETS, v - 1))}
+                    style={styles.stepBtn}>
+                    <Icon
+                      name="remove"
+                      size={18}
+                      color={tickets <= MIN_TICKETS ? T.textDim : T.text}
+                    />
+                  </TouchableOpacity>
+
+                  <View style={styles.stepValueBox}>
+                    <Text style={styles.stepValue}>{tickets}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    disabled={tickets >= MAX_TICKETS}
+                    onPress={() => setTickets(v => Math.min(MAX_TICKETS, v + 1))}
+                    style={styles.stepBtn}>
+                    <Icon
+                      name="add"
+                      size={18}
+                      color={tickets >= MAX_TICKETS ? T.textDim : T.text}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* ---------- alerts banner ---------- */}
+              <View style={styles.banner}>
+                <Icon
+                  name="flash"
+                  size={16}
+                  color={T.gold}
+                  style={{ marginTop: 2 }}
+                />
+                <Text style={styles.bannerText}>
+                  You will receive instant{' '}
+                  <Text style={styles.bannerStrong}>WhatsApp &amp; SMS</Text>{' '}
+                  alerts the minute ticket booking opens.
+                </Text>
+              </View>
+
+              {/* ---------- submit ---------- */}
               <TouchableOpacity
                 activeOpacity={0.9}
                 disabled={submitting}
                 onPress={handleSubmit}
-                style={{ marginTop: 22 }}>
+                style={{ marginTop: 20 }}>
                 <LinearGradient
                   colors={[T.goldLight, T.gold, T.goldDark]}
                   start={{ x: 0, y: 0 }}
@@ -223,14 +332,18 @@ export default function ConcertInterestForm({
                   {submitting ? (
                     <ActivityIndicator color="#1A1206" />
                   ) : (
-                    <Text style={styles.submitText}>Submit</Text>
+                    <>
+                      <Text style={styles.submitText}>Submit</Text>
+                      <Icon
+                        name="arrow-forward"
+                        size={18}
+                        color="#1A1206"
+                        style={{ marginLeft: 8 }}
+                      />
+                    </>
                   )}
                 </LinearGradient>
               </TouchableOpacity>
-
-              <Text style={styles.footNote}>
-                We will only use these details to notify you about this concert.
-              </Text>
             </ScrollView>
           </View>
         </KeyboardAvoidingView>
@@ -239,97 +352,111 @@ export default function ConcertInterestForm({
   );
 }
 
-function Field({ label, error, ...props }) {
-  return (
-    <View style={{ marginTop: 16 }}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        placeholderTextColor={T.textDim}
-        style={[styles.input, !!error && styles.inputError]}
-        {...props}
-      />
-      {!!error && <Text style={styles.errorText}>{error}</Text>}
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
+  root: { flex: 1 },
   backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'flex-end',
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
   },
-  backdropTouch: { flex: 1 },
+  kav: { flex: 1, justifyContent: 'flex-end' },
+
   sheet: {
     backgroundColor: T.bg,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 20,
-    paddingTop: 10,
-    maxHeight: '88%',
-    borderTopWidth: 1,
-    borderColor: T.border,
+    paddingTop: 22,
+    maxHeight: '90%',
   },
-  grabber: {
-    alignSelf: 'center',
-    width: 44,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#3A2E22',
-    marginBottom: 14,
-  },
+
   headerRow: { flexDirection: 'row', alignItems: 'flex-start' },
   heading: {
     color: T.text,
     fontFamily: 'WorkSans-Bold',
-    fontSize: 19,
+    fontSize: 20,
   },
   subHeading: {
-    color: T.textMuted,
-    fontFamily: 'WorkSans-Regular',
+    color: T.gold,
+    fontFamily: 'WorkSans-Medium',
     fontSize: 12.5,
-    marginTop: 3,
+    marginTop: 5,
   },
   closeBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     backgroundColor: T.surface,
     borderWidth: 1,
     borderColor: T.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: T.border,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+
   label: {
-    color: T.textMuted,
-    fontFamily: 'WorkSans-Medium',
+    color: '#E3DCD5',
+    fontFamily: 'WorkSans-Regular',
     fontSize: 12,
-    marginBottom: 7,
+    letterSpacing: 0.9,
+    marginBottom: 8,
     marginTop: 16,
   },
+
+  twoCol: { flexDirection: 'row', justifyContent: 'space-between' },
+  col: { width: '48%' },
+
   input: {
     backgroundColor: T.surface,
     borderWidth: 1,
     borderColor: T.border,
-    borderRadius: 10,
+    borderRadius: 12,
     paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 13 : 9,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
     color: T.text,
     fontFamily: 'WorkSans-Regular',
     fontSize: 14,
   },
   inputError: { borderColor: '#B3453B' },
-  errorText: {
-    color: '#E0736A',
-    fontFamily: 'WorkSans-Regular',
-    fontSize: 11.5,
-    marginTop: 5,
+
+  phoneWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 12,
+    overflow: 'hidden',
   },
+  codeBox: {
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 12,
+    borderRightWidth: 1,
+    borderRightColor: T.border,
+  },
+  codeText: {
+    color: T.text,
+    fontFamily: 'WorkSans-Medium',
+    fontSize: 14,
+  },
+  phoneInput: {
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+    color: T.text,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 14,
+  },
+
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   chip: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 10,
+    borderRadius: 12,
     backgroundColor: T.surface,
     borderWidth: 1,
     borderColor: T.border,
@@ -351,8 +478,82 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   chipDateActive: { color: T.gold },
+
+  ticketCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: T.surface,
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 20,
+  },
+  ticketTitle: {
+    color: T.text,
+    fontFamily: 'WorkSans-SemiBold',
+    fontSize: 14.5,
+  },
+  ticketNote: {
+    color: T.textMuted,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 12.5,
+    lineHeight: 19,
+    marginTop: 5,
+  },
+  stepper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 10,
+    backgroundColor: T.surfaceActive,
+    overflow: 'hidden',
+  },
+  stepBtn: {
+    width: 36,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepValueBox: {
+    minWidth: 34,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderColor: T.border,
+  },
+  stepValue: {
+    color: T.text,
+    fontFamily: 'WorkSans-Bold',
+    fontSize: 15.5,
+  },
+
+  banner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: 'rgba(206,143,82,0.07)',
+    borderWidth: 1,
+    borderColor: 'rgba(206,143,82,0.32)',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 16,
+  },
+  bannerText: {
+    flex: 1,
+    color: T.gold,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 13,
+    lineHeight: 20,
+    marginLeft: 10,
+  },
+  bannerStrong: { fontFamily: 'WorkSans-Bold' },
+
   submitBtn: {
-    height: 52,
+    flexDirection: 'row',
+    height: 54,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -362,11 +563,11 @@ const styles = StyleSheet.create({
     fontFamily: 'WorkSans-Bold',
     fontSize: 15.5,
   },
-  footNote: {
-    color: T.textDim,
+
+  errorText: {
+    color: '#E0736A',
     fontFamily: 'WorkSans-Regular',
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 14,
+    fontSize: 11.5,
+    marginTop: 5,
   },
 });

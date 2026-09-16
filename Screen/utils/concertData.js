@@ -29,9 +29,9 @@ export const CONCERT = {
 
   // Hero / poster artwork
   heroImage:
-    'https://duixj37yn5405.cloudfront.net/appImages/concert/religious-india-hero.jpg',
+    'https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png',
   posterImage:
-    'https://duixj37yn5405.cloudfront.net/appImages/concert/religious-india-poster.jpg',
+    'https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png',
 
   // Vertical promo video shown on the home screen
   video: {
@@ -43,9 +43,9 @@ export const CONCERT = {
   // 30s audio teaser on the details screen (audio-only playback)
   teaser: {
     title: 'Listen to 30s Teaser',
-    subtitle: 'Harish Sagane • Live in Hyderabad',
+    subtitle: 'Harish Sagane & Band',
     audioUrl:
-      'https://duixj37yn5405.cloudfront.net/appImages/concert/religious-india-teaser-30s.mp3',
+      'https://duixj37yn5405.cloudfront.net/videos/ConcertVideo.mp4',
     durationSec: 30,
   },
 
