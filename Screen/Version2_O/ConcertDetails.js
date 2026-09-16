@@ -30,6 +30,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AudioWaveform from '../components/AudioWaveform';
 import ConcertInterestForm from '../components/ConcertInterestForm';
+import ShinyTag from '../components/ShinyTag';
 import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
 
 const { width, height } = Dimensions.get('window');
@@ -142,10 +143,11 @@ export default function ConcertDetails() {
           <View style={styles.grabber} />
 
           <View style={styles.sheetInner}>
-            <View style={styles.livePill}>
-              <View style={styles.liveDot} />
-              <Text style={styles.liveText}>{concert?.tag}</Text>
-            </View>
+            <ShinyTag
+              label={concert?.presents || 'FRACSPACE PRESENTS'}
+              active={isFocused}
+              style={{ marginBottom: 16 }}
+            />
 
             <Text style={styles.title}>{concert?.title}</Text>
             <Text style={styles.title}>{concert?.artist}</Text>
@@ -408,31 +410,6 @@ const styles = StyleSheet.create({
   },
   sheetInner: { paddingHorizontal: 20 },
 
-  livePill: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 20,
-    marginBottom: 16,
-  },
-  liveDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: T.live,
-    marginRight: 8,
-  },
-  liveText: {
-    color: T.text,
-    fontFamily: 'WorkSans-SemiBold',
-    fontSize: 10.5,
-    letterSpacing: 0.8,
-  },
 
   title: {
     color: T.text,
