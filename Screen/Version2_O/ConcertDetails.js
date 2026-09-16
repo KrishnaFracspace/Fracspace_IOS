@@ -177,7 +177,6 @@ export default function ConcertDetails() {
             <Video
               ref={audioRef}
               source={{ uri: concert?.teaser?.audioUrl }}
-              audioOnly
               paused={!audioPlaying || !isFocused || !appActive}
               playInBackground={false}
               playWhenInactive={false}
@@ -477,7 +476,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 3,
   },
-  hiddenAudio: { width: 0, height: 0, opacity: 0 },
+  hiddenAudio: {
+    position: 'absolute',
+    width: 1,
+    height: 1,
+    opacity: 0,
+  },
 
   sectionRow: {
     flexDirection: 'row',
