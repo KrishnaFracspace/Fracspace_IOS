@@ -21,6 +21,7 @@ import HomeSkeleton from '../components/HomeSkeleton';
 import FastImage from 'react-native-fast-image';
 import EdgeFab from './altaira/FloatingButton';
 import CustomSwiper from '../components/CustomSwiper';
+import ConcertVideoCard from '../components/ConcertVideoCard';
 import { profileDetails } from '../redux/reducer/profileReducer';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
@@ -43,6 +44,7 @@ export default function HomePage() {
   // console.log("Phone Number: ", phoneNumber, "FCM Token: ", fcmToken);
   const isFetched = useRef(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const concertScrollY = useRef(new Animated.Value(0)).current;
   const [carousel, setCarousel] = useState([])
   const popUp = useSelector(state => state.home.isPopupVisible);
   // const userProfileData = useSelector(state => state.profile?.user);
@@ -799,7 +801,10 @@ const Categories = carousel?.category
           scrollEventThrottle={16}>
 
           <ScrollView
-            onScroll={handleVerticalScroll}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: concertScrollY } } }],
+              { useNativeDriver: false, listener: handleVerticalScroll }
+            )}
             scrollEventThrottle={16}
             style={{ backgroundColor: '#FFFFFF', flex: 1, width: '100%' }}>
             <View
@@ -1657,6 +1662,7 @@ const Categories = carousel?.category
           </ScrollView>
         </Animated.ScrollView>
         <EdgeFab scrollY={scrollY} />
+        <ConcertVideoCard scrollY={concertScrollY} />
 
         {isMenuOpen && (
           <Pressable
