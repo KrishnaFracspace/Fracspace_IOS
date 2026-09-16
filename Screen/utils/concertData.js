@@ -35,9 +35,9 @@ export const CONCERT = {
 
   // Vertical promo video shown on the home screen
   video: {
-    url: 'https://duixj37yn5405.cloudfront.net/appImages/concert/religious-india-teaser.mp4',
+    url: 'https://duixj37yn5405.cloudfront.net/videos/ConcertVideo.mp4',
     poster:
-      'https://duixj37yn5405.cloudfront.net/appImages/concert/religious-india-poster.jpg',
+      'https://duixj37yn5405.cloudfront.net/appImages/homepreview.png',
   },
 
   // 30s audio teaser on the details screen (audio-only playback)

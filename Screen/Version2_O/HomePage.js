@@ -44,7 +44,6 @@ export default function HomePage() {
   // console.log("Phone Number: ", phoneNumber, "FCM Token: ", fcmToken);
   const isFetched = useRef(false);
   const scrollY = useRef(new Animated.Value(0)).current;
-  const concertScrollY = useRef(new Animated.Value(0)).current;
   const [carousel, setCarousel] = useState([])
   const popUp = useSelector(state => state.home.isPopupVisible);
   // const userProfileData = useSelector(state => state.profile?.user);
@@ -801,10 +800,7 @@ const Categories = carousel?.category
           scrollEventThrottle={16}>
 
           <ScrollView
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { y: concertScrollY } } }],
-              { useNativeDriver: false, listener: handleVerticalScroll }
-            )}
+            onScroll={handleVerticalScroll}
             scrollEventThrottle={16}
             style={{ backgroundColor: '#FFFFFF', flex: 1, width: '100%' }}>
             <View
@@ -1662,7 +1658,7 @@ const Categories = carousel?.category
           </ScrollView>
         </Animated.ScrollView>
         <EdgeFab scrollY={scrollY} />
-        <ConcertVideoCard scrollY={concertScrollY} />
+        <ConcertVideoCard scrollY={scrollY} />
 
         {isMenuOpen && (
           <Pressable
