@@ -8,6 +8,7 @@ import {
   Animated,
   AppState,
   Dimensions,
+  Image,
   Platform,
   StyleSheet,
   Text,
@@ -29,6 +30,13 @@ const TAB_BAR_HEIGHT = 50; // BottomNavi.js bar height
 const HIDE_OFFSET = -(CARD_W + 40);
 const SCROLL_DELTA = 6;
 
+// Peek tab shown on the left edge while the card is tucked away
+const TAB_W = 40;
+const TAB_H = 68;
+// Ignore auto-hide briefly after a manual re-open so leftover momentum
+// scrolling cannot slam the card straight back out.
+const MANUAL_SHOW_GRACE_MS = 900;
+
 /**
  * Floating promo video card for the home screen.
  * - Pinned bottom-left, always above the bottom tab bar.
@@ -43,8 +51,12 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
 
   const videoRef = useRef(null);
   const translateX = useRef(new Animated.Value(0)).current;
+  const tabX = useRef(new Animated.Value(-TAB_W)).current;
   const hiddenRef = useRef(false);
   const lastYRef = useRef(0);
+  const graceUntilRef = useRef(0);
+
+  const [hidden, setHidden] = useState(false);
 
   const [dismissed, setDismissed] = useState(false);
   const [playing, setPlaying] = useState(true);
@@ -73,17 +85,36 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
     [translateX],
   );
 
+  const animateTab = useCallback(
+    toValue => {
+      Animated.timing(tabX, {
+        toValue,
+        duration: 220,
+        useNativeDriver: true,
+      }).start();
+    },
+    [tabX],
+  );
+
   const hideCard = useCallback(() => {
     if (hiddenRef.current) return;
     hiddenRef.current = true;
+    setHidden(true);
     animateTo(HIDE_OFFSET);
-  }, [animateTo]);
+    animateTab(0);
+  }, [animateTo, animateTab]);
 
-  const showCard = useCallback(() => {
-    if (!hiddenRef.current) return;
-    hiddenRef.current = false;
-    animateTo(0);
-  }, [animateTo]);
+  const showCard = useCallback(
+    (manual = false) => {
+      if (manual) graceUntilRef.current = Date.now() + MANUAL_SHOW_GRACE_MS;
+      if (!hiddenRef.current) return;
+      hiddenRef.current = false;
+      setHidden(false);
+      animateTo(0);
+      animateTab(-TAB_W);
+    },
+    [animateTo, animateTab],
+  );
 
   useEffect(() => {
     if (!scrollY || typeof scrollY.addListener !== 'function') return;
@@ -95,7 +126,7 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
       if (value <= 10) {
         showCard();
       } else if (dy > SCROLL_DELTA) {
-        hideCard();
+        if (Date.now() >= graceUntilRef.current) hideCard();
       } else if (dy < -SCROLL_DELTA) {
         showCard();
       }
@@ -125,6 +156,29 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
 
   return (
     <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
+      {/* peek tab — only reachable while the card is tucked away */}
+      <Animated.View
+        style={[styles.peekWrap, { transform: [{ translateX: tabX }] }]}
+        pointerEvents={hidden ? 'auto' : 'none'}>
+        <TouchableOpacity
+          activeOpacity={0.85}
+          onPress={() => showCard(true)}
+          style={styles.peekTab}>
+          <Image
+            source={{ uri: concert?.video?.poster || concert?.posterImage }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0.8)']}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <View style={styles.peekDot} />
+          <Icon name="chevron-forward" size={18} color="#FFFFFF" />
+        </TouchableOpacity>
+      </Animated.View>
+
       <Animated.View style={[styles.cardWrap, { transform: [{ translateX }] }]}>
         <TouchableOpacity
           style={styles.card}
@@ -229,6 +283,41 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: 40,
     elevation: 40,
+  },
+  peekWrap: {
+    position: 'absolute',
+    left: 0,
+    bottom: CARD_H / 2 - TAB_H / 2,
+  },
+  peekTab: {
+    width: TAB_W,
+    height: TAB_H,
+    borderTopRightRadius: 12,
+    borderBottomRightRadius: 12,
+    overflow: 'hidden',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#100C09',
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderColor: 'rgba(206,143,82,0.45)',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        shadowOffset: { width: 2, height: 3 },
+      },
+      android: { elevation: 8 },
+    }),
+  },
+  peekDot: {
+    position: 'absolute',
+    top: 8,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: T.live,
   },
   cardWrap: {
     paddingTop: 16,

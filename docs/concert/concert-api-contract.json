@@ -98,6 +98,9 @@
                 "enabled": true,
                 "dismissible": true,
                 "hideOnScroll": true,
+                "peekTab": {
+                  "enabled": true
+                },
                 "footerLabel": "View Concert Details",
                 "controls": {
                   "replay": true,

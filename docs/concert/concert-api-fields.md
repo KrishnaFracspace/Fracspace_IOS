@@ -77,6 +77,7 @@ These are two **separate** strings on purpose — the home card says "LIVE MUSIC
 | `enabled` | bool | yes | Shows/hides the floating card without touching the details screen. |
 | `dismissible` | bool | no | Whether the X is rendered. Dismissal is session-only — it comes back on the next app open. |
 | `hideOnScroll` | bool | no | Whether the card slides away as the user scrolls the home feed. |
+| `peekTab.enabled` | bool | no | While the card is hidden, leaves a small tab on the left edge (video poster thumbnail + red dot + chevron) that brings it back on tap. Only meaningful when `hideOnScroll` is `true`. Default `true`. |
 | `footerLabel` | string | yes | "View Concert Details". Keep it under ~26 characters or it truncates. |
 | `controls.replay` / `playPause` / `mute` | bool | no | Which of the three circular buttons to show. |
 
