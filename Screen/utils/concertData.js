@@ -27,12 +27,12 @@ export const CONCERT = {
   title: 'Religious India',
   artist: 'Harish Sagane & Band',
   subtitle: 'An evening of devotion, rhythm & soul.',
-
+// https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/Concert_header.jpeg
   // Hero / poster artwork
   heroImage:
-    'https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png',
+    'https://duixj37yn5405.cloudfront.net/appImages/Concert_header2.jpeg',
   posterImage:
-    'https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png',
+    'https://duixj37yn5405.cloudfront.net/appImages/Concert_header2.jpeg',
 
   // Vertical promo video shown on the home screen
   video: {

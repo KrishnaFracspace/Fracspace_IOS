@@ -35,7 +35,7 @@ import ShinyTag from '../components/ShinyTag';
 import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
 
 const { width, height } = Dimensions.get('window');
-const HERO_H = Math.round(height * 0.38);
+const HERO_H = Math.round(height * 0.42);
 // Status bar colour the rest of the app expects (the navy app header)
 const APP_STATUS_BAR_COLOR = '#021265';
 
@@ -164,7 +164,7 @@ export default function ConcertDetails() {
         <Image
           source={{ uri: concert?.heroImage }}
           style={StyleSheet.absoluteFill}
-          resizeMode="cover"
+          resizeMode="contain"
         />
         <LinearGradient
           colors={['rgba(0,0,0,0.75)', 'transparent']}
@@ -184,7 +184,7 @@ export default function ConcertDetails() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false },
         )}
-        contentContainerStyle={{ paddingTop: HERO_H - 18 }}>
+        contentContainerStyle={{ paddingTop: HERO_H  }}>
         <View style={[styles.sheet, { minHeight: height }]}>
           <View style={styles.grabber} />
 
@@ -200,10 +200,12 @@ export default function ConcertDetails() {
             <Text style={styles.subtitle}>{concert?.subtitle}</Text>
 
             {/* ---------- teaser audio ---------- */}
-            <View style={styles.teaserCard}>
-              <TouchableOpacity
+            <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={toggleAudio}
+                 style={styles.teaserCard}
+            >
+              <View
                 style={styles.teaserPlay}>
                 <Icon
                   name={audioPlaying ? 'pause' : 'play'}
@@ -211,7 +213,7 @@ export default function ConcertDetails() {
                   color="#1A1206"
                   style={{ marginLeft: audioPlaying ? 0 : 2 }}
                 />
-              </TouchableOpacity>
+              </View>
 
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={styles.teaserTitle}>{concert?.teaser?.title}</Text>
@@ -219,7 +221,7 @@ export default function ConcertDetails() {
               </View>
 
               <AudioWaveform playing={audioPlaying} />
-            </View>
+            </TouchableOpacity>
 
             {/* hidden audio player */}
             <Video
