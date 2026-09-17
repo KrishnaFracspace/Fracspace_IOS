@@ -1,5 +1,5 @@
 {
-  "contractVersion": "1.1",
+  "contractVersion": "1.2",
   "feature": "Concert / Live Music section (Fracspace app)",
   "surfaces": [
     "HomePage floating video card",
@@ -60,7 +60,7 @@
 
               "branding": {
                 "liveTag": {
-                  "text": "LIVE MUSIC",
+                  "text": "Fracspace Exclusive",
                   "showDot": true
                 },
                 "presentsTag": {
@@ -75,8 +75,8 @@
               },
 
               "media": {
-                "heroImage": "https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png",
-                "posterImage": "https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png",
+                "heroImage": "https://duixj37yn5405.cloudfront.net/appImages/Concert_header2.jpeg",
+                "posterImage": "https://duixj37yn5405.cloudfront.net/appImages/Concert_header2.jpeg",
                 "video": {
                   "url": "https://duixj37yn5405.cloudfront.net/videos/ConcertVideo.mp4",
                   "poster": "https://duixj37yn5405.cloudfront.net/appImages/homepreview.png",
@@ -89,8 +89,12 @@
                   "enabled": true,
                   "title": "Listen to 30s Teaser",
                   "subtitle": "Harish Sagane & Band",
-                  "audioUrl": "https://duixj37yn5405.cloudfront.net/audio/religious-india-teaser-30s.mp3",
+                  "audioUrl": "https://duixj37yn5405.cloudfront.net/videos/ConcertVideo.mp4",
                   "durationSec": 30
+                },
+                "audioHandoff": {
+                  "enabled": true,
+                  "resumeAtCardPosition": true
                 }
               },
 

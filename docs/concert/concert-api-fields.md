@@ -1,8 +1,8 @@
 # Concert section — API field reference
 
-**Contract v1.1** — adds `interestForm.successSheet` and the `data.summary` block on the interest response (the registration confirmation screen).
+**Contract v1.2** — adds `media.audioHandoff` (unmuted playback carrying from the home card into the teaser). v1.1 added `interestForm.successSheet` and the `data.summary` block on the interest response.
 
-Companion to `concert-api-contract.json`. Every field below is already consumed by the app, so nothing here is speculative — the client currently reads these values from a hardcoded file (`Screen/utils/concertData.js`) and will read them from the API instead.
+Companion to `concert-api-contract.json`. Every field below corresponds to something the UI actually renders — nothing is speculative. The client reads these values from a hardcoded file (`Screen/utils/concertData.js`) today and will read them from the API instead. **§12 lists exactly which fields the app already reads from data and which are still hardcoded in the components**, so nobody assumes a payload change will move the UI before the wiring pass.
 
 Two endpoints:
 
@@ -44,7 +44,7 @@ Sent as an array so a second concert can be added later without a contract chang
 
 | Field | Type | Req | Drives |
 | --- | --- | --- | --- |
-| `liveTag.text` | string | yes | Pill on the home video card ("LIVE MUSIC"). |
+| `liveTag.text` | string | yes | Pill on the home video card. Currently "Fracspace Exclusive"; was "LIVE MUSIC". |
 | `liveTag.showDot` | bool | no | The red dot. Default `true`. |
 | `presentsTag.text` | string | yes | Gold gradient pill on the details screen ("FRACSPACE PRESENTS"). |
 | `presentsTag.showSparkle` | bool | no | The sparkle glyph. Default `true`. |
@@ -52,7 +52,7 @@ Sent as an array so a second concert can be added later without a contract chang
 | `presentsTag.shine.intervalMs` | int | no | Pause between sweeps. Currently 1500. |
 | `presentsTag.shine.sweepMs` | int | no | Duration of one sweep. Currently 1000. |
 
-These are two **separate** strings on purpose — the home card says "LIVE MUSIC", the details screen says "FRACSPACE PRESENTS".
+These are two **separate** strings on purpose — the home card currently says "Fracspace Exclusive", the details screen says "FRACSPACE PRESENTS".
 
 ## 4. `media`
 
@@ -68,7 +68,13 @@ These are two **separate** strings on purpose — the home card says "LIVE MUSIC
 | `teaser.title` | string | yes | "Listen to 30s Teaser". |
 | `teaser.subtitle` | string | yes | Second line of the teaser card. |
 | `teaser.audioUrl` | string (URL) | yes | **Audio-only file (MP3/AAC), not a video file.** It plays through a hidden player; a video URL works but wastes bandwidth. |
-| `teaser.durationSec` | int | no | For a future progress bar. |
+| `teaser.durationSec` | int | no | Also used as the upper bound for the audio handoff (see below). |
+| `audioHandoff.enabled` | bool | no | If the user unmutes the home card and then taps through, the teaser starts playing instead of opening silent. Default `true`. |
+| `audioHandoff.resumeAtCardPosition` | bool | no | Whether the teaser resumes at the card's playback timestamp rather than from 0. Default `true`. |
+
+**Important constraint on `audioHandoff.resumeAtCardPosition`.** The client only honours the timestamp when `teaser.audioUrl` is byte-for-byte the **same asset** as `video.url` — today they both point at `ConcertVideo.mp4`, so resume works. The moment the teaser becomes a separate 30-second cut, a timestamp taken from the full promo video points somewhere meaningless in it, so the client falls back to starting the teaser at 0 (still playing, still unmuted). It also falls back to 0 if the position lands within half a second of `teaser.durationSec`.
+
+So: if you want true resume, keep the two URLs identical. If you want a separate short teaser file, that's fine — just expect playback to start from the beginning, and set `resumeAtCardPosition: false` to make that explicit rather than implicit.
 
 ## 5. `homeCard`
 
@@ -197,6 +203,33 @@ The confirmation card renders from the server's echo rather than local state, so
 | `summary.registeredEmail` | string | no | Not rendered today; reserved. |
 
 **The 409 case matters here.** If the user has already registered — double tap, or they come back through the deep link on another device — return `409` *with the same `data.summary` block*. The app treats that as success and shows the confirmation card populated from it, which is much better than an error for something that already worked.
+
+---
+
+## 12. What the app reads today vs. what is still hardcoded
+
+Worth being explicit about, so nobody assumes changing a value in the API will immediately move the UI. The contract is the **target** shape. The client currently reads a flat hardcoded object (`Screen/utils/concertData.js`), so some of these fields need a small client-side wiring pass when the endpoint lands.
+
+**Read from data today** (change the value, the UI changes):
+
+`id` · `tag` · `presents` · `title` · `artist` · `subtitle` · `heroImage` · `video.url` · `video.poster` · `teaser.title` · `teaser.subtitle` · `teaser.audioUrl` · `teaser.durationSec` · `cities[]` · `defaultCityId` · `about[]` · `cta.label` · `cta.note` · `interestedCount` · `interestedNote` · `shareUrl` · `interestForm.successSheet.*` · the theme palette
+
+**Still hardcoded in the components** (in the contract, not yet wired):
+
+- `section.enabled`, `section.theme` — the palette is imported directly rather than read from the payload
+- `homeCard.*` — `enabled`, `dismissible`, `hideOnScroll`, `peekTab.enabled`, `footerLabel` ("View Concert Details"), `controls.*`
+- `branding.liveTag.showDot`, `branding.presentsTag.shine.*` — the shine timings are module constants
+- `details.schedule.sectionTitle` ("TOUR SCHEDULE & CITIES"), `details.about.sectionTitle` ("ABOUT THE CONCERT")
+- `details.cta.registeredLabel` ("You're Interested"), `details.cta.showInterestedCount`
+- `interestForm.title`, `fields[]` (labels and placeholders), `tickets.*` (min 1 / max 10 / default 2 are constants), `banner.*`, `submitLabel`, `errorToast`
+- `media.audioHandoff.*` — the handoff currently always happens when the card is unmuted
+
+**Two shape differences to be aware of** when wiring:
+
+1. **Cities.** The contract nests presentation under `display` and status under `status`; the client currently reads flat `month` / `day` / `weekday` / `dateLabel` and a plain `badge` string. Send the contract shape — the client will map it.
+2. **Interest form.** The contract sends `fields[]` as an array; the client renders four fixed inputs. The array lets you drop or reorder fields, but the client needs the mapping pass first.
+
+None of this blocks backend work. Build to the contract; the client catches up in one pass.
 
 ---
 
