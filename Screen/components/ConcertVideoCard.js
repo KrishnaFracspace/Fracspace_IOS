@@ -32,7 +32,7 @@ const SCROLL_DELTA = 6;
 
 // Peek tab shown on the left edge while the card is tucked away
 const TAB_W = 40;
-const TAB_H = 68;
+const TAB_H = 150;
 // Ignore auto-hide briefly after a manual re-open so leftover momentum
 // scrolling cannot slam the card straight back out.
 const MANUAL_SHOW_GRACE_MS = 900;
