@@ -87,6 +87,7 @@ import MembershipHome from '../Version2_O/escapeMembership/MembershipHome';
 import PackageDescription from '../Version2_O/PackageDescription';
 import AddressSearchScreen from '../Version2_O/AddressSearchScreen';
 import CompleteProfileScreen from '../Version2_O/CompleteProfileScreen';
+import ConcertDetails from '../Version2_O/ConcertDetails';
 
 const { width, height } = Dimensions.get('window');
 
@@ -280,6 +281,7 @@ useLayoutEffect(() => {
         <Stack.Screen name="TranHisForEscape" component={TranHisForEscape} options={{headerShown:false}}/>
         <Stack.Screen name="ViewAgreement" component={ViewAgreement} options={{headerShown:false}}/>
         <Stack.Screen name="PackageDescription" component={PackageDescription} options={{headerShown:false}}/>
+        <Stack.Screen name="ConcertDetails" component={ConcertDetails} options={{headerShown:false}}/>
         <Stack.Screen
           name="trails"
           component={EdgeFab}

@@ -169,10 +169,21 @@ const handleOTPLogin = async () => {
       // ==================== DEEP LINK REDIRECT LOGIC ====================
       let targetRoute = { name: 'BottomNavigations' };
 
-      // Check for pending deep link from storage
+      // Priority 1: route params, forwarded from NewLogin when the user
+      // arrived on a deep link and chose to sign up instead.
+      const redirectFromParams = route?.params?.redirectAfterLogin;
+
+      // Priority 2: stored pendingDeepLink (deferred links / first launch)
       const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
 
-      if (pendingJson) {
+      if (redirectFromParams?.screen) {
+        targetRoute = {
+          name: redirectFromParams.screen,
+          params: redirectFromParams.params || {},
+        };
+        console.log('[Signup Success] Using redirect from params:', redirectFromParams.screen);
+        await AsyncStorage.removeItem('pendingDeepLink'); // Clean up
+      } else if (pendingJson) {
         try {
           const pending = JSON.parse(pendingJson);
           if (pending?.screen) {
@@ -180,7 +191,7 @@ const handleOTPLogin = async () => {
               name: pending.screen,
               params: pending.params || {},
             };
-            console.log('[OTP Login] Redirecting to pending deep link:', pending.screen);
+            console.log('[Signup Success] Redirecting to pending deep link:', pending.screen);
           }
           await AsyncStorage.removeItem('pendingDeepLink'); // Clean up
         } catch (e) {

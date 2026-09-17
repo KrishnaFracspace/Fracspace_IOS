@@ -103,6 +103,7 @@ const handleLoginSuccess = async (resData) => {
         params: redirectFromParams.params || {},
       };
       console.log('[Login Success] Using redirect from params:', redirectFromParams.screen);
+      await AsyncStorage.removeItem('pendingDeepLink'); // Clean up
     } 
     else if (pendingJson) {
       try {

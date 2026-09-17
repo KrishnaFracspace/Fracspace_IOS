@@ -17,6 +17,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { CONCERT_THEME as T } from '../utils/concertData';
+import { AppContext } from '../Context/AppContext';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9]{10}$/;
@@ -43,14 +44,16 @@ export default function ConcertInterestForm({
     () => concert?.defaultCityId || cities?.[0]?.id,
     [concert, cities],
   );
+  const {globalState} = React.useContext(AppContext);
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [name, setName] = useState(globalState?.userDetails?.userName || '');
+  const [email, setEmail] = useState(globalState?.userDetails?.email || '');
+  const [phone, setPhone] = useState(globalState?.userDetails?.phoneNumber || '');
   const [cityId, setCityId] = useState(selectedCityId || fallbackCityId);
   const [tickets, setTickets] = useState(DEFAULT_TICKETS);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  
 
   useEffect(() => {
     if (visible) {

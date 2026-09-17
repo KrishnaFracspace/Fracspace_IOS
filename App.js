@@ -51,6 +51,11 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
     if (token) {
       navigationRef.navigate(redirectData.screen, redirectData.params);
     } else {
+      // Keep the target so signup can pick it up too.
+      await AsyncStorage.setItem(
+        'pendingDeepLink',
+        JSON.stringify(redirectData),
+      ).catch(err => console.log('Save pending error:', err));
       navigationRef.navigate('NewLogin', {
         redirectAfterLogin: redirectData,
       });
@@ -143,6 +148,11 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
       redirectData = { screen: 'Book', params: { Id: data?.deep_link_sub1 || 'MISSING' } };
     } else if (data.deep_link_value === 'escape_section'){
       redirectData = { screen: 'MembershipHome', params: {}};
+    } else if (data.deep_link_value === 'concert_section') {
+      redirectData = {
+        screen: 'ConcertDetails',
+        params: { concertId: data?.deep_link_sub1 || data?.af_sub1 || null },
+      };
     } else {
       return;
     }
@@ -153,6 +163,12 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
         .catch(err => console.log('Save pending error:', err));
     }
     AsyncStorage.getItem('mytoken').then((token) => {
+      if (!token) {
+        // Logged out: keep the target so it survives NewLogin -> NewSigin
+        // and an app restart in the middle of logging in.
+        AsyncStorage.setItem('pendingDeepLink', JSON.stringify(redirectData))
+          .catch(err => console.log('Save pending error:', err));
+      }
       if (navigationRef.isReady()) {
         if (token) {
           navigationRef.navigate(redirectData.screen, redirectData.params);

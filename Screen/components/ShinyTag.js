@@ -10,8 +10,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
 
 const SHINE_W = 46;
-const SWEEP_MS = 850;
-const DEFAULT_INTERVAL = 2600;
+const SWEEP_MS = 1000;
+const DEFAULT_INTERVAL = 1500;
 
 /**
  * Gold gradient pill with a sparkle glyph and a shine band that sweeps

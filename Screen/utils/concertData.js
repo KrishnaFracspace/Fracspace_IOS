@@ -17,7 +17,7 @@ export const CONCERT_THEME = {
   textMuted: '#B9AFA6',
   textDim: '#8A8078',
   live: '#FF3B30',
-  overlay: 'rgba(0,0,0,0.55)',
+  overlay: 'rgba(0, 0, 0, 0.83)',
 };
 
 export const CONCERT = {
@@ -90,7 +90,7 @@ export const CONCERT = {
   interestedNote: 'people already registered interest',
 
   // Deep link used by the share sheet (wired later)
-  shareUrl: 'https://fracspace.com/concerts/religious-india',
+  shareUrl: 'https://fracspace.onelink.me/OVdL/tqivtrv3',
 };
 
 export default CONCERT;
