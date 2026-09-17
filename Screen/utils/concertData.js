@@ -22,7 +22,7 @@ export const CONCERT_THEME = {
 
 export const CONCERT = {
   id: 'religious-india-2026',
-  tag: 'LIVE MUSIC',
+  tag: 'Fracspace Exclusive',
   presents: 'FRACSPACE PRESENTS',
   title: 'Religious India',
   artist: 'Harish Sagane & Band',

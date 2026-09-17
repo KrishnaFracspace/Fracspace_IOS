@@ -24,8 +24,8 @@ import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
 
 const { width } = Dimensions.get('window');
 
-const CARD_W = Math.min(width * 0.56, 230);
-const CARD_H = CARD_W * 1.62;
+const CARD_W = Math.min(width * 0.4, 230);
+const CARD_H = CARD_W * 1.5;
 const TAB_BAR_HEIGHT = 50; // BottomNavi.js bar height
 const HIDE_OFFSET = -(CARD_W + 40);
 const SCROLL_DELTA = 6;
@@ -55,6 +55,12 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
   const hiddenRef = useRef(false);
   const lastYRef = useRef(0);
   const graceUntilRef = useRef(0);
+  // Playback position, handed to ConcertDetails so the teaser can pick up
+  // where the card left off.
+  const positionRef = useRef(0);
+  // Set when navigation (not the user) paused the card, so focus regain
+  // resumes it without overriding a deliberate pause.
+  const resumeOnFocusRef = useRef(false);
 
   const [hidden, setHidden] = useState(false);
 
@@ -72,6 +78,13 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
     );
     return () => sub.remove();
   }, []);
+
+  useEffect(() => {
+    if (isFocused && resumeOnFocusRef.current) {
+      resumeOnFocusRef.current = false;
+      setPlaying(true);
+    }
+  }, [isFocused]);
 
   /* ---------------- slide away on scroll ---------------- */
   const animateTo = useCallback(
@@ -145,9 +158,21 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
   const onToggleMute = useCallback(() => setMuted(m => !m), []);
 
   const openDetails = useCallback(() => {
+    // Sound was on here, so keep it going on the details screen: pass the
+    // position and the source so the teaser can resume rather than restart.
+    const handoff =
+      !muted && playing
+        ? {
+            audioPlaying: true,
+            positionSec: positionRef.current,
+            sourceUrl: concert?.video?.url,
+          }
+        : null;
+
+    if (playing) resumeOnFocusRef.current = true;
     setPlaying(false);
-    navigation.navigate('ConcertDetails', { concert });
-  }, [navigation, concert]);
+    navigation.navigate('ConcertDetails', { concert, handoff });
+  }, [navigation, concert, muted, playing]);
 
   if (dismissed) return null;
 
@@ -197,6 +222,10 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
             playInBackground={false}
             playWhenInactive={false}
             ignoreSilentSwitch="ignore"
+            onProgress={({ currentTime }) => {
+              positionRef.current = currentTime;
+            }}
+            progressUpdateInterval={250}
             onError={e => console.log('ConcertVideoCard video error:', e)}
           />
 
@@ -220,13 +249,13 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
 
           {/* controls */}
           <View style={styles.controlsRow}>
-            <CircleButton name="refresh" onPress={onReplay} />
+            {/* <CircleButton name="refresh" onPress={onReplay} />
             <CircleButton
               name={playing ? 'pause' : 'play'}
               onPress={onTogglePlay}
               size={38}
               glyph={19}
-            />
+            /> */}
             <CircleButton
               name={muted ? 'volume-mute' : 'volume-high'}
               onPress={onToggleMute}
@@ -387,7 +416,7 @@ const styles = StyleSheet.create({
     bottom: 46,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-evenly',
+    justifyContent: 'flex-end',
     paddingHorizontal: 14,
   },
   circleBtn: {

@@ -48,19 +48,48 @@ export default function ConcertDetails() {
   const concert = route?.params?.concert || CONCERT;
   const cities = concert?.cities || [];
 
+  // Handed over by the home video card when its sound was on.
+  const handoff = route?.params?.handoff;
+
+  // Only resume at the card's timestamp when the teaser is literally the same
+  // asset. If the teaser is a separate 30s cut, that offset points somewhere
+  // else entirely, so start from the beginning instead.
+  const resumeAt = useMemo(() => {
+    if (!handoff?.audioPlaying) return 0;
+    if (!handoff?.sourceUrl || handoff.sourceUrl !== concert?.teaser?.audioUrl) {
+      return 0;
+    }
+    const duration = concert?.teaser?.durationSec;
+    const pos = Number(handoff.positionSec) || 0;
+    if (duration && pos >= duration - 0.5) return 0;
+    return pos;
+  }, [handoff, concert]);
+
   const scrollY = useRef(new Animated.Value(0)).current;
   const audioRef = useRef(null);
+  const pendingSeekRef = useRef(resumeAt);
 
   const [selectedCityId, setSelectedCityId] = useState(
     concert?.defaultCityId || cities?.[0]?.id,
   );
-  const [audioPlaying, setAudioPlaying] = useState(false);
+  const [audioPlaying, setAudioPlaying] = useState(!!handoff?.audioPlaying);
   const [audioProgress, setAudioProgress] = useState(0);
+  // Keeps the player silent until it has seeked, so a handoff never blurts
+  // out the first half second of the track before jumping.
+  const [seekPending, setSeekPending] = useState(resumeAt > 0);
   const [formVisible, setFormVisible] = useState(false);
   const [registered, setRegistered] = useState(false);
   const [appActive, setAppActive] = useState(
     AppState.currentState === 'active',
   );
+
+  // Safety net: if onLoad/onSeek never arrive (bad URL, codec issue) release
+  // the hold anyway so the teaser is never stuck silently paused.
+  useEffect(() => {
+    if (!seekPending) return undefined;
+    const t = setTimeout(() => setSeekPending(false), 1500);
+    return () => clearTimeout(t);
+  }, [seekPending]);
 
   /* ---------------- status bar ---------------- */
   // The translucent/transparent bar is what lets the hero sit under the
@@ -196,11 +225,22 @@ export default function ConcertDetails() {
             <Video
               ref={audioRef}
               source={{ uri: concert?.teaser?.audioUrl }}
-              paused={!audioPlaying || !isFocused || !appActive}
+              paused={
+                !audioPlaying || seekPending || !isFocused || !appActive
+              }
               playInBackground={false}
               playWhenInactive={false}
               ignoreSilentSwitch="ignore"
               style={styles.hiddenAudio}
+              onLoad={() => {
+                if (pendingSeekRef.current > 0) {
+                  audioRef.current?.seek(pendingSeekRef.current);
+                  pendingSeekRef.current = 0;
+                } else {
+                  setSeekPending(false);
+                }
+              }}
+              onSeek={() => setSeekPending(false)}
               onProgress={({ currentTime }) => setAudioProgress(currentTime)}
               onEnd={() => {
                 setAudioPlaying(false);
