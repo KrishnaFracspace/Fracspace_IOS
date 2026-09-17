@@ -1,0 +1,301 @@
+{
+  "contractVersion": "1.0",
+  "feature": "Concert / Live Music section (Fracspace app)",
+  "surfaces": [
+    "HomePage floating video card",
+    "ConcertDetails screen",
+    "Register your Interest bottom sheet"
+  ],
+  "endpoints": {
+    "getConcertSection": {
+      "method": "GET",
+      "path": "/api/v1/concerts/section",
+      "auth": "optional (bearer token). When a token is sent, populate interestRegistered and prefill.",
+      "queryParams": {
+        "concertId": "optional. Sent when the app is opened from a deep link carrying deep_link_sub1, so the response can be scoped to one concert.",
+        "platform": "optional. android | ios"
+      },
+      "sampleResponse": {
+        "success": true,
+        "message": "OK",
+        "data": {
+          "section": {
+            "enabled": true,
+            "deepLinkValue": "concert_section",
+            "theme": {
+              "gold": "#CE8F52",
+              "goldLight": "#E7B87E",
+              "goldDark": "#A96F3A",
+              "bg": "#0A0806",
+              "surface": "#15100C",
+              "surfaceActive": "#1C1510",
+              "border": "#2E2318",
+              "borderActive": "#CE8F52",
+              "text": "#FFFFFF",
+              "textMuted": "#B9AFA6",
+              "textDim": "#8A8078",
+              "live": "#FF3B30",
+              "overlay": "rgba(0, 0, 0, 0.83)"
+            }
+          },
+          "concerts": [
+            {
+              "id": "religious-india-2026",
+              "slug": "religious-india",
+              "isActive": true,
+              "priority": 1,
+              "publishFrom": "2026-09-01T00:00:00+05:30",
+              "publishTill": "2026-11-21T23:59:59+05:30",
+              "shareUrl": "https://fracspace.onelink.me/OVdL/tqivtrv3",
+              "deepLink": {
+                "value": "concert_section",
+                "sub1": "religious-india-2026"
+              },
+              "interestRegistered": false,
+
+              "title": "Religious India",
+              "artist": "Harish Sagane & Band",
+              "subtitle": "An evening of devotion, rhythm & soul.",
+
+              "branding": {
+                "liveTag": {
+                  "text": "LIVE MUSIC",
+                  "showDot": true
+                },
+                "presentsTag": {
+                  "text": "FRACSPACE PRESENTS",
+                  "showSparkle": true,
+                  "shine": {
+                    "enabled": true,
+                    "intervalMs": 1500,
+                    "sweepMs": 1000
+                  }
+                }
+              },
+
+              "media": {
+                "heroImage": "https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png",
+                "posterImage": "https://duixj37yn5405.cloudfront.net/appImages/religious-india-hero.png",
+                "video": {
+                  "url": "https://duixj37yn5405.cloudfront.net/videos/ConcertVideo.mp4",
+                  "poster": "https://duixj37yn5405.cloudfront.net/appImages/homepreview.png",
+                  "aspectRatio": "9:16",
+                  "autoPlay": true,
+                  "muted": true,
+                  "loop": true
+                },
+                "teaser": {
+                  "enabled": true,
+                  "title": "Listen to 30s Teaser",
+                  "subtitle": "Harish Sagane & Band",
+                  "audioUrl": "https://duixj37yn5405.cloudfront.net/audio/religious-india-teaser-30s.mp3",
+                  "durationSec": 30
+                }
+              },
+
+              "homeCard": {
+                "enabled": true,
+                "dismissible": true,
+                "hideOnScroll": true,
+                "footerLabel": "View Concert Details",
+                "controls": {
+                  "replay": true,
+                  "playPause": true,
+                  "mute": true
+                }
+              },
+
+              "details": {
+                "schedule": {
+                  "sectionTitle": "TOUR SCHEDULE & CITIES",
+                  "defaultCityId": "hyd",
+                  "cities": [
+                    {
+                      "id": "hyd",
+                      "city": "Hyderabad",
+                      "venue": "Hyderabad",
+                      "venueAddress": null,
+                      "startsAt": "2026-11-14T19:00:00+05:30",
+                      "timezone": "Asia/Kolkata",
+                      "display": {
+                        "month": "NOV",
+                        "day": "14",
+                        "weekday": "SAT",
+                        "dateLabel": "Saturday, 14 November 2026"
+                      },
+                      "status": {
+                        "code": "fast_filling",
+                        "label": "Fast Filling"
+                      },
+                      "selectable": true,
+                      "soldOut": false
+                    },
+                    {
+                      "id": "blr",
+                      "city": "Bangalore",
+                      "venue": "Bangalore",
+                      "venueAddress": null,
+                      "startsAt": "2026-11-21T19:00:00+05:30",
+                      "timezone": "Asia/Kolkata",
+                      "display": {
+                        "month": "NOV",
+                        "day": "21",
+                        "weekday": "SAT",
+                        "dateLabel": "Saturday, 21 November 2026"
+                      },
+                      "status": {
+                        "code": "early_bird",
+                        "label": "Early Bird"
+                      },
+                      "selectable": true,
+                      "soldOut": false
+                    }
+                  ]
+                },
+                "about": {
+                  "sectionTitle": "ABOUT THE CONCERT",
+                  "paragraphs": [
+                    "Experience an immersive evening of Indian devotional music, powerful vocals, and live instrumentation with **Harish Sagane & Band**.",
+                    "Journey through timeless spiritual compositions reimagined with contemporary orchestral grandeur, soul-stirring flute melodies, and thundering percussions designed for pure transcendence."
+                  ]
+                },
+                "cta": {
+                  "label": "I'm Interested",
+                  "registeredLabel": "You're Interested",
+                  "note": "Be first to know when tickets go live.",
+                  "interestedCount": 4800,
+                  "interestedCountLabel": "4.8k",
+                  "interestedNote": "people already registered interest",
+                  "showInterestedCount": true
+                }
+              },
+
+              "interestForm": {
+                "title": "Register your Interest",
+                "submitLabel": "Submit",
+                "fields": [
+                  {
+                    "key": "name",
+                    "type": "text",
+                    "label": "FULL NAME",
+                    "placeholder": "Ashish G",
+                    "required": true,
+                    "maxLength": 60,
+                    "prefillFrom": "profile.userName"
+                  },
+                  {
+                    "key": "email",
+                    "type": "email",
+                    "label": "EMAIL ID",
+                    "placeholder": "ashishg@gmail.com",
+                    "required": true,
+                    "prefillFrom": "profile.email"
+                  },
+                  {
+                    "key": "phone",
+                    "type": "phone",
+                    "label": "MOBILE NUMBER",
+                    "placeholder": "9876543210",
+                    "required": true,
+                    "length": 10,
+                    "defaultCountryCode": "+91",
+                    "prefillFrom": "profile.phoneNumber"
+                  },
+                  {
+                    "key": "cityId",
+                    "type": "citySelect",
+                    "label": "SELECT CITY",
+                    "required": true,
+                    "prefillFrom": "schedule.selectedCity"
+                  }
+                ],
+                "tickets": {
+                  "enabled": true,
+                  "title": "Estimated Tickets Needed",
+                  "note": "You'll get priority window booking link for these tickets.",
+                  "min": 1,
+                  "max": 10,
+                  "default": 2
+                },
+                "banner": {
+                  "enabled": true,
+                  "icon": "flash",
+                  "text": "You will receive instant **WhatsApp & SMS** alerts the minute ticket booking opens."
+                },
+                "successToast": {
+                  "title": "You're on the list!",
+                  "message": "We will notify you the moment tickets go live."
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "postConcertInterest": {
+      "method": "POST",
+      "path": "/api/v1/concerts/{concertId}/interest",
+      "auth": "bearer token required",
+      "sampleRequest": {
+        "concertId": "religious-india-2026",
+        "name": "Ashish G",
+        "email": "ashishg@gmail.com",
+        "countryCode": "+91",
+        "phoneNumber": "9876543210",
+        "cityId": "hyd",
+        "city": "Hyderabad",
+        "ticketsNeeded": 2,
+        "source": "app_concert_details",
+        "platform": "android",
+        "appVersion": "1.0.0"
+      },
+      "sampleResponse": {
+        "success": true,
+        "message": "Interest registered successfully",
+        "data": {
+          "interestId": "cint_01HX7Y2K9",
+          "interestRegistered": true,
+          "interestedCount": 4801,
+          "interestedCountLabel": "4.8k"
+        }
+      },
+      "errorResponses": {
+        "400": {
+          "success": false,
+          "message": "Validation failed",
+          "errors": {
+            "email": "Enter a valid email",
+            "phoneNumber": "Enter a valid 10 digit number"
+          }
+        },
+        "409": {
+          "success": false,
+          "message": "You have already registered interest for this concert",
+          "data": {
+            "interestRegistered": true
+          }
+        }
+      }
+    }
+  },
+
+  "enums": {
+    "cityStatusCode": [
+      "early_bird",
+      "fast_filling",
+      "few_left",
+      "sold_out"
+    ],
+    "bannerIcon": [
+      "flash",
+      "sparkles",
+      "notifications"
+    ],
+    "interestSource": [
+      "app_concert_details",
+      "app_home_card",
+      "deep_link"
+    ]
+  }
+}
