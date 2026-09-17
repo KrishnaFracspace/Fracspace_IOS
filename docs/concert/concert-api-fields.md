@@ -1,5 +1,7 @@
 # Concert section — API field reference
 
+**Contract v1.1** — adds `interestForm.successSheet` and the `data.summary` block on the interest response (the registration confirmation screen).
+
 Companion to `concert-api-contract.json`. Every field below is already consumed by the app, so nothing here is speculative — the client currently reads these values from a hardcoded file (`Screen/utils/concertData.js`) and will read them from the API instead.
 
 Two endpoints:
@@ -137,7 +139,8 @@ Each city:
 | `fields[]` | array | yes | Rendered **in array order**. Dropping an entry removes that input. |
 | `tickets` | object | no | The stepper card. `enabled: false` hides it. |
 | `banner` | object | no | The gold WhatsApp/SMS notice. Supports `**bold**`. |
-| `successToast` | object | no | Copy shown after a successful submit. |
+| `successSheet` | object | no | Copy for the confirmation screen. See §10. |
+| `errorToast` | object | no | Copy shown when the submit call fails. |
 
 Each `fields[]` entry:
 
@@ -153,6 +156,46 @@ Each `fields[]` entry:
 | `prefillFrom` | string | Where the client sources the initial value: `profile.userName`, `profile.email`, `profile.phoneNumber`, or `schedule.selectedCity`. |
 
 `cityId` renders from `details.schedule.cities` — it is not a separate option list, so the two can never drift.
+
+## 10. `interestForm.successSheet` — the confirmation screen
+
+Shown in place of the form (same bottom sheet, no second animation) as soon as the interest POST succeeds. All copy is remote so the confirmation can be re-worded per concert.
+
+| Field | Type | Req | Drives |
+| --- | --- | --- | --- |
+| `showCheckmark` | bool | no | The gold circle with the white tick. Default `true`. |
+| `title` | string | yes | "You're on the list!" |
+| `message` | string | yes | "Interest Registered. We'll notify you when tickets go live!" |
+| `summaryLabel` | string | yes | Gold label on the summary card ("EVENT & TOUR"). |
+| `phoneLabel` | string | yes | Left side of the last row ("Registered Phone"). |
+| `ticketsBadge.singular` | string | yes | Template for 1 ticket. `{count}` is substituted. |
+| `ticketsBadge.plural` | string | yes | Template for 2+. `{count}` is substituted. |
+| `primaryCta.label` | string | yes | The gold button ("Go to Home"). |
+| `primaryCta.action` | enum | yes | `go_home` \| `close` \| `view_concert`. See the enums block. |
+
+The **values** on the summary card do not come from this block — they come from the POST response (§11), falling back to what the user just typed if the response omits them.
+
+`primaryCta.action` semantics in the app: `go_home` pops back to the home screen (and resets to the tab bar if the screen was opened cold from a deep link), `close` just dismisses the sheet and leaves the user on the concert page, `view_concert` dismisses and scrolls back to the schedule.
+
+## 11. `POST .../interest` → `data.summary`
+
+The confirmation card renders from the server's echo rather than local state, so what the user sees is what was actually stored.
+
+| Field | Type | Req | Drives |
+| --- | --- | --- | --- |
+| `interestId` | string | yes | Internal id, for support lookups. |
+| `referenceCode` | string | no | Human-quotable code. Not rendered today — send it and the client can surface it later. |
+| `interestRegistered` | bool | yes | Should be `true`. Flips the CTA on the details screen permanently. |
+| `interestedCount` / `interestedCountLabel` | int / string | no | The incremented count, so the details screen can update without a refetch. |
+| `summary.eventLabel` | string | yes | Bold line on the card. Server-composed, e.g. `Religious India • Harish Sagane & Band` — please use the `•` separator so the client doesn't have to rebuild it. |
+| `summary.cityId` | string | yes | The confirmed city. |
+| `summary.city` | string | yes | Muted line under the event name ("Hyderabad"). |
+| `summary.ticketsNeeded` | int | yes | Drives the badge count. |
+| `summary.ticketsLabel` | string | no | Pre-rendered badge text ("2 TICKETS"). If sent, the client uses it verbatim and ignores `ticketsBadge`. Useful for languages where the plural rule isn't singular/plural. |
+| `summary.registeredPhone` | string | yes | Right side of the phone row, **display-formatted** (`+91 98765 43210`). The client currently formats Indian numbers as 5+5, so sending it pre-formatted keeps non-Indian numbers correct. |
+| `summary.registeredEmail` | string | no | Not rendered today; reserved. |
+
+**The 409 case matters here.** If the user has already registered — double tap, or they come back through the deep link on another device — return `409` *with the same `data.summary` block*. The app treats that as success and shows the confirmation card populated from it, which is much better than an error for something that already worked.
 
 ---
 

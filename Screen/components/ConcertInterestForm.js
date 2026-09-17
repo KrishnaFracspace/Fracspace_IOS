@@ -17,10 +17,18 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { CONCERT_THEME as T } from '../utils/concertData';
+import ConcertSuccessSheet from './ConcertSuccessSheet';
 import { AppContext } from '../Context/AppContext';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9]{10}$/;
+
+/** +919876543210 -> "+91 98765 43210" */
+function formatPhone(countryCode, phone) {
+  const digits = String(phone || '').replace(/[^0-9]/g, '');
+  if (digits.length !== 10) return `${countryCode} ${digits}`.trim();
+  return `${countryCode} ${digits.slice(0, 5)} ${digits.slice(5)}`;
+}
 
 const MIN_TICKETS = 1;
 const MAX_TICKETS = 10;
@@ -37,6 +45,7 @@ export default function ConcertInterestForm({
   concert,
   cities = [],
   selectedCityId,
+  onGoHome,
 }) {
   const insets = useSafeAreaInsets();
 
@@ -53,12 +62,14 @@ export default function ConcertInterestForm({
   const [tickets, setTickets] = useState(DEFAULT_TICKETS);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [submission, setSubmission] = useState(null);
   
 
   useEffect(() => {
     if (visible) {
       setCityId(selectedCityId || fallbackCityId);
       setErrors({});
+      setSubmission(null);
     }
   }, [visible, selectedCityId, fallbackCityId]);
 
@@ -98,16 +109,14 @@ export default function ConcertInterestForm({
       console.log('Concert interest payload:', payload);
       await new Promise(res => setTimeout(res, 600));
 
-      Toast.show({
-        type: 'success',
-        text1: "You're on the list!",
-        text2: 'We will notify you the moment tickets go live.',
+      // TODO: prefer the server's `data.summary` once the API is wired.
+      setSubmission({
+        ...payload,
+        eventLabel: [concert?.title, concert?.artist]
+          .filter(Boolean)
+          .join(' \u2022 '),
+        registeredPhone: formatPhone('+91', payload.phoneNumber),
       });
-      setName('');
-      setEmail('');
-      setPhone('');
-      setTickets(DEFAULT_TICKETS);
-      onClose?.(true);
     } catch (err) {
       Toast.show({
         type: 'error',
@@ -119,15 +128,19 @@ export default function ConcertInterestForm({
     }
   };
 
+  // Once the registration has gone through, any dismissal still reports
+  // success upward so the CTA keeps its registered state.
+  const dismiss = () => onClose?.(!!submission);
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="slide"
       statusBarTranslucent
-      onRequestClose={() => onClose?.(false)}>
+      onRequestClose={dismiss}>
       <View style={styles.root}>
-        <TouchableWithoutFeedback onPress={() => onClose?.(false)}>
+        <TouchableWithoutFeedback onPress={dismiss}>
           <View style={styles.backdrop} />
         </TouchableWithoutFeedback>
 
@@ -136,6 +149,19 @@ export default function ConcertInterestForm({
           pointerEvents="box-none"
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <View style={[styles.sheet, { paddingBottom: insets.bottom + 16 }]}>
+            {submission ? (
+              <ConcertSuccessSheet
+                concert={concert}
+                submission={submission}
+                copy={concert?.interestForm?.successSheet}
+                onClose={dismiss}
+                onGoHome={() => {
+                  onClose?.(true);
+                  onGoHome?.();
+                }}
+              />
+            ) : (
+              <>
             {/* ---------- header ---------- */}
             <View style={styles.headerRow}>
               <View style={{ flex: 1, paddingRight: 12 }}>
@@ -348,6 +374,8 @@ export default function ConcertInterestForm({
                 </LinearGradient>
               </TouchableOpacity>
             </ScrollView>
+              </>
+            )}
           </View>
         </KeyboardAvoidingView>
       </View>

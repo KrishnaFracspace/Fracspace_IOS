@@ -96,6 +96,11 @@ export default function ConcertDetails() {
 
   const toggleAudio = useCallback(() => setAudioPlaying(p => !p), []);
 
+  const goHome = useCallback(() => {
+    if (navigation.canGoBack()) navigation.goBack();
+    else navigation.reset({ index: 0, routes: [{ name: 'BottomNavigations' }] });
+  }, [navigation]);
+
   const onShare = useCallback(() => {
     // TODO: wire real share payload / deep link
     Share.share({
@@ -313,6 +318,7 @@ export default function ConcertDetails() {
         concert={concert}
         cities={cities}
         selectedCityId={selectedCity?.id}
+        onGoHome={goHome}
         onClose={didSubmit => {
           setFormVisible(false);
           if (didSubmit) setRegistered(true);

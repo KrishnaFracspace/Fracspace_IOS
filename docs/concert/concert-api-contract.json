@@ -1,10 +1,11 @@
 {
-  "contractVersion": "1.0",
+  "contractVersion": "1.1",
   "feature": "Concert / Live Music section (Fracspace app)",
   "surfaces": [
     "HomePage floating video card",
     "ConcertDetails screen",
-    "Register your Interest bottom sheet"
+    "Register your Interest bottom sheet",
+    "Registration confirmation sheet"
   ],
   "endpoints": {
     "getConcertSection": {
@@ -222,9 +223,24 @@
                   "icon": "flash",
                   "text": "You will receive instant **WhatsApp & SMS** alerts the minute ticket booking opens."
                 },
-                "successToast": {
+                "successSheet": {
+                  "showCheckmark": true,
                   "title": "You're on the list!",
-                  "message": "We will notify you the moment tickets go live."
+                  "message": "Interest Registered. We'll notify you when tickets go live!",
+                  "summaryLabel": "EVENT & TOUR",
+                  "phoneLabel": "Registered Phone",
+                  "ticketsBadge": {
+                    "singular": "{count} TICKET",
+                    "plural": "{count} TICKETS"
+                  },
+                  "primaryCta": {
+                    "label": "Go to Home",
+                    "action": "go_home"
+                  }
+                },
+                "errorToast": {
+                  "title": "Something went wrong",
+                  "message": "Please try again in a moment."
                 }
               }
             }
@@ -255,9 +271,19 @@
         "message": "Interest registered successfully",
         "data": {
           "interestId": "cint_01HX7Y2K9",
+          "referenceCode": "FSC-2026-004821",
           "interestRegistered": true,
           "interestedCount": 4801,
-          "interestedCountLabel": "4.8k"
+          "interestedCountLabel": "4.8k",
+          "summary": {
+            "eventLabel": "Religious India • Harish Sagane & Band",
+            "cityId": "hyd",
+            "city": "Hyderabad",
+            "ticketsNeeded": 2,
+            "ticketsLabel": "2 TICKETS",
+            "registeredPhone": "+91 98765 43210",
+            "registeredEmail": "ashishg@gmail.com"
+          }
         }
       },
       "errorResponses": {
@@ -273,7 +299,18 @@
           "success": false,
           "message": "You have already registered interest for this concert",
           "data": {
-            "interestRegistered": true
+            "interestId": "cint_01HX7Y2K9",
+            "referenceCode": "FSC-2026-004821",
+            "interestRegistered": true,
+            "summary": {
+              "eventLabel": "Religious India • Harish Sagane & Band",
+              "cityId": "hyd",
+              "city": "Hyderabad",
+              "ticketsNeeded": 2,
+              "ticketsLabel": "2 TICKETS",
+              "registeredPhone": "+91 98765 43210",
+              "registeredEmail": "ashishg@gmail.com"
+            }
           }
         }
       }
@@ -296,6 +333,11 @@
       "app_concert_details",
       "app_home_card",
       "deep_link"
+    ],
+    "successCtaAction": [
+      "go_home",
+      "close",
+      "view_concert"
     ]
   }
 }
