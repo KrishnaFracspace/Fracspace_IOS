@@ -23,6 +23,7 @@ import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {
+  useFocusEffect,
   useIsFocused,
   useNavigation,
   useRoute,
@@ -35,6 +36,8 @@ import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
 
 const { width, height } = Dimensions.get('window');
 const HERO_H = Math.round(height * 0.38);
+// Status bar colour the rest of the app expects (the navy app header)
+const APP_STATUS_BAR_COLOR = '#021265';
 
 export default function ConcertDetails() {
   const navigation = useNavigation();
@@ -60,15 +63,24 @@ export default function ConcertDetails() {
   );
 
   /* ---------------- status bar ---------------- */
-  useEffect(() => {
-    if (isFocused) {
+  // The translucent/transparent bar is what lets the hero sit under the
+  // status bar. On Android those are global flags, so they MUST be put back
+  // on blur or every other screen inherits a transparent status bar.
+  useFocusEffect(
+    useCallback(() => {
       StatusBar.setBarStyle('light-content');
       if (Platform.OS === 'android') {
         StatusBar.setBackgroundColor('transparent');
         StatusBar.setTranslucent(true);
       }
-    }
-  }, [isFocused]);
+      return () => {
+        if (Platform.OS === 'android') {
+          StatusBar.setTranslucent(false);
+          StatusBar.setBackgroundColor(APP_STATUS_BAR_COLOR);
+        }
+      };
+    }, []),
+  );
 
   /* ---------------- pause audio on blur / background ---------------- */
   useEffect(() => {
