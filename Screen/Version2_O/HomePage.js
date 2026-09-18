@@ -11,7 +11,7 @@ import Video, { VideoRef } from 'react-native-video';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
-import {CallRecord,DeleteAccount,DisLike,DreamscapeHotels,GetAllNotification,GetCarousel,Like,LikeData,PaymentUPI,PopularDestination,PropertyDetails,updateFCMToken,} from '../Services/UserApi';
+import {CallRecord,DeleteAccount,DisLike,DreamscapeHotels,GetAllNotification,GetCarousel,GetConcertSection,Like,LikeData,PaymentUPI,PopularDestination,PropertyDetails,updateFCMToken,} from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
 const { width, height } = Dimensions.get('window');
 import Swiper from 'react-native-swiper';
@@ -22,6 +22,7 @@ import FastImage from 'react-native-fast-image';
 import EdgeFab from './altaira/FloatingButton';
 import CustomSwiper from '../components/CustomSwiper';
 import ConcertVideoCard from '../components/ConcertVideoCard';
+import { normalizeSection } from '../utils/concertAdapter';
 import { profileDetails } from '../redux/reducer/profileReducer';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
@@ -44,6 +45,7 @@ export default function HomePage() {
   // console.log("Phone Number: ", phoneNumber, "FCM Token: ", fcmToken);
   const isFetched = useRef(false);
   const scrollY = useRef(new Animated.Value(0)).current;
+  const [concertSection, setConcertSection] = useState(null);
   const [carousel, setCarousel] = useState([])
   const popUp = useSelector(state => state.home.isPopupVisible);
   // const userProfileData = useSelector(state => state.profile?.user);
@@ -608,6 +610,25 @@ const Categories = carousel?.category
   );
 
   const videoLayouts = useRef([]);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem('mytoken');
+        const { data } = await GetConcertSection({ token });
+        if (alive) setConcertSection(normalizeSection(data));
+      } catch (e) {
+        // The concert surface is optional - a failure here must never take
+        // the home screen down, so it just stays hidden.
+        console.log('Concert section fetch failed:', e?.message);
+        if (alive) setConcertSection({ enabled: false, concert: null });
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   const handleVerticalScroll = event => {
     const scrollY = event.nativeEvent.contentOffset.y;
     const windowHeight = event.nativeEvent.layoutMeasurement.height;
@@ -1660,7 +1681,14 @@ const Categories = carousel?.category
         {carousel?.edgeTab &&
           <EdgeFab scrollY={scrollY} />
         }
-        <ConcertVideoCard scrollY={scrollY} />
+        {concertSection?.enabled &&
+          !!concertSection?.concert &&
+          concertSection.concert?.homeCard?.enabled !== false && (
+            <ConcertVideoCard
+              scrollY={scrollY}
+              concert={concertSection.concert}
+            />
+          )}
 
         {isMenuOpen && (
           <Pressable

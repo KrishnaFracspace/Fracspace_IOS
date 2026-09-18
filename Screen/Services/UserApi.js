@@ -1,4 +1,6 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
+import DeviceInfo from 'react-native-device-info';
 export const Registration = async payload => {
   return await axios.post('https://apitest.fracspace.com/api/users/userRegisterationWithoutPassword', payload,{
     headers: {
@@ -1174,4 +1176,155 @@ export const GetInternationalProperties = async(payload) => {
       },
     },
   );
+};
+
+/* ------------------------------------------------------------------ *
+ *  Concert / Live Music  (contract 1.2)                              *
+ * ------------------------------------------------------------------ */
+
+const CONCERT_BASE = 'https://apitest.fracspace.com/api/v1/concerts';
+
+/** Headers the concert endpoints use for visibility rules and rollouts. */
+const concertHeaders = async ({ token } = {}) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'x-api-key': 'Fracspace@2024',
+    'x-platform': Platform.OS,
+  };
+  try {
+    headers['x-app-version'] = DeviceInfo.getVersion();
+  } catch (e) {}
+  try {
+    const id = await DeviceInfo.getUniqueId();
+    if (id) headers['x-device-id'] = String(id);
+  } catch (e) {}
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+};
+
+/**
+ * GET /api/v1/concerts/section
+ * Auth is optional - with a token the response adds interestRegistered and
+ * interestForm.prefill. Never 401s, so a bad token is safe to send.
+ */
+export const GetConcertSection = async ({ concertId, cityId, token } = {}) => {
+  const params = {};
+  if (concertId) params.concertId = concertId;
+  if (cityId) params.cityId = cityId;
+  params.platform = Platform.OS;
+  try {
+    params.appVersion = DeviceInfo.getVersion();
+  } catch (e) {}
+
+  return await axios.get(`${CONCERT_BASE}/section`, {
+    params,
+    headers: await concertHeaders({ token }),
+  });
+};
+
+/**
+ * POST /api/v1/concerts/:concertId/interest
+ *
+ * Success is 201 (or 200 when allowReRegister is on), so this resolves for any
+ * 2xx AND for 409, because a 409 carrying data.interestRegistered means the
+ * user is already on the list - that is a success for the UI, not an error.
+ * Everything else rejects and is classified by classifyInterestError below.
+ */
+export const RegisterConcertInterest = async (concertId, payload, token) => {
+  return await axios.post(
+    `${CONCERT_BASE}/${encodeURIComponent(concertId)}/interest`,
+    payload,
+    {
+      headers: await concertHeaders({ token }),
+      validateStatus: status =>
+        (status >= 200 && status < 300) || status === 409,
+    },
+  );
+};
+
+/**
+ * Turns an interest response/error into one of:
+ *   { kind: 'success',    data, isNew }      -> show the success sheet
+ *   { kind: 'duplicate',  matchedOn, data, errors, message }
+ *                                            -> these details are already on
+ *                                               the list; data.summary is the
+ *                                               ORIGINAL registration
+ *   { kind: 'fieldErrors', errors }          -> paint the form
+ *   { kind: 'closed',     message, errors }  -> concert or city closed
+ *   { kind: 'auth' }                         -> requireLogin is on and the
+ *                                               token is missing/expired
+ *   { kind: 'error',      message }          -> generic toast
+ *
+ * Two different 409s share the status code, so they are told apart by
+ * `matchedOn` (top level, NOT inside data): present on a duplicate, absent on
+ * a sold-out city.
+ */
+const readInterestBody = res => {
+  const body = res?.data || {};
+  return { body, data: body?.data || {} };
+};
+
+const classify409 = (body, data) => {
+  if (body?.matchedOn) {
+    return {
+      kind: 'duplicate',
+      matchedOn: body.matchedOn,
+      data,
+      errors: body.errors || {},
+      message: body.message,
+    };
+  }
+  // older builds of the API answered a duplicate without matchedOn
+  if (data?.interestRegistered === true || data?.summary) {
+    return {
+      kind: 'duplicate',
+      matchedOn: 'account',
+      data,
+      errors: body?.errors || {},
+      message: body?.message,
+    };
+  }
+  return { kind: 'closed', message: body?.message, errors: body?.errors || {} };
+};
+
+export const classifyInterestResponse = res => {
+  const status = res?.status;
+  const { body, data } = readInterestBody(res);
+
+  if (status >= 200 && status < 300) {
+    // 200 + isNew:false means an existing registration was updated
+    return { kind: 'success', data, isNew: data?.isNew !== false };
+  }
+  if (status === 409) return classify409(body, data);
+  return { kind: 'error', message: body?.message };
+};
+
+export const classifyInterestError = err => {
+  const res = err?.response;
+  if (!res) return { kind: 'error', message: null }; // network
+
+  const { body, data } = readInterestBody(res);
+
+  switch (res.status) {
+    case 400:
+      return {
+        kind: 'fieldErrors',
+        errors: body?.errors || {},
+        message: body?.message,
+      };
+    case 401:
+      return { kind: 'auth', message: body?.message };
+    case 404:
+      return { kind: 'error', message: body?.message };
+    case 409:
+      return classify409(body, data);
+    case 410:
+      return {
+        kind: 'closed',
+        message: body?.message,
+        errors: body?.errors || {},
+      };
+    default:
+      return { kind: 'error', message: body?.message };
+  }
 };

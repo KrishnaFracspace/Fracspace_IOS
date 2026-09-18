@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import {
+  ActivityIndicator,
   Animated,
   AppState,
   Dimensions,
@@ -33,6 +34,10 @@ import AudioWaveform from '../components/AudioWaveform';
 import ConcertInterestForm from '../components/ConcertInterestForm';
 import ShinyTag from '../components/ShinyTag';
 import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
+import { normalizeSection } from '../utils/concertAdapter';
+import { GetConcertSection } from '../Services/UserApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { hasRegisteredConcert } from '../utils/concertInterestStore';
 
 const { width, height } = Dimensions.get('window');
 const HERO_H = Math.round(height * 0.42);
@@ -45,8 +50,38 @@ export default function ConcertDetails() {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
 
-  const concert = route?.params?.concert || CONCERT;
+  // Arrives as a param from the home card. A deep link opens this screen
+  // directly, so in that case fetch the section ourselves.
+  const [fetched, setFetched] = useState(null);
+  const [loadError, setLoadError] = useState(false);
+  const concert = route?.params?.concert || fetched;
   const cities = concert?.cities || [];
+
+  const wantedId = route?.params?.concertId || route?.params?.concert?.id;
+
+  useEffect(() => {
+    if (route?.params?.concert) return;
+    let alive = true;
+    (async () => {
+      try {
+        const token = await AsyncStorage.getItem('mytoken');
+        const { data } = await GetConcertSection({ concertId: wantedId, token });
+        const section = normalizeSection(data, wantedId);
+        if (!alive) return;
+        if (!section.enabled || !section.concert) {
+          setLoadError(true);
+        } else {
+          setFetched(section.concert);
+        }
+      } catch (e) {
+        console.log('ConcertDetails section fetch failed:', e?.message);
+        if (alive) setLoadError(true);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [wantedId, route?.params?.concert]);
 
   // Handed over by the home video card when its sound was on.
   const handoff = route?.params?.handoff;
@@ -90,6 +125,35 @@ export default function ConcertDetails() {
     const t = setTimeout(() => setSeekPending(false), 1500);
     return () => clearTimeout(t);
   }, [seekPending]);
+
+  // Seed the registered state from the server first, then fall back to the
+  // local marker. The marker matters because "Go to Home" pops this screen,
+  // and the concert passed back down by the home card still carries the
+  // interestRegistered value from before the user registered.
+  useEffect(() => {
+    if (concert?.interestRegistered) {
+      setRegistered(true);
+      return undefined;
+    }
+    let alive = true;
+    (async () => {
+      const local = await hasRegisteredConcert(concert?.id);
+      if (alive && local) setRegistered(true);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [concert?.id, concert?.interestRegistered]);
+
+  // On the deep-link path the concert arrives after first render, so the city
+  // selection has to catch up once it does.
+  useEffect(() => {
+    if (selectedCityId) return;
+    const fallback =
+      concert?.defaultCityId ||
+      (cities.find(c => c.selectable !== false) || cities[0] || {}).id;
+    if (fallback) setSelectedCityId(fallback);
+  }, [concert?.defaultCityId, cities, selectedCityId]);
 
   /* ---------------- status bar ---------------- */
   // The translucent/transparent bar is what lets the hero sit under the
@@ -150,6 +214,28 @@ export default function ConcertDetails() {
   }, [concert]);
 
   const bottomBarPad = insets.bottom + 12;
+
+  if (!concert) {
+    return (
+      <View style={[styles.screen, styles.centerFill]}>
+        <StatusBar
+          barStyle="light-content"
+          backgroundColor="transparent"
+          translucent
+        />
+        {loadError ? (
+          <>
+            <Text style={styles.emptyTitle}>Nothing playing right now</Text>
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <Text style={styles.emptyAction}>Go back</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <ActivityIndicator color={T.gold} size="large" />
+        )}
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -253,7 +339,9 @@ export default function ConcertDetails() {
             />
 
             {/* ---------- tour schedule ---------- */}
-            <SectionLabel title="TOUR SCHEDULE & CITIES" />
+            <SectionLabel
+              title={concert?.scheduleTitle || 'TOUR SCHEDULE & CITIES'}
+            />
 
             {cities.map(city => {
               const active = city.id === selectedCityId;
@@ -293,7 +381,10 @@ export default function ConcertDetails() {
             })}
 
             {/* ---------- about ---------- */}
-            <SectionLabel title="ABOUT THE CONCERT" withRule />
+            <SectionLabel
+              title={concert?.aboutTitle || 'ABOUT THE CONCERT'}
+              withRule
+            />
 
             <View style={styles.aboutCard}>
               {(concert?.about || []).map((para, i) => (
@@ -336,8 +427,11 @@ export default function ConcertDetails() {
           pointerEvents="none"
         />
 
+        {/* Once registered the CTA is a status label, not a button: there is
+            no edit endpoint, so re-opening the form could only fail. */}
         <TouchableOpacity
           activeOpacity={0.9}
+          disabled={registered}
           onPress={() => setFormVisible(true)}
           style={{ width: '100%' }}>
           <LinearGradient
@@ -356,15 +450,19 @@ export default function ConcertDetails() {
             />
             <Text
               style={[styles.ctaText, registered && { color: T.gold }]}>
-              {registered ? "You're Interested" : concert?.cta?.label}
+              {registered
+                ? concert?.cta?.registeredLabel || "You're Interested"
+                : concert?.cta?.label}
             </Text>
           </LinearGradient>
         </TouchableOpacity>
 
         <Text style={styles.ctaNote}>{concert?.cta?.note}</Text>
-        <Text style={styles.ctaCount}>
-          🔥 {concert?.interestedCount} {concert?.interestedNote}
-        </Text>
+        {concert?.showInterestedCount !== false && !!concert?.interestedCount && (
+          <Text style={styles.ctaCount}>
+            🔥 {concert?.interestedCount} {concert?.interestedNote}
+          </Text>
+        )}
       </View>
 
       <ConcertInterestForm
@@ -411,6 +509,18 @@ function renderRichText(text = '') {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: T.bg },
+  centerFill: { alignItems: 'center', justifyContent: 'center' },
+  emptyTitle: {
+    color: T.text,
+    fontFamily: 'WorkSans-SemiBold',
+    fontSize: 16,
+  },
+  emptyAction: {
+    color: T.gold,
+    fontFamily: 'WorkSans-SemiBold',
+    fontSize: 14,
+    marginTop: 14,
+  },
 
   hero: {
     position: 'absolute',

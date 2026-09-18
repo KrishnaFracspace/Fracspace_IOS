@@ -19,9 +19,32 @@ import Toast from 'react-native-toast-message';
 import { CONCERT_THEME as T } from '../utils/concertData';
 import ConcertSuccessSheet from './ConcertSuccessSheet';
 import { AppContext } from '../Context/AppContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DeviceInfo from 'react-native-device-info';
+import { markConcertRegistered } from '../utils/concertInterestStore';
+import {
+  RegisterConcertInterest,
+  classifyInterestResponse,
+  classifyInterestError,
+} from '../Services/UserApi';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9]{10}$/;
+
+/** Minimal **bold** support, same subset the about section uses. */
+function renderBannerText(text = '') {
+  return String(text)
+    .split(/(\*\*[^*]+\*\*)/g)
+    .map((chunk, i) =>
+      chunk.startsWith('**') && chunk.endsWith('**') ? (
+        <Text key={i} style={styles.bannerStrong}>
+          {chunk.slice(2, -2)}
+        </Text>
+      ) : (
+        chunk
+      ),
+    );
+}
 
 /** +919876543210 -> "+91 98765 43210" */
 function formatPhone(countryCode, phone) {
@@ -48,21 +71,50 @@ export default function ConcertInterestForm({
   onGoHome,
 }) {
   const insets = useSafeAreaInsets();
-
-  const fallbackCityId = useMemo(
-    () => concert?.defaultCityId || cities?.[0]?.id,
-    [concert, cities],
-  );
   const {globalState} = React.useContext(AppContext);
 
-  const [name, setName] = useState(globalState?.userDetails?.userName || '');
-  const [email, setEmail] = useState(globalState?.userDetails?.email || '');
-  const [phone, setPhone] = useState(globalState?.userDetails?.phoneNumber || '');
+  // NOTE: these have to be declared before the useMemo below reads them.
+  const formCfg = concert?.interestForm || {};
+  const ticketCfg = formCfg.tickets || {};
+  const bannerCfg = formCfg.banner || {};
+  const fieldsByKey = formCfg.fieldsByKey || {};
+  const prefill = formCfg.prefill || {};
+  const minTickets = ticketCfg.min ?? MIN_TICKETS;
+  const maxTickets = ticketCfg.max ?? MAX_TICKETS;
+  const fld = key => fieldsByKey[key] || {};
+  const countryCode = fld('phone').defaultCountryCode || '+91';
+  const appVersion = (() => {
+    try {
+      return DeviceInfo.getVersion();
+    } catch (e) {
+      return undefined;
+    }
+  })();
+
+  const fallbackCityId = useMemo(
+    () => prefill?.cityId || concert?.defaultCityId || cities?.[0]?.id,
+    [prefill, concert, cities],
+  );
+
+  const [name, setName] = useState(
+    prefill.name || globalState?.userDetails?.userName || '',
+  );
+  const [email, setEmail] = useState(
+    prefill.email || globalState?.userDetails?.email || '',
+  );
+  const [phone, setPhone] = useState(
+    prefill.phoneNumber || globalState?.userDetails?.phoneNumber || '',
+  );
   const [cityId, setCityId] = useState(selectedCityId || fallbackCityId);
-  const [tickets, setTickets] = useState(DEFAULT_TICKETS);
+  const [tickets, setTickets] = useState(
+    ticketCfg.default ?? DEFAULT_TICKETS,
+  );
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submission, setSubmission] = useState(null);
+  // non-null when the API answered 409: the submission was already on the
+  // list, so the confirmation card says so instead of claiming a new signup.
+  const [alreadyMessage, setAlreadyMessage] = useState(null);
   
 
   useEffect(() => {
@@ -70,6 +122,7 @@ export default function ConcertInterestForm({
       setCityId(selectedCityId || fallbackCityId);
       setErrors({});
       setSubmission(null);
+      setAlreadyMessage(null);
     }
   }, [visible, selectedCityId, fallbackCityId]);
 
@@ -93,43 +146,144 @@ export default function ConcertInterestForm({
     if (!validate()) return;
 
     const payload = {
-      concertId: concert?.id,
       name: name.trim(),
       email: email.trim(),
-      countryCode: '+91',
+      countryCode: countryCode,
       phoneNumber: phone.trim(),
       cityId,
-      city: cities.find(c => c.id === cityId)?.city,
       ticketsNeeded: tickets,
+      source: 'app_concert_details',
+      platform: Platform.OS,
+      appVersion: appVersion,
     };
 
-    setSubmitting(true);
-    try {
-      // TODO: replace with the register-interest API call
-      console.log('Concert interest payload:', payload);
-      await new Promise(res => setTimeout(res, 600));
+    // Local fallback for the confirmation card, used when the server does not
+    // echo a summary back.
+    const localSummary = {
+      ...payload,
+      eventLabel: [concert?.title, concert?.artist]
+        .filter(Boolean)
+        .join(' \u2022 '),
+      registeredPhone: formatPhone(countryCode, payload.phoneNumber),
+    };
 
-      // TODO: prefer the server's `data.summary` once the API is wired.
+    const showSuccess = data => {
+      const summary = data?.summary || {};
+      // Remember it before the sheet is dismissed: "Go to Home" pops this
+      // screen, so component state cannot carry the fact forward.
+      markConcertRegistered(concert?.id);
       setSubmission({
-        ...payload,
-        eventLabel: [concert?.title, concert?.artist]
-          .filter(Boolean)
-          .join(' \u2022 '),
-        registeredPhone: formatPhone('+91', payload.phoneNumber),
+        ...localSummary,
+        ...summary,
+        // prefer the server's values, keep ours where it sent nothing
+        city: summary.city || localSummary.city,
+        ticketsNeeded: summary.ticketsNeeded ?? localSummary.ticketsNeeded,
+        registeredPhone:
+          summary.registeredPhone || localSummary.registeredPhone,
+        eventLabel: summary.eventLabel || localSummary.eventLabel,
+        referenceCode: data?.referenceCode || null,
       });
-    } catch (err) {
+    };
+
+    const errorToast = message =>
       Toast.show({
         type: 'error',
         text1: 'Something went wrong',
-        text2: 'Please try again in a moment.',
+        text2:
+          message ||
+          formCfg?.errorToast?.message ||
+          'Please try again in a moment.',
       });
+
+    const paintFieldErrors = (fieldErrors, fallbackMessage) => {
+      const mapped = {};
+      Object.entries(fieldErrors || {}).forEach(([k, v]) => {
+        const key = k === 'phoneNumber' ? 'phone' : k;
+        mapped[key] = v;
+      });
+      setErrors(mapped);
+      if (!Object.keys(mapped).length) errorToast(fallbackMessage);
+    };
+
+    // 409 with matchedOn: these details are already on the list. There is no
+    // edit endpoint, so we confirm what already exists and leave it at that.
+    const showAlreadyRegistered = result => {
+      setAlreadyMessage(
+        result.message || 'An interest is already registered for this concert.',
+      );
+      showSuccess(result.data);
+    };
+
+    if (!concert?.id) {
+      errorToast('This concert is no longer available.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const token = await AsyncStorage.getItem('mytoken');
+      const res = await RegisterConcertInterest(concert?.id, payload, token);
+      const result = classifyInterestResponse(res);
+
+      switch (result.kind) {
+        case 'success':
+          showSuccess(result.data);
+          break;
+        case 'duplicate':
+          showAlreadyRegistered(result);
+          break;
+        case 'closed':
+          // paintFieldErrors already toasts when there is nothing to paint,
+          // so only add a toast when a field error took the visual slot.
+          paintFieldErrors(
+            result.errors,
+            result.message || 'Registrations are closed.',
+          );
+          if (Object.keys(result.errors || {}).length) {
+            errorToast(result.message || 'Registrations are closed.');
+          }
+          break;
+        default:
+          errorToast(result.message);
+      }
+    } catch (err) {
+      const result = classifyInterestError(err);
+
+      switch (result.kind) {
+        case 'success':
+          showSuccess(result.data);
+          break;
+        case 'duplicate':
+          showAlreadyRegistered(result);
+          break;
+        case 'fieldErrors':
+          paintFieldErrors(result.errors, result.message);
+          break;
+        case 'closed':
+          // paintFieldErrors already toasts when there is nothing to paint,
+          // so only add a toast when a field error took the visual slot.
+          paintFieldErrors(
+            result.errors,
+            result.message || 'Registrations are closed.',
+          );
+          if (Object.keys(result.errors || {}).length) {
+            errorToast(result.message || 'Registrations are closed.');
+          }
+          break;
+        case 'auth':
+          errorToast('Please log in again to register.');
+          break;
+        default:
+          errorToast(result.message);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   // Once the registration has gone through, any dismissal still reports
-  // success upward so the CTA keeps its registered state.
+  // success upward so the CTA keeps its registered (disabled) state. A 409
+  // also sets `submission`, so an already-registered user counts too.
   const dismiss = () => onClose?.(!!submission);
 
   return (
@@ -153,7 +307,15 @@ export default function ConcertInterestForm({
               <ConcertSuccessSheet
                 concert={concert}
                 submission={submission}
-                copy={concert?.interestForm?.successSheet}
+                copy={
+                  alreadyMessage
+                    ? {
+                        ...(concert?.interestForm?.successSheet || {}),
+                        title: 'Interest already registered',
+                        message: alreadyMessage,
+                      }
+                    : concert?.interestForm?.successSheet
+                }
                 onClose={dismiss}
                 onGoHome={() => {
                   onClose?.(true);
@@ -165,7 +327,9 @@ export default function ConcertInterestForm({
             {/* ---------- header ---------- */}
             <View style={styles.headerRow}>
               <View style={{ flex: 1, paddingRight: 12 }}>
-                <Text style={styles.heading}>Register your Interest</Text>
+                <Text style={styles.heading}>
+                  {formCfg.title || 'Register your Interest'}
+                </Text>
                 <Text style={styles.subHeading}>
                   {concert?.title} • {concert?.artist}
                 </Text>
@@ -188,14 +352,16 @@ export default function ConcertInterestForm({
               {/* ---------- name + email ---------- */}
               <View style={styles.twoCol}>
                 <View style={styles.col}>
-                  <Text style={styles.label}>FULL NAME</Text>
+                  <Text style={styles.label}>
+                    {fld('name').label || 'FULL NAME'}
+                  </Text>
                   <TextInput
                     value={name}
                     onChangeText={t => {
                       setName(t);
                       clearError('name');
                     }}
-                    placeholder="Ashish G"
+                    placeholder={fld('name').placeholder || 'Ashish G'}
                     placeholderTextColor={T.textDim}
                     style={[styles.input, !!errors.name && styles.inputError]}
                   />
@@ -205,14 +371,18 @@ export default function ConcertInterestForm({
                 </View>
 
                 <View style={styles.col}>
-                  <Text style={styles.label}>EMAIL ID</Text>
+                  <Text style={styles.label}>
+                    {fld('email').label || 'EMAIL ID'}
+                  </Text>
                   <TextInput
                     value={email}
                     onChangeText={t => {
                       setEmail(t);
                       clearError('email');
                     }}
-                    placeholder="ashishg@gmail.com"
+                    placeholder={
+                      fld('email').placeholder || 'ashishg@gmail.com'
+                    }
                     placeholderTextColor={T.textDim}
                     keyboardType="email-address"
                     autoCapitalize="none"
@@ -227,7 +397,7 @@ export default function ConcertInterestForm({
 
               {/* ---------- mobile ---------- */}
               <Text style={[styles.label, { marginTop: 18 }]}>
-                MOBILE NUMBER
+                {fld('phone').label || 'MOBILE NUMBER'}
               </Text>
               <View
                 style={[
@@ -235,7 +405,9 @@ export default function ConcertInterestForm({
                   !!errors.phone && styles.inputError,
                 ]}>
                 <View style={styles.codeBox}>
-                  <Text style={styles.codeText}>+91</Text>
+                  <Text style={styles.codeText}>
+                    {fld('phone').defaultCountryCode || '+91'}
+                  </Text>
                 </View>
                 <TextInput
                   value={phone}
@@ -243,7 +415,7 @@ export default function ConcertInterestForm({
                     setPhone(t.replace(/[^0-9]/g, '').slice(0, 10));
                     clearError('phone');
                   }}
-                  placeholder="9876543210"
+                  placeholder={fld('phone').placeholder || '9876543210'}
                   placeholderTextColor={T.textDim}
                   keyboardType="number-pad"
                   maxLength={10}
@@ -255,7 +427,9 @@ export default function ConcertInterestForm({
               )}
 
               {/* ---------- city (existing chip selector) ---------- */}
-              <Text style={[styles.label, { marginTop: 18 }]}>SELECT CITY</Text>
+              <Text style={[styles.label, { marginTop: 18 }]}>
+                {fld('cityId').label || 'SELECT CITY'}
+              </Text>
               <View style={styles.chipRow}>
                 {cities.map(city => {
                   const active = city.id === cityId;
@@ -291,26 +465,28 @@ export default function ConcertInterestForm({
               )}
 
               {/* ---------- tickets stepper ---------- */}
+              {ticketCfg.enabled !== false && (
               <View style={styles.ticketCard}>
                 <View style={{ flex: 1, paddingRight: 14 }}>
                   <Text style={styles.ticketTitle}>
-                    Estimated Tickets Needed
+                    {ticketCfg.title || 'Estimated Tickets Needed'}
                   </Text>
                   <Text style={styles.ticketNote}>
-                    You'll get priority window booking link for these tickets.
+                    {ticketCfg.note ||
+                      "You'll get priority window booking link for these tickets."}
                   </Text>
                 </View>
 
                 <View style={styles.stepper}>
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    disabled={tickets <= MIN_TICKETS}
-                    onPress={() => setTickets(v => Math.max(MIN_TICKETS, v - 1))}
+                    disabled={tickets <= minTickets}
+                    onPress={() => setTickets(v => Math.max(minTickets, v - 1))}
                     style={styles.stepBtn}>
                     <Icon
                       name="remove"
                       size={18}
-                      color={tickets <= MIN_TICKETS ? T.textDim : T.text}
+                      color={tickets <= minTickets ? T.textDim : T.text}
                     />
                   </TouchableOpacity>
 
@@ -320,32 +496,38 @@ export default function ConcertInterestForm({
 
                   <TouchableOpacity
                     activeOpacity={0.7}
-                    disabled={tickets >= MAX_TICKETS}
-                    onPress={() => setTickets(v => Math.min(MAX_TICKETS, v + 1))}
+                    disabled={tickets >= maxTickets}
+                    onPress={() => setTickets(v => Math.min(maxTickets, v + 1))}
                     style={styles.stepBtn}>
                     <Icon
                       name="add"
                       size={18}
-                      color={tickets >= MAX_TICKETS ? T.textDim : T.text}
+                      color={tickets >= maxTickets ? T.textDim : T.text}
                     />
                   </TouchableOpacity>
                 </View>
               </View>
 
+              )}
+
               {/* ---------- alerts banner ---------- */}
+              {bannerCfg.enabled !== false && (
               <View style={styles.banner}>
                 <Icon
-                  name="flash"
+                  name={bannerCfg.icon || 'flash'}
                   size={16}
                   color={T.gold}
                   style={{ marginTop: 2 }}
                 />
                 <Text style={styles.bannerText}>
-                  You will receive instant{' '}
-                  <Text style={styles.bannerStrong}>WhatsApp &amp; SMS</Text>{' '}
-                  alerts the minute ticket booking opens.
+                  {renderBannerText(
+                    bannerCfg.text ||
+                      'You will receive instant **WhatsApp & SMS** alerts the minute ticket booking opens.',
+                  )}
                 </Text>
               </View>
+
+              )}
 
               {/* ---------- submit ---------- */}
               <TouchableOpacity
@@ -362,7 +544,9 @@ export default function ConcertInterestForm({
                     <ActivityIndicator color="#1A1206" />
                   ) : (
                     <>
-                      <Text style={styles.submitText}>Submit</Text>
+                      <Text style={styles.submitText}>
+                        {formCfg.submitLabel || 'Submit'}
+                      </Text>
                       <Icon
                         name="arrow-forward"
                         size={18}

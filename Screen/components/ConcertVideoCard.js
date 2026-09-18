@@ -44,7 +44,9 @@ const MANUAL_SHOW_GRACE_MS = 900;
  * - Dismissed with the X for the current session only (no persistence).
  * - Pauses when the screen loses focus or the app is backgrounded.
  */
-export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
+export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
+  // a default parameter only fires for `undefined`, never for `null`
+  const concert = concertProp || CONCERT;
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
@@ -65,8 +67,14 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
   const [hidden, setHidden] = useState(false);
 
   const [dismissed, setDismissed] = useState(false);
-  const [playing, setPlaying] = useState(true);
-  const [muted, setMuted] = useState(true);
+
+  const cardCfg = concert?.homeCard || {};
+  const controls = cardCfg.controls || {};
+  const canDismiss = cardCfg.dismissible !== false;
+  const wantsPeekTab = cardCfg.peekTab !== false;
+  const wantsHideOnScroll = cardCfg.hideOnScroll !== false;
+  const [playing, setPlaying] = useState(concert?.video?.autoPlay !== false);
+  const [muted, setMuted] = useState(concert?.video?.muted !== false);
   const [appActive, setAppActive] = useState(
     AppState.currentState === 'active',
   );
@@ -130,6 +138,7 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
   );
 
   useEffect(() => {
+    if (!wantsHideOnScroll) return;
     if (!scrollY || typeof scrollY.addListener !== 'function') return;
 
     const id = scrollY.addListener(({ value }) => {
@@ -146,7 +155,7 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
     });
 
     return () => scrollY.removeListener(id);
-  }, [scrollY, hideCard, showCard]);
+  }, [scrollY, hideCard, showCard, wantsHideOnScroll]);
 
   /* ---------------- controls ---------------- */
   const onReplay = useCallback(() => {
@@ -160,11 +169,15 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
   const openDetails = useCallback(() => {
     // Sound was on here, so keep it going on the details screen: pass the
     // position and the source so the teaser can resume rather than restart.
+    const handoffCfg = concert?.audioHandoff || {};
     const handoff =
-      !muted && playing
+      handoffCfg.enabled !== false && !muted && playing
         ? {
             audioPlaying: true,
-            positionSec: positionRef.current,
+            positionSec:
+              handoffCfg.resumeAtCardPosition === false
+                ? 0
+                : positionRef.current,
             sourceUrl: concert?.video?.url,
           }
         : null;
@@ -184,7 +197,7 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
       {/* peek tab — only reachable while the card is tucked away */}
       <Animated.View
         style={[styles.peekWrap, { transform: [{ translateX: tabX }] }]}
-        pointerEvents={hidden ? 'auto' : 'none'}>
+        pointerEvents={hidden && wantsPeekTab ? 'auto' : 'none'}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={() => showCard(true)}
@@ -236,7 +249,7 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
             pointerEvents="none"
           />
           <View style={styles.livePill}>
-            <View style={styles.liveDot} />
+            {concert?.showLiveDot !== false && <View style={styles.liveDot} />}
             <Text style={styles.liveText}>{concert?.tag || 'LIVE MUSIC'}</Text>
           </View>
 
@@ -256,10 +269,12 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
               size={38}
               glyph={19}
             /> */}
-            <CircleButton
-              name={muted ? 'volume-mute' : 'volume-high'}
-              onPress={onToggleMute}
-            />
+            {controls.mute !== false && (
+              <CircleButton
+                name={muted ? 'volume-mute' : 'volume-high'}
+                onPress={onToggleMute}
+              />
+            )}
           </View>
 
           {/* footer bar */}
@@ -269,13 +284,14 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
             onPress={openDetails}>
             <View style={styles.footerDot} />
             <Text style={styles.footerText} numberOfLines={1}>
-              View Concert Details
+              {cardCfg.footerLabel || 'View Concert Details'}
             </Text>
             <Icon name="chevron-forward" size={16} color={T.textMuted} />
           </TouchableOpacity>
         </TouchableOpacity>
 
         {/* dismiss (session only) */}
+        {canDismiss && (
         <TouchableOpacity
           style={styles.closeBtn}
           activeOpacity={0.85}
@@ -286,6 +302,7 @@ export default function ConcertVideoCard({ scrollY, concert = CONCERT }) {
           }}>
           <Icon name="close" size={18} color="#FFFFFF" />
         </TouchableOpacity>
+        )}
       </Animated.View>
     </View>
   );
