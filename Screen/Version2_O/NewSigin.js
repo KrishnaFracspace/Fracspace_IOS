@@ -147,14 +147,23 @@ const handleOTPLogin = async () => {
       await AsyncStorage.setItem('mytoken', token);
       await AsyncStorage.setItem('Email', email);
 
-      if(selectedCode.code === '+91'){
-        analytics().logEvent('newUser_signin_indian', {
-          user_id: res?.email
-        });
-      }else {
-        analytics().logEvent('newUser_signin_international', {
-          user_id: res?.email
-        });
+      // `res` was undefined here (this function's variable is `response`), so
+      // this threw a ReferenceError inside the try and the catch reported it
+      // as "Invalid OTP" - after the token had already been saved. Analytics
+      // must never be able to fail a signup, hence the guard.
+      try {
+        const analyticsUserId = response?.data?.email || email;
+        if (selectedCode.code === '+91') {
+          analytics().logEvent('newUser_signin_indian', {
+            user_id: analyticsUserId,
+          });
+        } else {
+          analytics().logEvent('newUser_signin_international', {
+            user_id: analyticsUserId,
+          });
+        }
+      } catch (e) {
+        console.log('signup analytics failed (non-fatal):', e?.message);
       }
 
       setGlobalState(prev => ({
