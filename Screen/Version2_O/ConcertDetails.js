@@ -184,7 +184,7 @@ export default function ConcertDetails() {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false },
         )}
-        contentContainerStyle={{ paddingTop: HERO_H  }}>
+        contentContainerStyle={{ paddingTop: HERO_H - 30  }}>
         <View style={[styles.sheet, { minHeight: height }]}>
           <View style={styles.grabber} />
 

@@ -924,9 +924,9 @@ const Categories = carousel?.category
 
             </View>
             <TouchableOpacity onPress={() => {
-              navigation.navigate('MembershipHome');
+              navigation.navigate('ConcertDetails');
             }} style={{ paddingTop: 20, paddingHorizontal: 20 }}>
-              <Image resizeMode='cover' source={{ uri: carousel?.altairaUrl }} style={{ width: '100%', height: 100, borderRadius: 10 }} />
+              <Image resizeMode='contain' source={{ uri: "https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/bgc+(1).png" }} style={{ width: '100%', height: 110, borderRadius: 10}} />
             </TouchableOpacity>
 
             <View
@@ -1657,7 +1657,9 @@ const Categories = carousel?.category
 
           </ScrollView>
         </Animated.ScrollView>
-        <EdgeFab scrollY={scrollY} />
+        {carousel?.edgeTab &&
+          <EdgeFab scrollY={scrollY} />
+        }
         <ConcertVideoCard scrollY={scrollY} />
 
         {isMenuOpen && (
