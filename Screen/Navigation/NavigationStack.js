@@ -249,8 +249,8 @@ useLayoutEffect(() => {
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         {/* <ActivityIndicator size={'large'} color={'#043862'}/> */}
         <Image
-          source={require('../assets/logo_FS.png')}
-          style={{ width: width * 0.6, height: height * 0.3 }}
+          source={{uri: "https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/SplashImage.png"}}
+          style={{ width: width, height: height }}
         />
       </View>
     );

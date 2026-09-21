@@ -350,9 +350,9 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
     <>
       {showSplash ? (
         <Video
-          source={splashVideo}
+          source={{uri: "https://duixj37yn5405.cloudfront.net/videos/FracspaceSplash.mp4"}}
           style={styles.video}
-          resizeMode="cover"
+          // resizeMode="cover"
           muted
           onError={(e) => console.log('Video error:', e)}
         />

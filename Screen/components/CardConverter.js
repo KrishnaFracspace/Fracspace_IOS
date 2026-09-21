@@ -77,11 +77,12 @@ const CardConverter = ({PropertiesArray}) => {
       activeOpacity={0.9}
     >
       {/* Toggle */}
-      <Text style={{color: '#FFFFFF80', fontSize: 10, marginBottom: 5}}>
+      <Text style={{color: '#FFFFFF80', fontSize: 10, marginBottom: 0}}>
         Tap to convert to {nextCurrency}
       </Text>
 
       {/* TOTAL VALUE (INR → currentCurrency) */}
+      { PropertiesArray?.name !== "THE 10 CIRCLES OF ALTAIRA" &&
       <View>
         <Text style={{fontSize: 12, color: '#FFFFFFBF'}}>
           TOTAL PROPERTY VALUE
@@ -91,6 +92,7 @@ const CardConverter = ({PropertiesArray}) => {
           {convert(PropertiesArray?.Price, 'INR', currentCurrency)}
         </Text>
       </View>
+      }
 
       <View
         style={{

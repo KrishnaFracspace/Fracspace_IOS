@@ -1059,6 +1059,7 @@ useEffect(() => {
 
           </View>
 
+          { PropertiesArray?.name !== "THE 10 CIRCLES OF ALTAIRA" &&
           <View style={{marginTop:15,borderColor:'#00000080',borderWidth:0.5,borderRadius:10,padding:20,backgroundColor:'#FFF'}}>
               <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000000BF'}}>AVAILABILITY</Text>
 
@@ -1098,6 +1099,7 @@ useEffect(() => {
                   <View style={{width:`${availableFrac}%`,height:8,borderRadius:6,backgroundColor:'#021265'}}></View>
               </View>
           </View>
+          }
 
           {PropertiesArray?.investmentDetails?.show &&
             <View style={{marginTop:15}}>

@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
 
   hero: {
     position: 'absolute',
-    top: 0,
+    top: 20,
     left: 0,
     right: 0,
     height: HERO_H,
