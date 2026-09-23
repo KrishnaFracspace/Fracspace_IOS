@@ -1,7 +1,10 @@
 /**
- * Maps the /api/v1/concerts/section response (contract 1.2) onto the flat
- * shape the concert components already read, so wiring the API needs no
- * component rewrite.
+ * Maps the /api/v1/concerts/section response onto the flat shape the concert
+ * components already read, so wiring the API needs no component rewrite.
+ *
+ * Covers contract 1.2 (interest) plus the booking fields added on top of it:
+ * concert.booking, details.cta.action/bookLabel and the per-city bookable /
+ * fromPrice / ticketTypes block.
  *
  * Every field falls back to the bundled defaults in concertData.js. That is
  * deliberate: as of the first live response the backend has seeded all the
@@ -36,6 +39,52 @@ export function normalizeTheme(apiTheme) {
   return { ...CONCERT_THEME, ...(filled(apiTheme) || {}) };
 }
 
+/**
+ * Ticket tiers on a city (General / VIP / ...), from the booking API.
+ *
+ * Two rules here are easy to get wrong:
+ *  - `remaining` absent means "stock is not tracked", NOT zero. Collapsing it
+ *    to 0 would make every untracked tier look sold out.
+ *  - a tier that is listed is sellable unless the server says otherwise, so
+ *    `available` follows the house !== false rule while `soldOut` is opt-in.
+ */
+function normalizeTicketTypes(apiTypes) {
+  const list = Array.isArray(apiTypes) ? apiTypes : [];
+  return list
+    .filter(t => t && t.id)
+    .map(t => {
+      const available = t.available !== false;
+      const soldOut = !!t.soldOut;
+      const remaining = typeof t.remaining === 'number' ? t.remaining : null;
+      return {
+        id: t.id,
+        label: pick(t.label, t.id),
+        price: typeof t.price === 'number' ? t.price : null,
+        currency: pick(t.currency, null),
+        available,
+        soldOut,
+        remaining,
+        maxPerBooking:
+          typeof t.maxPerBooking === 'number' ? t.maxPerBooking : null,
+        minPerBooking:
+          typeof t.minPerBooking === 'number' ? t.minPerBooking : null,
+        // one derived flag so components stop re-deriving the three-way test
+        // (and stop getting the `remaining: null` case wrong)
+        purchasable:
+          available && !soldOut && (remaining === null || remaining > 0),
+      };
+    });
+}
+
+/** The bundled fallback cities predate booking; give them the same keys. */
+const addBookingShape = c => ({
+  bookable: false,
+  currency: null,
+  fromPrice: null,
+  ticketTypes: [],
+  ...c,
+});
+
 function normalizeCities(apiCities) {
   const list = Array.isArray(apiCities) ? apiCities : [];
   const mapped = list
@@ -55,8 +104,17 @@ function normalizeCities(apiCities) {
       startsAt: pick(c.startsAt, null),
       selectable: c.selectable !== false,
       soldOut: !!c.soldOut,
+
+      // ---- booking (absent entirely on an interest-only concert) ----
+      // `bookable` defaults to FALSE on purpose: if the server has not said a
+      // city is on sale, we must not offer a Book button that would 409 on
+      // every tap. Failing closed here is the safe direction.
+      bookable: c.bookable === true,
+      currency: pick(c.currency, null),
+      fromPrice: typeof c.fromPrice === 'number' ? c.fromPrice : null,
+      ticketTypes: normalizeTicketTypes(c.ticketTypes),
     }));
-  return mapped.length ? mapped : DEFAULTS.cities;
+  return mapped.length ? mapped : DEFAULTS.cities.map(addBookingShape);
 }
 
 function normalizeFields(apiFields) {
@@ -86,7 +144,22 @@ export function normalizeConcert(api) {
   const cta = details.cta || {};
   const form = api.interestForm || {};
 
+  // The API OMITS `booking` entirely for an interest-only concert, so absence
+  // has to mean OFF. This is the one place the house `onUnlessFalse` rule must
+  // NOT be used: `api.booking || {}` would read as enabled and would put a
+  // Book button on every concert in the list.
+  const bookingRaw = filled(api.booking);
+  const booking = {
+    enabled: !!bookingRaw && bookingRaw.enabled === true,
+    title: pick(bookingRaw && bookingRaw.title, 'Book your tickets'),
+    currency: pick(bookingRaw && bookingRaw.currency, 'INR'),
+    // a hint only: checkout reads the authoritative wallet block from
+    // /booking/options, which knows the balance and the per-booking caps
+    walletEnabled: !!bookingRaw && bookingRaw.walletEnabled !== false,
+  };
+
   const cities = normalizeCities(schedule.cities);
+  const anyCityBookable = cities.some(c => c.bookable);
 
   // The server says defaultCityId always points at a pickable city, but a
   // stale dashboard value would otherwise leave the form holding a cityId
@@ -168,8 +241,24 @@ export function normalizeConcert(api) {
     defaultCityId,
     about: paragraphs,
 
+    // ---- booking ----
+    booking,
+    // kept as separate flags so a misconfiguration stays inspectable: booking
+    // enabled with no bookable city means the dashboard opened sales but no
+    // city is actually on sale.
+    bookingEnabled: booking.enabled,
+    anyCityBookable,
+
     cta: {
+      // 'interest' (the default) or 'book'. BOTH conditions are required: the
+      // concert-level switch and a city actually on sale. Failing closed shows
+      // the existing interest CTA rather than a button that errors.
+      action:
+        booking.enabled && anyCityBookable && cta.action === 'book'
+          ? 'book'
+          : 'interest',
       label: pick(cta.label, DEFAULTS.cta.label),
+      bookLabel: pick(cta.bookLabel, 'Book tickets'),
       registeredLabel: pick(cta.registeredLabel, "You're Interested"),
       note: pick(cta.note, DEFAULTS.cta.note),
     },
