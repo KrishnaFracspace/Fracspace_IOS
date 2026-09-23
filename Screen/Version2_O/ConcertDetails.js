@@ -32,6 +32,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AudioWaveform from '../components/AudioWaveform';
 import ConcertInterestForm from '../components/ConcertInterestForm';
+import ConcertCheckoutSheet from '../components/ConcertCheckoutSheet';
 import ShinyTag from '../components/ShinyTag';
 import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
 import { normalizeSection } from '../utils/concertAdapter';
@@ -113,6 +114,12 @@ export default function ConcertDetails() {
   // out the first half second of the track before jumping.
   const [seekPending, setSeekPending] = useState(resumeAt > 0);
   const [formVisible, setFormVisible] = useState(false);
+  const [checkoutVisible, setCheckoutVisible] = useState(false);
+
+  // 'book' switches the sticky CTA from interest capture to ticket sales.
+  // The adapter only reports 'book' when the concert-level switch is on AND a
+  // city is actually on sale, so no extra guard is needed here.
+  const bookingMode = concert?.cta?.action === 'book';
   const [registered, setRegistered] = useState(false);
   const [appActive, setAppActive] = useState(
     AppState.currentState === 'active',
@@ -427,30 +434,48 @@ export default function ConcertDetails() {
           pointerEvents="none"
         />
 
-        {/* Once registered the CTA is a status label, not a button: there is
-            no edit endpoint, so re-opening the form could only fail. */}
+        {/* In booking mode the CTA sells tickets and stays live even for a
+            user who already registered interest - the two are separate things.
+            In interest mode it becomes a status label once registered: there
+            is no edit endpoint, so re-opening the form could only fail. */}
         <TouchableOpacity
           activeOpacity={0.9}
-          disabled={registered}
-          onPress={() => setFormVisible(true)}
+          disabled={!bookingMode && registered}
+          onPress={() =>
+            bookingMode ? setCheckoutVisible(true) : setFormVisible(true)
+          }
           style={{ width: '100%' }}>
           <LinearGradient
             colors={
-              registered
+              !bookingMode && registered
                 ? [T.surfaceActive, T.surface]
                 : [T.goldLight, T.gold, T.goldDark]
             }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
-            style={[styles.ctaBtn, registered && styles.ctaBtnDone]}>
+            style={[
+              styles.ctaBtn,
+              !bookingMode && registered && styles.ctaBtnDone,
+            ]}>
             <Icon
-              name={registered ? 'checkmark-circle' : 'sparkles'}
+              name={
+                bookingMode
+                  ? 'ticket'
+                  : registered
+                  ? 'checkmark-circle'
+                  : 'sparkles'
+              }
               size={17}
-              color={registered ? T.gold : '#1A1206'}
+              color={!bookingMode && registered ? T.gold : '#1A1206'}
             />
             <Text
-              style={[styles.ctaText, registered && { color: T.gold }]}>
-              {registered
+              style={[
+                styles.ctaText,
+                !bookingMode && registered && { color: T.gold },
+              ]}>
+              {bookingMode
+                ? concert?.cta?.bookLabel || 'Book tickets'
+                : registered
                 ? concert?.cta?.registeredLabel || "You're Interested"
                 : concert?.cta?.label}
             </Text>
@@ -474,6 +499,58 @@ export default function ConcertDetails() {
         onClose={didSubmit => {
           setFormVisible(false);
           if (didSubmit) setRegistered(true);
+        }}
+      />
+
+      <ConcertCheckoutSheet
+        visible={checkoutVisible}
+        concert={concert}
+        initialCityId={selectedCity?.id}
+        onClose={() => setCheckoutVisible(false)}
+        onRequireLogin={() => {
+          setCheckoutVisible(false);
+          navigation.navigate('NewLogin', {
+            redirectAfterLogin: {
+              screen: 'ConcertDetails',
+              params: { concertId: concert?.id },
+            },
+          });
+        }}
+        onBookingCreated={result => {
+          setCheckoutVisible(false);
+          // Wallet covered the whole total: the booking is already confirmed
+          // and there is nothing to pay online.
+          if (result?.settledImmediately) {
+            navigation.navigate('ConcertBookingSuccess', {
+              booking: result.booking,
+              concert,
+            });
+            return;
+          }
+          if (result?.canOpenPayU) {
+            navigation.navigate('ConcertPaymentPage', {
+              payuHtml: result.payuHtml,
+              txnId: result.txnId,
+              bookingId: result.booking?.bookingId,
+              referenceCode: result.booking?.referenceCode,
+              booking: result.booking,
+              concert,
+              priceChanged: result.priceChanged,
+              quotedTotal: result.quotedTotal,
+            });
+            return;
+          }
+          // requiresPayU with no usable form. The booking exists, so it is
+          // handed to the failure screen where it can be resumed rather than
+          // silently dropped.
+          navigation.navigate('ConcertBookingFailed', {
+            outcome: 'error',
+            resumable: true,
+            bookingId: result?.booking?.bookingId,
+            referenceCode: result?.booking?.referenceCode,
+            booking: result?.booking,
+            concert,
+          });
         }}
       />
     </View>

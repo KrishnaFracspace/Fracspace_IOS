@@ -20,6 +20,9 @@ import InteriorFormThird from '../Version2_O/InteriorFormThird';
 import Locationview from '../Version2_O/Locationview';
 import Like from '../Like';
 import ConcertDetails from '../Version2_O/ConcertDetails';
+import ConcertPaymentPage from '../Version2_O/ConcertPaymentPage';
+import ConcertBookingSuccess from '../Version2_O/ConcertBookingSuccess';
+import ConcertBookingFailed from '../Version2_O/ConcertBookingFailed';
 
 
 const Stack = createNativeStackNavigator();
@@ -47,6 +50,9 @@ export default function HomeStack() {
         <Stack.Screen name="InteriorFormThird" component={InteriorFormThird}/>
         <Stack.Screen name="Locationview" component={Locationview}/>
         <Stack.Screen name="ConcertDetails" component={ConcertDetails}/>
+        <Stack.Screen name="ConcertPaymentPage" component={ConcertPaymentPage}/>
+        <Stack.Screen name="ConcertBookingSuccess" component={ConcertBookingSuccess}/>
+        <Stack.Screen name="ConcertBookingFailed" component={ConcertBookingFailed}/>
 
         {/* ------ Dreamscape ------ */}
         <Stack.Screen name="DreamscapeHome" component={DreamscapeHome}/>
