@@ -1328,3 +1328,200 @@ export const classifyInterestError = err => {
       return { kind: 'error', message: body?.message };
   }
 };
+
+
+/* ------------------------------------------------------------------ *
+ *  Concert ticket booking                                            *
+ * ------------------------------------------------------------------ */
+
+/*
+ * Auth, which differs per route:
+ *   /section                 - neither key nor token (token only enriches)
+ *   /booking/options         - x-api-key required, token OPTIONAL (a token
+ *                              adds the wallet balance + ticketsAlreadyHeld)
+ *   everything else below    - x-api-key AND bearer token required
+ * concertHeaders already sends x-api-key, so passing `token` is all that
+ * differs between them.
+ *
+ * All of these reject on 4xx; classifyBookingError below maps the response.
+ * Money is never computed here - the server re-prices everything and ignores
+ * any unitPrice / amount / totalAmount the client sends.
+ */
+
+/**
+ * GET /:concertId/booking/options
+ * Tiers, per-user caps, wallet availability and the refund policy.
+ * Never 401s without a token - it just returns the logged-out view.
+ */
+export const GetConcertBookingOptions = async ({ concertId, cityId, token } = {}) => {
+  const params = {};
+  if (cityId) params.cityId = cityId;
+  return await axios.get(
+    `${CONCERT_BASE}/${encodeURIComponent(concertId)}/booking/options`,
+    { params, headers: await concertHeaders({ token }) },
+  );
+};
+
+/**
+ * POST /:concertId/checkout
+ * Prices a basket. Creates nothing, reserves nothing, debits nothing, so it
+ * is safe to call on every quantity change or wallet toggle.
+ * Body: { cityId, items: [{ ticketTypeId, quantity }], useWallet, walletAmount? }
+ */
+export const GetConcertCheckoutQuote = async (concertId, payload, token) => {
+  return await axios.post(
+    `${CONCERT_BASE}/${encodeURIComponent(concertId)}/checkout`,
+    payload,
+    { headers: await concertHeaders({ token }) },
+  );
+};
+
+/**
+ * POST /:concertId/book
+ * Creates the booking and returns the PayU form (or confirms outright when
+ * the wallet covers the total).
+ *
+ * NOT idempotent: two calls create two bookings and two PayU transactions.
+ * The button must stay disabled for the whole round trip.
+ *
+ * A NETWORK failure here is ambiguous - the booking may exist even though we
+ * never saw the response. Recover with GetMyConcertBookings({ status:
+ * 'pending_payment' }) and resume it; do not simply call this again.
+ */
+export const CreateConcertBooking = async (concertId, payload, token) => {
+  return await axios.post(
+    `${CONCERT_BASE}/${encodeURIComponent(concertId)}/book`,
+    payload,
+    { headers: await concertHeaders({ token }) },
+  );
+};
+
+/**
+ * POST /booking/verify-payment
+ * Asks PayU directly and settles the booking. Safe to call repeatedly, and
+ * the only authority on whether a payment succeeded - the WebView URL is not.
+ * Body: one of { txnID } | { bookingId } | { referenceCode }
+ */
+export const VerifyConcertPayment = async (payload, token) => {
+  return await axios.post(`${CONCERT_BASE}/booking/verify-payment`, payload, {
+    headers: await concertHeaders({ token }),
+  });
+};
+
+/**
+ * POST /bookings/:bookingId/pay
+ * Re-opens payment for a booking stuck at pending_payment.
+ *
+ * Checks PayU FIRST: a 200 carrying requiresPayU:false means the earlier
+ * attempt actually succeeded and the booking is now confirmed, so the app
+ * must NOT open PayU again. Same txnid and amount as the original - it is
+ * not re-priced.
+ */
+export const ResumeConcertPayment = async (bookingId, token) => {
+  return await axios.post(
+    `${CONCERT_BASE}/bookings/${encodeURIComponent(bookingId)}/pay`,
+    {},
+    { headers: await concertHeaders({ token }) },
+  );
+};
+
+/**
+ * GET /bookings
+ * Stale pending_payment rows are re-checked with PayU during this call, so a
+ * booking whose callback was lost can come back confirmed here.
+ */
+export const GetMyConcertBookings = async ({ status, concertId, page, limit, token } = {}) => {
+  const params = {};
+  if (status) params.status = status;
+  if (concertId) params.concertId = concertId;
+  if (page) params.page = page;
+  if (limit) params.limit = limit;
+  return await axios.get(`${CONCERT_BASE}/bookings`, {
+    params,
+    headers: await concertHeaders({ token }),
+  });
+};
+
+/** GET /bookings/:bookingIdOrReferenceCode - both forms of id work. */
+export const GetConcertBooking = async (bookingIdOrRef, token) => {
+  return await axios.get(
+    `${CONCERT_BASE}/bookings/${encodeURIComponent(bookingIdOrRef)}`,
+    { headers: await concertHeaders({ token }) },
+  );
+};
+
+/**
+ * POST /bookings/:bookingId/cancel
+ * Read the booking first and show its `cancellation` block - that is exactly
+ * what the refund will be.
+ */
+export const CancelConcertBooking = async (bookingIdOrRef, reason, token) => {
+  return await axios.post(
+    `${CONCERT_BASE}/bookings/${encodeURIComponent(bookingIdOrRef)}/cancel`,
+    reason ? { reason } : {},
+    { headers: await concertHeaders({ token }) },
+  );
+};
+
+/**
+ * Maps any booking-call failure onto one of:
+ *   { kind: 'network' }        -> unknown whether the server acted; on /book
+ *                                 this means "look for a pending booking"
+ *   { kind: 'fieldErrors' }    -> 400, paint `errors` onto the form
+ *   { kind: 'auth' }           -> 401, send to login
+ *   { kind: 'forbidden' }      -> 403, someone else's booking
+ *   { kind: 'notFound' }       -> 404
+ *   { kind: 'conflict' }       -> 409, see the flags below
+ *   { kind: 'closed' }         -> 410, concert no longer on sale
+ *   { kind: 'error' }          -> anything else
+ *
+ * The API has no stable error code, so the 409s are told apart by which key
+ * `errors` carries - which is structured data, unlike the message string:
+ *   errors.walletAmount   -> balance changed since the quote  (walletChanged)
+ *   errors.tickets        -> per-user ticket cap reached      (capReached)
+ *   errors.cityId         -> that city is not on sale
+ *   errors.status         -> the previous PayU attempt failed (retryBlocked)
+ *   errors.referenceCode  -> amount mismatch, needs a human   (needsSupport)
+ * A 409 with no `errors` at all is a state clash (already confirmed, already
+ * cancelled, not cancellable) and the server message is the right thing to
+ * show.
+ */
+export const classifyBookingError = err => {
+  const res = err && err.response;
+  if (!res) return { kind: 'network', message: null, errors: {}, status: 0 };
+
+  const body = res.data || {};
+  const errors = (body && body.errors) || {};
+  const keys = Object.keys(errors);
+  const base = {
+    message: body.message || null,
+    errors,
+    field: keys.length ? keys[0] : null,
+    status: res.status,
+  };
+
+  switch (res.status) {
+    case 400:
+      return { kind: 'fieldErrors', ...base };
+    case 401:
+      return { kind: 'auth', ...base };
+    case 403:
+      return { kind: 'forbidden', ...base };
+    case 404:
+      return { kind: 'notFound', ...base };
+    case 409:
+      return {
+        kind: 'conflict',
+        ...base,
+        walletChanged: keys.indexOf('walletAmount') !== -1,
+        capReached: keys.indexOf('tickets') !== -1,
+        cityClosed: keys.indexOf('cityId') !== -1,
+        retryBlocked: keys.indexOf('status') !== -1,
+        needsSupport: keys.indexOf('referenceCode') !== -1,
+      };
+    case 410:
+      return { kind: 'closed', ...base };
+    default:
+      return { kind: 'error', ...base };
+  }
+};
