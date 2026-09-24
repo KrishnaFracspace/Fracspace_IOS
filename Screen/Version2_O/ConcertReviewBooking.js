@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CONCERT_THEME as T } from '../utils/concertData';
+import { BOOKING_THEME as T } from '../utils/concertData';
 import {
   formatCountdown,
   formatEventShort,
@@ -344,8 +344,9 @@ export default function ConcertReviewBooking({ route, navigation }) {
           disabled={!quote || paying || secondsLeft <= 0}
           onPress={onPay}
           style={{ opacity: !quote || paying || secondsLeft <= 0 ? 0.5 : 1 }}>
+          {/* sampled: #D29355 -> #E6B47A -> #D2975C, light band in the middle */}
           <LinearGradient
-            colors={[T.goldLight, T.gold, T.goldDark]}
+            colors={[T.goldDark, T.goldLight, T.goldDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.cta}>
@@ -396,46 +397,43 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 18,
+    paddingHorizontal: 22,
     paddingVertical: 12,
   },
+  // measured 48pt across, flat #212123, no border
   circleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: T.circle,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headerTitle: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 17 },
 
-  body: { paddingHorizontal: 18, paddingBottom: 24 },
+  body: { paddingHorizontal: 22, paddingBottom: 24 },
 
   holdBar: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    backgroundColor: 'rgba(206,143,82,0.09)',
-    borderWidth: 1,
-    borderColor: 'rgba(206,143,82,0.28)',
+    backgroundColor: T.holdBanner,
     borderRadius: 11,
     paddingHorizontal: 14,
-    paddingVertical: 11,
+    height: 36,
     marginTop: 6,
   },
   holdText: { color: T.textMuted, fontFamily: 'WorkSans-Regular', fontSize: 12.5 },
   holdTime: { color: T.goldLight, fontFamily: 'WorkSans-Bold' },
 
+  // measured 112pt tall with a 12pt gap, borderless
   card: {
     backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    marginTop: 14,
+    borderRadius: 16,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    marginTop: 12,
+    justifyContent: 'center',
   },
   stale: { opacity: 0.6 },
   cardDivider: {
@@ -488,14 +486,14 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
 
-  footer: { paddingHorizontal: 18, paddingTop: 8, paddingBottom: 14 },
+  footer: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 20 },
   cta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 9,
-    height: 54,
-    borderRadius: 12,
+    height: 50,
+    borderRadius: 14,
   },
   ctaText: { color: '#1A1206', fontFamily: 'WorkSans-Bold', fontSize: 15.5 },
 });

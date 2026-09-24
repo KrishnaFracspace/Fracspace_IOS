@@ -15,7 +15,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CONCERT_THEME as T } from '../utils/concertData';
+import { BOOKING_THEME as T } from '../utils/concertData';
 import {
   formatEventDateTime,
   formatMoney,
@@ -542,9 +542,16 @@ export default function ConcertCheckout({ route, navigation }) {
                 <Text style={styles.walletSub}>
                   {wallet.requiresLogin
                     ? 'Log in to use your wallet balance'
-                    : walletUsable
-                    ? 'Available: ' + formatMoney(wallet.balance, currency)
-                    : wallet.unavailableNote || 'No wallet balance available'}
+                    : walletUsable ? (
+                      <>
+                        {'Available: '}
+                        <Text style={styles.walletBalance}>
+                          {formatMoney(wallet.balance, currency)}
+                        </Text>
+                      </>
+                    ) : (
+                      wallet.unavailableNote || 'No wallet balance available'
+                    )}
                 </Text>
               </View>
               {walletUsable ? (
@@ -605,8 +612,10 @@ export default function ConcertCheckout({ route, navigation }) {
             disabled={!canProceed}
             onPress={onProceed}
             style={{ marginTop: 16, opacity: canProceed ? 1 : 0.45 }}>
+            {/* sampled off the frame: #CF9053 -> #E6B379 -> #D29355, so the
+                light band sits in the MIDDLE rather than at one end */}
             <LinearGradient
-              colors={[T.goldLight, T.gold, T.goldDark]}
+              colors={[T.goldDark, T.goldLight, T.goldDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.cta}>
@@ -634,25 +643,36 @@ export default function ConcertCheckout({ route, navigation }) {
                 />
               </TouchableOpacity>
               {showRefunds
-                ? options.refundPolicy.rules.map(r => (
-                    <View key={r.id || r.label} style={styles.refundRow}>
-                      <View style={{ flex: 1, paddingRight: 12 }}>
-                        <Text style={styles.refundLabel}>{r.label}</Text>
-                        {r.deadline ? (
-                          <Text style={styles.refundDeadline}>
-                            until {formatShortDate(r.deadline)}
+                ? options.refundPolicy.rules.map((r, idx) => {
+                    // the frame emphasises only the top rule: white label and
+                    // a gold percentage, everything below it muted
+                    const lead = idx === 0;
+                    return (
+                      <View key={r.id || r.label} style={styles.refundRow}>
+                        <View style={{ flex: 1, paddingRight: 12 }}>
+                          <Text
+                            style={[
+                              styles.refundLabel,
+                              !lead && styles.refundLabelMuted,
+                            ]}>
+                            {r.label}
                           </Text>
-                        ) : null}
+                          {r.deadline ? (
+                            <Text style={styles.refundDeadline}>
+                              until {formatShortDate(r.deadline)}
+                            </Text>
+                          ) : null}
+                        </View>
+                        <Text
+                          style={[
+                            styles.refundPct,
+                            !lead && styles.refundPctMuted,
+                          ]}>
+                          {r.refundPercent}%
+                        </Text>
                       </View>
-                      <Text
-                        style={[
-                          styles.refundPct,
-                          r.refundPercent === 0 && styles.dim,
-                        ]}>
-                        {r.refundPercent}%
-                      </Text>
-                    </View>
-                  ))
+                    );
+                  })
                 : null}
             </View>
           ) : null}
@@ -689,10 +709,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 34,
   },
-  pad: { paddingHorizontal: 18, marginTop: -14 },
+  pad: { paddingHorizontal: 22, marginTop: -14 },
   dim: { color: T.textDim },
 
-  heroWrap: { height: 230, backgroundColor: T.surface },
+  heroWrap: { height: 225, backgroundColor: T.surface },
   hero: { width: '100%', height: '100%' },
   heroBar: {
     position: 'absolute',
@@ -746,14 +766,14 @@ const styles = StyleSheet.create({
     flex: 1,
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 12.5,
+    fontSize: 13.5,
     marginLeft: 9,
   },
 
   sectionTitle: {
     color: T.gold,
-    fontFamily: 'WorkSans-SemiBold',
-    fontSize: 15,
+    fontFamily: 'WorkSans-Bold',
+    fontSize: 17,
     marginBottom: 12,
   },
   emptyInline: {
@@ -781,19 +801,23 @@ const styles = StyleSheet.create({
   },
   retryText: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 13.5 },
 
+  // measured 138pt tall with a 12pt gap; the frame shows no border on an
+  // unselected card, the fill alone separates it from the page
   tierCard: {
     backgroundColor: T.surface,
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: 'transparent',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
+    minHeight: 138,
+    justifyContent: 'center',
   },
-  tierCardOn: { borderColor: 'rgba(206,143,82,0.55)' },
+  tierCardOn: { borderColor: T.borderActive },
   tierCardError: { borderColor: '#B3453B' },
   tierHead: { flexDirection: 'row', alignItems: 'flex-start' },
   tierTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  tierName: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 16 },
+  tierName: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 17 },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -821,7 +845,7 @@ const styles = StyleSheet.create({
   tierDesc: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 12.5,
+    fontSize: 13,
     lineHeight: 19,
     marginTop: 7,
   },
@@ -860,7 +884,7 @@ const styles = StyleSheet.create({
     fontFamily: 'WorkSans-SemiBold',
     fontSize: 9,
   },
-  price: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 19, marginTop: 2 },
+  price: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 20, marginTop: 2 },
   perTicket: {
     color: T.textDim,
     fontFamily: 'WorkSans-Regular',
@@ -913,9 +937,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: T.surface,
     borderWidth: 1,
-    borderColor: T.border,
+    borderColor: 'transparent',
     borderRadius: 14,
-    padding: 13,
+    paddingHorizontal: 12,
+    height: 50,
   },
   walletCardOn: {
     borderColor: 'rgba(206,143,82,0.55)',
@@ -952,6 +977,7 @@ const styles = StyleSheet.create({
     fontSize: 11.5,
     marginTop: 3,
   },
+  walletBalance: { color: T.balance, fontFamily: 'WorkSans-SemiBold' },
   toggle: {
     width: 42,
     height: 25,
@@ -988,13 +1014,11 @@ const styles = StyleSheet.create({
     marginTop: 7,
   },
 
-  cta: { height: 54, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   ctaText: { color: '#1A1206', fontFamily: 'WorkSans-Bold', fontSize: 15.5 },
 
   refundCard: {
     backgroundColor: T.surface,
-    borderWidth: 1,
-    borderColor: T.border,
     borderRadius: 14,
     paddingHorizontal: 15,
     paddingVertical: 4,
@@ -1020,7 +1044,8 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: T.border,
   },
-  refundLabel: { color: T.text, fontFamily: 'WorkSans-Regular', fontSize: 12.5 },
+  refundLabel: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 12.5 },
+  refundLabelMuted: { color: T.textMuted, fontFamily: 'WorkSans-Regular' },
   refundDeadline: {
     color: T.textDim,
     fontFamily: 'WorkSans-Regular',
@@ -1028,6 +1053,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   refundPct: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 13 },
+  refundPctMuted: { color: T.textMuted },
 
   footNote: {
     color: T.textDim,

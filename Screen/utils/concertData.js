@@ -9,7 +9,7 @@ export const CONCERT_THEME = {
   goldLight: '#E7B87E',
   goldDark: '#A96F3A',
   bg: '#0A0806',
-  surface: '#15100C',
+  surface: '#000',
   surfaceActive: '#1C1510',
   border: '#2E2318',
   borderActive: '#CE8F52',
@@ -94,3 +94,30 @@ export const CONCERT = {
 };
 
 export default CONCERT;
+
+/**
+ * Palette for the ticket-booking screens, measured off the Figma frames
+ * (4x and 3x exports, sampled pixel-exact).
+ *
+ * Deliberately NOT the same as CONCERT_THEME above. The concert details
+ * screen is live on the warm brown palette the dashboard sends; the booking
+ * design is cool-neutral. Keeping them apart means shipping booking cannot
+ * shift the colours of a screen that is already in production.
+ */
+export const BOOKING_THEME = {
+  ...CONCERT_THEME,
+  bg: '#08080A',        // frame fill
+  surface: '#0D0E13',   // every card
+  surfaceActive: '#141520',
+  border: '#1B1C22',    // cards read as borderless; this is for steppers only
+  borderActive: 'rgba(206,143,82,0.55)',
+  text: '#FFFFFF',
+  textMuted: '#AAAAAA', // neutral grey, not the warm #B9AFA6
+  textDim: '#7E7E85',
+  gold: '#CE8F52',
+  goldLight: '#E6B379', // the light middle of the CTA gradient
+  goldDark: '#CF9053',
+  circle: '#212123',    // back-button circle
+  holdBanner: '#1C1511',
+  balance: '#247010',   // the wallet amount reads green in the design
+};
