@@ -186,6 +186,7 @@ export default function ConcertReviewBooking({ route, navigation }) {
       if (result.canOpenPayU) {
         navigation.replace('ConcertPaymentPage', {
           payuHtml: result.payuHtml,
+          payuAction: result.payuAction,
           txnId: result.txnId,
           bookingId: result.booking?.bookingId,
           referenceCode: result.booking?.referenceCode,

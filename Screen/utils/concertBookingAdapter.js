@@ -493,6 +493,8 @@ export function normalizeBookResponse(payload) {
      * strand the user on a blank screen instead of surfacing it.
      */
     canOpenPayU: requiresPayU && !!payuHtml,
+    /** Gateway origin, needed as the WebView baseUrl (see ConcertPaymentPage). */
+    payuAction: (payu && typeof payu.action === 'string' && payu.action) || null,
     /** Wallet covered the whole thing; there is nothing to pay online. */
     settledImmediately: !requiresPayU && !!booking && booking.isConfirmed,
     txnId: (payu && payu.data && pick(payu.data.txnid, null)) || null,

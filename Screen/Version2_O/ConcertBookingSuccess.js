@@ -14,6 +14,26 @@ import { CONCERT_THEME as T } from '../utils/concertData';
 import { formatEventShort, formatMoney } from '../utils/concertFormat';
 import { clearPendingBooking } from '../utils/concertPendingBooking';
 
+/**
+ * Back to the home tab.
+ *
+ * Two things had to be right here and neither was obvious:
+ * the bottom tab is called "HomeStack", not "Home" - navigating to a screen
+ * name that does not exist resolves to nothing and the button silently does
+ * nothing; and simply switching tabs would leave ConcertDetails -> Checkout
+ * -> Review -> Payment -> this screen still stacked underneath, so the user
+ * would not move. Resetting the ROOT navigator clears all of it.
+ */
+function goToHome(navigation) {
+  let root = navigation;
+  while (root.getParent && root.getParent()) root = root.getParent();
+  try {
+    root.reset({ index: 0, routes: [{ name: 'BottomNavigations' }] });
+  } catch (e) {
+    navigation.navigate('BottomNavigations', { screen: 'HomeStack' });
+  }
+}
+
 export default function ConcertBookingSuccess({ route, navigation }) {
   const { booking, concert } = route.params || {};
   const payment = booking?.payment || {};
@@ -23,9 +43,7 @@ export default function ConcertBookingSuccess({ route, navigation }) {
     clearPendingBooking();
   }, []);
 
-  const goHome = () => {
-    navigation.navigate('BottomNavigations', { screen: 'Home' });
-  };
+  const goHome = () => goToHome(navigation);
 
   // There is nothing to go back to: the payment page was replaced, and the
   // booking is already paid for.

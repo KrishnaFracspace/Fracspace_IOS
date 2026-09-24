@@ -56,6 +56,26 @@ const COPY = {
   },
 };
 
+/**
+ * Back to the home tab.
+ *
+ * Two things had to be right here and neither was obvious:
+ * the bottom tab is called "HomeStack", not "Home" - navigating to a screen
+ * name that does not exist resolves to nothing and the button silently does
+ * nothing; and simply switching tabs would leave ConcertDetails -> Checkout
+ * -> Review -> Payment -> this screen still stacked underneath, so the user
+ * would not move. Resetting the ROOT navigator clears all of it.
+ */
+function goToHome(navigation) {
+  let root = navigation;
+  while (root.getParent && root.getParent()) root = root.getParent();
+  try {
+    root.reset({ index: 0, routes: [{ name: 'BottomNavigations' }] });
+  } catch (e) {
+    navigation.navigate('BottomNavigations', { screen: 'HomeStack' });
+  }
+}
+
 export default function ConcertBookingFailed({ route, navigation }) {
   const {
     outcome,
@@ -76,7 +96,7 @@ export default function ConcertBookingFailed({ route, navigation }) {
 
   const goHome = () => {
     clearPendingBooking();
-    navigation.navigate('BottomNavigations', { screen: 'Home' });
+    goToHome(navigation);
   };
 
   const onRetry = useCallback(async () => {
@@ -102,6 +122,7 @@ export default function ConcertBookingFailed({ route, navigation }) {
       if (result.canOpenPayU) {
         navigation.replace('ConcertPaymentPage', {
           payuHtml: result.payuHtml,
+          payuAction: result.payuAction,
           txnId: result.txnId,
           bookingId: result.booking?.bookingId || bookingId,
           referenceCode: result.booking?.referenceCode || referenceCode,

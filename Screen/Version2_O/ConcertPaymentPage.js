@@ -46,6 +46,7 @@ const POLL_DELAYS_MS = [0, 2000, 4000, 6000, 8000];
 export default function ConcertPaymentPage({ route, navigation }) {
   const {
     payuHtml,
+    payuAction,
     txnId,
     bookingId,
     referenceCode,
@@ -239,6 +240,12 @@ export default function ConcertPaymentPage({ route, navigation }) {
 
   /* ---------------- render ---------------- */
 
+  // Origin of the gateway, e.g. https://test.payu.in - see the WebView below.
+  const payuOrigin = (() => {
+    const m = /^(https?:\/\/[^/]+)/i.exec(String(payuAction || ''));
+    return m ? m[1] : undefined;
+  })();
+
   if (!payuHtml) {
     // normalizeBookResponse only sets canOpenPayU when a usable form exists,
     // so this is a guard against a bad navigation rather than an expected path
@@ -285,12 +292,27 @@ export default function ConcertPaymentPage({ route, navigation }) {
 
       <View style={styles.webWrap}>
         <WebView
-          source={{ html: payuHtml }}
+          /**
+           * baseUrl matters more than it looks.
+           *
+           * Injected HTML with no baseUrl runs on about:blank, so every cookie
+           * PayU sets counts as third-party - and Android's WebView blocks
+           * those by default. The gateway then loses its session mid-flow and
+           * reports a failed payment, while iOS (which is far more permissive
+           * here) sails through. Giving the page the gateway's own origin makes
+           * the POST same-origin and the cookies first-party.
+           */
+          source={{ html: payuHtml, baseUrl: payuOrigin }}
           javaScriptEnabled
           domStorageEnabled
           originWhitelist={['*']}
           startInLoadingState
           setSupportMultipleWindows={false}
+          thirdPartyCookiesEnabled
+          sharedCookiesEnabled
+          javaScriptCanOpenWindowsAutomatically
+          mixedContentMode="always"
+          allowsBackForwardNavigationGestures={false}
           onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
           onNavigationStateChange={onNavigationStateChange}
           renderLoading={() => (
