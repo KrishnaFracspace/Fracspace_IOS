@@ -43,6 +43,18 @@ const RETURN_MARKERS = [
 /** Verify is not instant - PayU may still be settling. Poll, then give up. */
 const POLL_DELAYS_MS = [0, 2000, 4000, 6000, 8000];
 
+/**
+ * Has the user actually reached the gateway?
+ *
+ * A bare origin does not count. Since the page is injected with the gateway's
+ * origin as baseUrl, the very first navigation is already a payu URL - without
+ * the path check this would flip true before the form had even posted, and an
+ * instant back-out would then be reported as a possible lost payment rather
+ * than an abandoned checkout.
+ */
+const atGateway = url =>
+  /payu/i.test(url) && /^https?:\/\/[^/]+\/.+/i.test(url);
+
 export default function ConcertPaymentPage({ route, navigation }) {
   const {
     payuHtml,
@@ -188,14 +200,14 @@ export default function ConcertPaymentPage({ route, navigation }) {
       );
       return false;
     }
-    if (/payu/i.test(url)) payuAttempted.current = true;
+    if (atGateway(url)) payuAttempted.current = true;
     return true;
   };
 
   const onNavigationStateChange = state => {
     const url = (state?.url || '').toLowerCase();
     if (!url) return;
-    if (/payu/i.test(url)) payuAttempted.current = true;
+    if (atGateway(url)) payuAttempted.current = true;
     if (RETURN_MARKERS.some(m => url.indexOf(m) !== -1)) settle();
   };
 
@@ -311,7 +323,7 @@ export default function ConcertPaymentPage({ route, navigation }) {
           thirdPartyCookiesEnabled
           sharedCookiesEnabled
           javaScriptCanOpenWindowsAutomatically
-          mixedContentMode="always"
+          mixedContentMode="compatibility"
           allowsBackForwardNavigationGestures={false}
           onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
           onNavigationStateChange={onNavigationStateChange}
