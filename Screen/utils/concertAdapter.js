@@ -59,7 +59,16 @@ function normalizeTicketTypes(apiTypes) {
       return {
         id: t.id,
         label: pick(t.label, t.id),
+        description: pick(t.description, null),
+        badge: pick(t.badge, null),
+        perks: (Array.isArray(t.perks) ? t.perks : [])
+          .map(x => String(x || '').replace(/[,\s]+$/, '').trim())
+          .filter(Boolean),
         price: typeof t.price === 'number' ? t.price : null,
+        compareAtPrice:
+          typeof t.compareAtPrice === 'number' && t.compareAtPrice > t.price
+            ? t.compareAtPrice
+            : null,
         currency: pick(t.currency, null),
         available,
         soldOut,
@@ -152,6 +161,8 @@ export function normalizeConcert(api) {
   const booking = {
     enabled: !!bookingRaw && bookingRaw.enabled === true,
     title: pick(bookingRaw && bookingRaw.title, 'Book your tickets'),
+    subtitle: pick(bookingRaw && bookingRaw.subtitle, null),
+    checkoutLabel: pick(bookingRaw && bookingRaw.checkoutLabel, 'Proceed to pay'),
     currency: pick(bookingRaw && bookingRaw.currency, 'INR'),
     // a hint only: checkout reads the authoritative wallet block from
     // /booking/options, which knows the balance and the per-booking caps

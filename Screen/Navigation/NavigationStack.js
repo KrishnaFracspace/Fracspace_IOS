@@ -88,6 +88,8 @@ import PackageDescription from '../Version2_O/PackageDescription';
 import AddressSearchScreen from '../Version2_O/AddressSearchScreen';
 import CompleteProfileScreen from '../Version2_O/CompleteProfileScreen';
 import ConcertDetails from '../Version2_O/ConcertDetails';
+import ConcertCheckout from '../Version2_O/ConcertCheckout';
+import ConcertReviewBooking from '../Version2_O/ConcertReviewBooking';
 import ConcertPaymentPage from '../Version2_O/ConcertPaymentPage';
 import ConcertBookingSuccess from '../Version2_O/ConcertBookingSuccess';
 import ConcertBookingFailed from '../Version2_O/ConcertBookingFailed';
@@ -285,6 +287,8 @@ useLayoutEffect(() => {
         <Stack.Screen name="ViewAgreement" component={ViewAgreement} options={{headerShown:false}}/>
         <Stack.Screen name="PackageDescription" component={PackageDescription} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertDetails" component={ConcertDetails} options={{headerShown:false}}/>
+        <Stack.Screen name="ConcertCheckout" component={ConcertCheckout} options={{headerShown:false}}/>
+        <Stack.Screen name="ConcertReviewBooking" component={ConcertReviewBooking} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertPaymentPage" component={ConcertPaymentPage} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertBookingSuccess" component={ConcertBookingSuccess} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertBookingFailed" component={ConcertBookingFailed} options={{headerShown:false}}/>

@@ -11,39 +11,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CONCERT_THEME as T } from '../utils/concertData';
-import { formatMoney } from '../components/ConcertCheckoutSheet';
+import { formatEventShort, formatMoney } from '../utils/concertFormat';
 import { clearPendingBooking } from '../utils/concertPendingBooking';
-
-const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-
-/** Asia/Kolkata. The venue's clock, not the phone's. */
-const VENUE_OFFSET_MIN = 330;
-
-/**
- * Formats the event time in the VENUE's timezone.
- *
- * Two reasons this is not just new Date(iso).getHours(): Hermes ships without
- * full Intl, so a timeZone option cannot be relied on; and a show starting
- * 19:00 in Hyderabad has to read 19:00 to everyone, not shift because the
- * user happens to be abroad. Reading the UTC getters off a shifted timestamp
- * keeps the device's own zone out of it entirely.
- */
-export function formatEventDate(iso, offsetMinutes = VENUE_OFFSET_MIN) {
-  if (!iso) return '';
-  const parsed = new Date(iso);
-  if (isNaN(parsed.getTime())) return '';
-  const d = new Date(parsed.getTime() + offsetMinutes * 60000);
-  let h = d.getUTCHours();
-  const m = d.getUTCMinutes();
-  const ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-  const mm = m < 10 ? '0' + m : String(m);
-  return (
-    DAYS[d.getUTCDay()] + ', ' + d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()] +
-    ' ' + d.getUTCFullYear() + '  •  ' + h + ':' + mm + ' ' + ampm
-  );
-}
 
 export default function ConcertBookingSuccess({ route, navigation }) {
   const { booking, concert } = route.params || {};
@@ -100,7 +69,7 @@ export default function ConcertBookingSuccess({ route, navigation }) {
             <Line icon="location-outline" text={booking.venue ? booking.venue + ', ' + booking.city : booking.city} />
           ) : null}
           {booking?.eventDate ? (
-            <Line icon="calendar-outline" text={formatEventDate(booking.eventDate)} />
+            <Line icon="calendar-outline" text={formatEventShort(booking.eventDate)} />
           ) : null}
           {booking?.email ? <Line icon="mail-outline" text={booking.email} /> : null}
         </View>

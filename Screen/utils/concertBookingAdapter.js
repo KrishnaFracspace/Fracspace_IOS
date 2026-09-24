@@ -82,7 +82,22 @@ function normalizeTicketTypes(apiTypes) {
       return {
         id: t.id,
         label: pick(t.label, t.id),
+        description: pick(t.description, null),
+        badge: pick(t.badge, null),
+        // dashboard perks arrive with stray trailing commas ("Priority entry,")
+        perks: (Array.isArray(t.perks) ? t.perks : [])
+          .map(x => String(x || '').replace(/[,\s]+$/, '').trim())
+          .filter(Boolean),
         price: amount(t.price),
+        // struck-through "was" price; only meaningful when above the real one
+        compareAtPrice:
+          num(t.compareAtPrice) !== null && num(t.compareAtPrice) > amount(t.price)
+            ? num(t.compareAtPrice)
+            : null,
+        discountPercent:
+          num(t.compareAtPrice) !== null && num(t.compareAtPrice) > amount(t.price)
+            ? Math.round((1 - amount(t.price) / num(t.compareAtPrice)) * 100)
+            : null,
         available,
         soldOut,
         remaining,
@@ -101,11 +116,18 @@ function normalizeCities(apiCities) {
       id: c.id,
       city: pick(c.city, c.venue, ''),
       venue: pick(c.venue, c.city, ''),
+      venueAddress: pick(c.venueAddress, null),
       // fails closed: no explicit `true` means not on sale
       bookable: c.bookable === true,
       currency: pick(c.currency, 'INR'),
       fromPrice: num(c.fromPrice),
       eventDate: pick(c.startsAt, c.eventDate, null),
+      timezone: pick(c.timezone, 'Asia/Kolkata'),
+      // the server's own pre-formatted strings, preferred over anything the
+      // client derives because the dashboard controls them
+      dateLabel: pick(c.display && c.display.dateLabel, null),
+      badge: pick(c.status && c.status.label, null),
+      soldOut: !!c.soldOut,
       ticketTypes: normalizeTicketTypes(c.ticketTypes),
     }));
 }
@@ -123,6 +145,8 @@ function normalizeWallet(apiWallet) {
     available: w.available === true,
     balance: amount(w.balance),
     label: pick(w.label, 'Pay using Fracspace wallet'),
+    note: pick(w.note, null),
+    unavailableNote: pick(w.unavailableNote, null),
     requiresLogin: w.requiresLogin === true,
     // null means "no cap", which is different from 0
     maxPercentOfTotal: num(w.maxPercentOfTotal),
@@ -136,13 +160,20 @@ function normalizeWallet(apiWallet) {
 function normalizeRefundPolicy(apiPolicy) {
   const p = filled(apiPolicy) || {};
   return {
+    enabled: p.enabled !== false,
     cancellationAllowed: p.cancellationAllowed === true,
+    processingFee: amount(p.processingFee),
+    processingFeePercent: amount(p.processingFeePercent),
+    nonRefundableAfterEvent: p.nonRefundableAfterEvent !== false,
+    refundPayuToWallet: p.refundPayuToWallet === true,
+    policyText: arr(p.policyText),
     rules: arr(p.rules).map(r => ({
       id: pick(r.id, null),
       label: pick(r.label, ''),
       minHoursBeforeEvent: num(r.minHoursBeforeEvent),
       refundPercent: amount(r.refundPercent),
       deadline: pick(r.deadline, null),
+      note: pick(r.note, null),
     })),
   };
 }
@@ -199,12 +230,20 @@ export function normalizeBookingOptions(payload) {
   return {
     concertId: pick(d.concertId, null),
     concertTitle: pick(d.concertTitle, ''),
+    artist: pick(d.artist, ''),
     booking: {
       enabled: b.enabled === true,
+      title: pick(b.title, 'Book your tickets'),
+      subtitle: pick(b.subtitle, null),
+      checkoutLabel: pick(b.checkoutLabel, 'Proceed to pay'),
+      ticketSectionTitle: pick(b.ticketSectionTitle, 'SELECT TICKETS'),
+      currency: pick(b.currency, 'INR'),
+      requireLogin: b.requireLogin === true,
+      minTicketsPerBooking: num(b.minTicketsPerBooking),
       maxTicketsPerBooking: num(b.maxTicketsPerBooking),
+      // null means uncapped, which is NOT the same as 0
       maxTicketsPerUser: num(b.maxTicketsPerUser),
       ticketsAlreadyHeld: amount(b.ticketsAlreadyHeld),
-      // null means the server did not cap it
       ticketsRemainingForUser: num(b.ticketsRemainingForUser),
       terms: arr(b.terms),
       successSheet: filled(b.successSheet) || {},
@@ -246,6 +285,69 @@ export function normalizeCheckoutQuote(payload) {
     terms: arr(d.terms),
     notice: pick(d.notice, null),
   };
+}
+
+/* ------------------------------------------------------------------ *
+ *  Payment summary rows                                              *
+ * ------------------------------------------------------------------ */
+
+/**
+ * Turns a quote into the rows the review screen prints, in order.
+ *
+ * Every number is the server's. The only arithmetic here is `remaining`,
+ * which is a restatement of two figures already shown (subtotal minus the
+ * wallet amount), never an input to anything paid.
+ *
+ * The conditional rows are what make one component cover all three payment
+ * shapes: a wallet row only when wallet was applied, a remaining row only on
+ * a genuine split, and a fee row only when the server charged one.
+ */
+export function buildPaymentSummary(quote, { walletLabel } = {}) {
+  if (!quote) return [];
+  const subtotal = amount(quote.subtotal);
+  const applied = amount(quote.wallet && quote.wallet.applied);
+  const payu = amount(quote.payuAmount);
+  const fees = amount(quote.fees);
+  const discount = amount(quote.discount);
+
+  const rows = [{ key: 'subtotal', label: 'Subtotal', value: subtotal }];
+
+  if (applied > 0) {
+    rows.push({
+      key: 'wallet',
+      label: walletLabel || 'Pay using Fracspace wallet',
+      value: applied,
+      negative: true,
+      icon: 'wallet-outline',
+    });
+  }
+  // only on a split: with wallet-only or gateway-only it would just repeat a
+  // figure that is already on screen
+  if (applied > 0 && payu > 0) {
+    rows.push({
+      key: 'remaining',
+      label: 'Remaining Amount',
+      value: subtotal - applied,
+    });
+  }
+  if (discount > 0) {
+    rows.push({
+      key: 'discount',
+      label: 'Discount',
+      value: discount,
+      negative: true,
+      accent: true,
+    });
+  }
+  if (fees > 0) {
+    rows.push({
+      key: 'fees',
+      label: 'GST & Convenience Fee',
+      value: fees,
+    });
+  }
+  rows.push({ key: 'total', label: 'To Pay', value: payu, strong: true });
+  return rows;
 }
 
 /* ------------------------------------------------------------------ *
