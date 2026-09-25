@@ -14,6 +14,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BOOKING_THEME as T } from '../utils/concertData';
+import useBookingStatusBar from '../utils/useBookingStatusBar';
 import {
   formatCountdown,
   formatEventShort,
@@ -22,8 +23,14 @@ import {
 import {
   CreateConcertBooking,
   GetConcertCheckoutQuote,
+  ResumeConcertPayment,
   classifyBookingError,
 } from '../Services/UserApi';
+import {
+  clearPendingBooking,
+  getPendingBooking,
+  savePendingBooking,
+} from '../utils/concertPendingBooking';
 import {
   buildPaymentSummary,
   normalizeBookResponse,
@@ -41,6 +48,16 @@ import {
 const HOLD_SECONDS = 30 * 60;
 
 /**
+ * How long an unfinished booking is treated as still resumable.
+ *
+ * The server expires a pending booking in about 15 minutes; this is
+ * deliberately looser, because /pay pushes that out and the server is the one
+ * that decides. If it refuses, the marker is dropped and the next tap makes a
+ * fresh booking.
+ */
+const PENDING_WINDOW_MS = 30 * 60 * 1000;
+
+/**
  * Review Booking - the last screen before money moves.
  *
  * The quote is carried over from checkout so this renders instantly, then
@@ -51,6 +68,7 @@ const HOLD_SECONDS = 30 * 60;
  * bookings come back already confirmed and never touch PayU.
  */
 export default function ConcertReviewBooking({ route, navigation }) {
+  useBookingStatusBar();
   const {
     concert,
     concertId,
@@ -146,13 +164,98 @@ export default function ConcertReviewBooking({ route, navigation }) {
 
   /* ---------------- pay ---------------- */
 
-  const onPay = async () => {
+  /** Hand an unfinished booking back to the gateway instead of making another. */
+  const resumePending = async pending => {
+    payingRef.current = true;
+    setPaying(true);
+    try {
+      const token = await getToken();
+      const res = await ResumeConcertPayment(pending.bookingId, token);
+      const result = normalizeBookResponse(res?.data);
+
+      // /pay asks PayU before issuing a new form, so this means the earlier
+      // attempt actually went through
+      if (!result.requiresPayU && result.booking?.isConfirmed) {
+        await clearPendingBooking();
+        if (!mounted.current) return;
+        navigation.replace('ConcertBookingSuccess', {
+          booking: result.booking,
+          concert,
+        });
+        return;
+      }
+      if (result.canOpenPayU) {
+        if (!mounted.current) return;
+        navigation.replace('ConcertPaymentPage', {
+          payuHtml: result.payuHtml,
+          payuAction: result.payuAction,
+          txnId: result.txnId,
+          bookingId: result.booking?.bookingId || pending.bookingId,
+          referenceCode: result.booking?.referenceCode || pending.referenceCode,
+          booking: result.booking,
+          concert,
+        });
+        return;
+      }
+      throw new Error('no payment form returned');
+    } catch (err) {
+      // That booking cannot be paid for any more. Drop the marker so the next
+      // tap starts a clean one rather than looping on a dead booking.
+      await clearPendingBooking();
+      if (!mounted.current) return;
+      setNotice(
+        'Your earlier booking could not be resumed. Tap pay again to start a new one.',
+      );
+    } finally {
+      if (mounted.current) {
+        setPaying(false);
+        payingRef.current = false;
+      }
+    }
+  };
+
+  const onPay = async (skipPendingCheck) => {
     if (payingRef.current || !quote || secondsLeft <= 0) return;
     const token = await getToken();
     if (!token) {
       navigation.navigate('NewLogin', {
         redirectAfterLogin: { screen: 'ConcertDetails', params: { concertId } },
       });
+      return;
+    }
+
+    /*
+     * Guard against a second booking for the same concert.
+     *
+     * /book is not idempotent and the API has no duplicate-pending check, so
+     * backing out of the payment screen and coming through here again would
+     * create another booking and another PayU transaction. Reaching the
+     * payment page at all leaves a marker behind, which is what this reads.
+     */
+    const pending = skipPendingCheck ? null : await getPendingBooking();
+    if (
+      pending &&
+      pending.bookingId &&
+      pending.concertId === concertId &&
+      Date.now() - (pending.savedAt || 0) < PENDING_WINDOW_MS
+    ) {
+      Alert.alert(
+        'Booking already in progress',
+        'You started a booking for this concert a few minutes ago. Resume that one rather than creating a second?',
+        [
+          {
+            text: 'Start new',
+            style: 'destructive',
+            onPress: async () => {
+              await clearPendingBooking();
+              // skip the check: if the clear silently failed, re-reading it
+              // here would show this same prompt again, forever
+              onPay(true);
+            },
+          },
+          { text: 'Resume', onPress: () => resumePending(pending) },
+        ],
+      );
       return;
     }
 
@@ -167,6 +270,13 @@ export default function ConcertReviewBooking({ route, navigation }) {
       );
       if (!mounted.current) return;
       const result = normalizeBookResponse(res?.data);
+
+      // Remember it before navigating anywhere. The payment page also stores
+      // this, but it is not reached on every branch, and an unrecorded
+      // booking is one the user can silently duplicate.
+      if (result.booking && result.booking.isPending) {
+        savePendingBooking(result.booking);
+      }
 
       // /book re-prices server-side and the quote is not an input, so the
       // booking's total can differ from what was on screen. It already
@@ -343,7 +453,7 @@ export default function ConcertReviewBooking({ route, navigation }) {
         <TouchableOpacity
           activeOpacity={0.9}
           disabled={!quote || paying || secondsLeft <= 0}
-          onPress={onPay}
+          onPress={() => onPay()}
           style={{ opacity: !quote || paying || secondsLeft <= 0 ? 0.5 : 1 }}>
           {/* sampled: #D29355 -> #E6B47A -> #D2975C, light band in the middle */}
           <LinearGradient

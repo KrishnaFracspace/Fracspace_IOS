@@ -11,6 +11,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CONCERT_THEME as T } from '../utils/concertData';
+import useBookingStatusBar from '../utils/useBookingStatusBar';
 import { ResumeConcertPayment, classifyBookingError } from '../Services/UserApi';
 import { normalizeBookResponse } from '../utils/concertBookingAdapter';
 import { clearPendingBooking } from '../utils/concertPendingBooking';
@@ -77,6 +78,7 @@ function goToHome(navigation) {
 }
 
 export default function ConcertBookingFailed({ route, navigation }) {
+  useBookingStatusBar();
   const {
     outcome,
     message,
@@ -92,7 +94,12 @@ export default function ConcertBookingFailed({ route, navigation }) {
   const retryingRef = useRef(false);
 
   const copy = COPY[outcome] || COPY.default;
-  const canRetry = !needsSupport && !!bookingId && (resumable || outcome === 'not_found');
+  // Offer retry whenever a booking exists and nothing says it is finished.
+  // 'payment_failed' and the cancelled/expired family are final - /pay would
+  // answer 409 - and an amount mismatch needs a human, not another attempt.
+  const FINAL = ['payment_failed', 'expired', 'cancelled', 'refunded', 'confirmed'];
+  const canRetry =
+    !!bookingId && !needsSupport && FINAL.indexOf(outcome) === -1;
 
   const goHome = () => {
     clearPendingBooking();
@@ -131,8 +138,13 @@ export default function ConcertBookingFailed({ route, navigation }) {
         });
         return;
       }
+      // neither a confirmed booking nor a usable form came back: say so
+      // rather than letting the button spin and stop
       setRetrying(false);
       retryingRef.current = false;
+      navigation.setParams({
+        message: 'We could not reopen the payment. Please try again in a moment.',
+      });
     } catch (err) {
       const e = classifyBookingError(err);
       setRetrying(false);

@@ -105,9 +105,11 @@ export default function ConcertCheckout({ route, navigation }) {
 
   /* ---------------- options ---------------- */
 
-  const loadOptions = useCallback(async () => {
+  const loadOptions = useCallback(async (quiet) => {
     if (!concertId) return;
-    setLoading(true);
+    // a city switch refreshes in place; swapping the whole screen for a
+    // spinner on every chip tap would be worse than the stale moment
+    if (!quiet) setLoading(true);
     setLoadError(null);
     try {
       const token = await getToken();
@@ -126,9 +128,23 @@ export default function ConcertCheckout({ route, navigation }) {
             : 'Ticket booking is not available right now.'),
       );
     } finally {
-      if (mounted.current) setLoading(false);
+      if (mounted.current && !quiet) setLoading(false);
     }
   }, [concertId, cityId, getToken]);
+
+  // The refund deadlines in /booking/options are computed from the SELECTED
+  // city's event date, so switching city leaves them describing the wrong
+  // show - "until 7 Nov" for a concert a week later. Prices come from the
+  // cities array and stay correct; only this needs the round trip.
+  const firstCityRun = useRef(true);
+  useEffect(() => {
+    if (firstCityRun.current) {
+      firstCityRun.current = false;
+      return;
+    }
+    if (cityId) loadOptions(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cityId]);
 
   useEffect(() => {
     loadOptions();
@@ -527,7 +543,7 @@ export default function ConcertCheckout({ route, navigation }) {
                   color={useWallet && walletUsable ? '#1A1206' : T.textDim}
                 />
               </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
+              <View style={{ flex: 1, marginLeft: 8 }}>
                 <View style={styles.walletTitleRow}>
                   <Text style={styles.walletTitle}>
                     {wallet.label || 'Pay through FS Wallet'}
@@ -817,7 +833,7 @@ const styles = StyleSheet.create({
   tierCardError: { borderColor: '#B3453B' },
   tierHead: { flexDirection: 'row', alignItems: 'flex-start' },
   tierTitleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 },
-  tierName: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 17 },
+  tierName: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 14 },
   badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -845,7 +861,7 @@ const styles = StyleSheet.create({
   tierDesc: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 13,
+    fontSize: 11,
     lineHeight: 19,
     marginTop: 7,
   },
@@ -859,7 +875,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: 14,
+    marginTop: 8,
   },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   priceLabel: {
@@ -884,7 +900,7 @@ const styles = StyleSheet.create({
     fontFamily: 'WorkSans-SemiBold',
     fontSize: 9,
   },
-  price: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 20, marginTop: 2 },
+  price: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 16, marginTop: 2 },
   perTicket: {
     color: T.textDim,
     fontFamily: 'WorkSans-Regular',
@@ -940,22 +956,22 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
     borderRadius: 14,
     paddingHorizontal: 12,
-    height: 50,
+    height: 60,
   },
   walletCardOn: {
     borderColor: 'rgba(206,143,82,0.55)',
     backgroundColor: 'rgba(206,143,82,0.07)',
   },
   walletIcon: {
-    width: 34,
-    height: 34,
+    width: 30,
+    height: 30,
     borderRadius: 9,
     backgroundColor: 'rgba(206,143,82,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   walletTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  walletTitle: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 13.5 },
+  walletTitle: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 12 },
   instantPill: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CONCERT_THEME as T } from '../utils/concertData';
+import useBookingStatusBar from '../utils/useBookingStatusBar';
 import { formatEventShort, formatMoney } from '../utils/concertFormat';
 import { clearPendingBooking } from '../utils/concertPendingBooking';
 
@@ -35,6 +36,7 @@ function goToHome(navigation) {
 }
 
 export default function ConcertBookingSuccess({ route, navigation }) {
+  useBookingStatusBar();
   const { booking, concert } = route.params || {};
   const payment = booking?.payment || {};
   const currency = booking?.currency || 'INR';

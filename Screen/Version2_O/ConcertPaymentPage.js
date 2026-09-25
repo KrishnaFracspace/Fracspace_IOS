@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CONCERT_THEME as T } from '../utils/concertData';
+import useBookingStatusBar from '../utils/useBookingStatusBar';
 import { VerifyConcertPayment, classifyBookingError } from '../Services/UserApi';
 import { classifyVerifyResponse } from '../utils/concertBookingAdapter';
 import { clearPendingBooking, savePendingBooking } from '../utils/concertPendingBooking';
@@ -56,6 +57,7 @@ const atGateway = url =>
   /payu/i.test(url) && /^https?:\/\/[^/]+\/.+/i.test(url);
 
 export default function ConcertPaymentPage({ route, navigation }) {
+  useBookingStatusBar();
   const {
     payuHtml,
     payuAction,
@@ -173,6 +175,19 @@ export default function ConcertPaymentPage({ route, navigation }) {
     if (!mounted.current) return;
     setVerifying(false);
     settling.current = false;
+
+    // Every attempt failed to reach the server, so we learned nothing: the
+    // booking is untouched and still payable. Without this it falls through
+    // as a plain error, the failure screen offers no retry, and a user who
+    // HAS already paid is pushed towards paying a second time.
+    if (!last) {
+      last = {
+        outcome: 'error',
+        resumable: true,
+        displayMessage:
+          'We could not reach the server to confirm your payment. Your booking is still open.',
+      };
+    }
 
     // Still unresolved after polling: the booking stays payable, so it is
     // left in the pending store for the resume flow to pick up.
