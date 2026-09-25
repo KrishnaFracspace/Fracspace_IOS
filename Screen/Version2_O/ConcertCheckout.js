@@ -105,11 +105,9 @@ export default function ConcertCheckout({ route, navigation }) {
 
   /* ---------------- options ---------------- */
 
-  const loadOptions = useCallback(async (quiet) => {
+  const loadOptions = useCallback(async () => {
     if (!concertId) return;
-    // a city switch refreshes in place; swapping the whole screen for a
-    // spinner on every chip tap would be worse than the stale moment
-    if (!quiet) setLoading(true);
+    setLoading(true);
     setLoadError(null);
     try {
       const token = await getToken();
@@ -128,23 +126,10 @@ export default function ConcertCheckout({ route, navigation }) {
             : 'Ticket booking is not available right now.'),
       );
     } finally {
-      if (mounted.current && !quiet) setLoading(false);
+      if (mounted.current) setLoading(false);
     }
   }, [concertId, cityId, getToken]);
 
-  // The refund deadlines in /booking/options are computed from the SELECTED
-  // city's event date, so switching city leaves them describing the wrong
-  // show - "until 7 Nov" for a concert a week later. Prices come from the
-  // cities array and stay correct; only this needs the round trip.
-  const firstCityRun = useRef(true);
-  useEffect(() => {
-    if (firstCityRun.current) {
-      firstCityRun.current = false;
-      return;
-    }
-    if (cityId) loadOptions(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cityId]);
 
   useEffect(() => {
     loadOptions();
