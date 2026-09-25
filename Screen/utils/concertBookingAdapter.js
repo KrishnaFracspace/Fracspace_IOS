@@ -521,6 +521,52 @@ export function normalizeBookingList(payload) {
 }
 
 /* ------------------------------------------------------------------ *
+ *  Step 10 - cancel                                                  *
+ * ------------------------------------------------------------------ */
+
+/**
+ * The cancel response carries the refund twice: once nested on the booking and
+ * once at the top level. They agree, but the top-level copy is the one with
+ * walletCreditedImmediately and payuRefundEta, so it wins.
+ */
+export function normalizeCancelResponse(payload) {
+  const d = unwrap(payload);
+  const booking = normalizeBookingRecord(d.booking);
+  return {
+    booking,
+    refund: normalizeRefund(d.refund) || (booking && booking.refund) || null,
+  };
+}
+
+/**
+ * How a status should read and how loud it should look.
+ *
+ * Kept here rather than in a screen because the list and the detail have to
+ * agree: the same booking must not be "Confirmed" in one place and "Paid" in
+ * the other.
+ */
+export function bookingStatusMeta(status) {
+  switch (status) {
+    case BOOKING_STATUS.CONFIRMED:
+      return { label: 'Confirmed', tone: 'good' };
+    case BOOKING_STATUS.PENDING:
+      return { label: 'Payment pending', tone: 'warn' };
+    case BOOKING_STATUS.FAILED:
+      return { label: 'Payment failed', tone: 'bad' };
+    case BOOKING_STATUS.EXPIRED:
+      return { label: 'Expired', tone: 'muted' };
+    case BOOKING_STATUS.CANCELLED:
+      return { label: 'Cancelled', tone: 'muted' };
+    case BOOKING_STATUS.REFUND_INITIATED:
+      return { label: 'Refund on the way', tone: 'warn' };
+    case BOOKING_STATUS.REFUNDED:
+      return { label: 'Refunded', tone: 'muted' };
+    default:
+      return { label: status ? String(status) : 'Unknown', tone: 'muted' };
+  }
+}
+
+/* ------------------------------------------------------------------ *
  *  Step 6 - verify                                                   *
  * ------------------------------------------------------------------ */
 
@@ -579,6 +625,8 @@ export function classifyVerifyResponse(res, { payuAttempted = true } = {}) {
 
 export default {
   BOOKING_STATUS,
+  bookingStatusMeta,
+  normalizeCancelResponse,
   normalizeBookingOptions,
   normalizeCheckoutQuote,
   normalizeBookingRecord,

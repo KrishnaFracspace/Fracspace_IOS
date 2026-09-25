@@ -32,6 +32,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AudioWaveform from '../components/AudioWaveform';
 import ConcertInterestForm from '../components/ConcertInterestForm';
+import ConcertTicketsTab from '../components/ConcertTicketsTab';
 import ShinyTag from '../components/ShinyTag';
 import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
 import { normalizeSection } from '../utils/concertAdapter';
@@ -423,6 +424,16 @@ export default function ConcertDetails() {
           <Icon name="share-outline" size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
+
+      {/* ---------- tickets edge tab ---------- */}
+      {/* Tied to booking being enabled at all, NOT to bookingMode: a concert
+          that has sold out still has ticket holders who need to reach them. */}
+      {concert?.bookingEnabled ? (
+        <ConcertTicketsTab
+          scrollY={scrollY}
+          onPress={() => navigation.navigate('ConcertBookings')}
+        />
+      ) : null}
 
       {/* ---------- sticky CTA ---------- */}
       <View style={[styles.ctaBar, { paddingBottom: bottomBarPad }]}>

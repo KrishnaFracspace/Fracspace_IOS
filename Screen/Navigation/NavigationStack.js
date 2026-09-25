@@ -88,6 +88,8 @@ import PackageDescription from '../Version2_O/PackageDescription';
 import AddressSearchScreen from '../Version2_O/AddressSearchScreen';
 import CompleteProfileScreen from '../Version2_O/CompleteProfileScreen';
 import ConcertDetails from '../Version2_O/ConcertDetails';
+import ConcertBookings from '../Version2_O/ConcertBookings';
+import ConcertBookingDetail from '../Version2_O/ConcertBookingDetail';
 import ConcertCheckout from '../Version2_O/ConcertCheckout';
 import ConcertReviewBooking from '../Version2_O/ConcertReviewBooking';
 import ConcertPaymentPage from '../Version2_O/ConcertPaymentPage';
@@ -287,6 +289,8 @@ useLayoutEffect(() => {
         <Stack.Screen name="ViewAgreement" component={ViewAgreement} options={{headerShown:false}}/>
         <Stack.Screen name="PackageDescription" component={PackageDescription} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertDetails" component={ConcertDetails} options={{headerShown:false}}/>
+        <Stack.Screen name="ConcertBookings" component={ConcertBookings} options={{headerShown:false}}/>
+        <Stack.Screen name="ConcertBookingDetail" component={ConcertBookingDetail} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertCheckout" component={ConcertCheckout} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertReviewBooking" component={ConcertReviewBooking} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertPaymentPage" component={ConcertPaymentPage} options={{headerShown:false}}/>

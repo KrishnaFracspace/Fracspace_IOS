@@ -20,6 +20,8 @@ import InteriorFormThird from '../Version2_O/InteriorFormThird';
 import Locationview from '../Version2_O/Locationview';
 import Like from '../Like';
 import ConcertDetails from '../Version2_O/ConcertDetails';
+import ConcertBookings from '../Version2_O/ConcertBookings';
+import ConcertBookingDetail from '../Version2_O/ConcertBookingDetail';
 import ConcertCheckout from '../Version2_O/ConcertCheckout';
 import ConcertReviewBooking from '../Version2_O/ConcertReviewBooking';
 import ConcertPaymentPage from '../Version2_O/ConcertPaymentPage';
@@ -52,6 +54,8 @@ export default function HomeStack() {
         <Stack.Screen name="InteriorFormThird" component={InteriorFormThird}/>
         <Stack.Screen name="Locationview" component={Locationview}/>
         <Stack.Screen name="ConcertDetails" component={ConcertDetails}/>
+        <Stack.Screen name="ConcertBookings" component={ConcertBookings}/>
+        <Stack.Screen name="ConcertBookingDetail" component={ConcertBookingDetail}/>
         <Stack.Screen name="ConcertCheckout" component={ConcertCheckout}/>
         <Stack.Screen name="ConcertReviewBooking" component={ConcertReviewBooking}/>
         <Stack.Screen name="ConcertPaymentPage" component={ConcertPaymentPage}/>
