@@ -348,9 +348,10 @@ export default function ConcertBookingDetail({ route, navigation }) {
         {/* ---------------- venue ---------------- */}
         {booking.venue || booking.venueImages.length ? (
           <View style={styles.card}>
-            <SectionHead icon="location-outline" title="Venue" />
+            {/* <SectionHead icon="location-outline" title="Venue" /> */}
             <View style={styles.venueRow}>
               <View style={styles.venueLeft}>
+                <SectionHead icon="location-outline" title="Venue" />
                 <Text style={styles.venueName}>{booking.venue}</Text>
                 {venueLine ? <Text style={styles.venueAddr}>{venueLine}</Text> : null}
                 {venueDirectionsUrl(booking) ? (
@@ -358,7 +359,7 @@ export default function ConcertBookingDetail({ route, navigation }) {
                     activeOpacity={0.85}
                     onPress={() => openUrl(venueDirectionsUrl(booking))}
                     style={styles.dirBtn}>
-                    <Icon name="navigate-outline" size={13} color={T.gold} />
+                    <Icon name="navigate-outline" size={10} color={T.gold} />
                     <Text style={styles.dirText}>Get Directions</Text>
                   </TouchableOpacity>
                 ) : null}
@@ -565,7 +566,7 @@ function SectionHead({ icon, title, flush }) {
 function Meta({ icon, text }) {
   return (
     <View style={styles.metaRow}>
-      <Icon name={icon} size={14} color={T.gold} />
+      <Icon name={icon} size={12} color={T.gold} />
       <Text style={styles.metaText}>{text}</Text>
     </View>
   );
@@ -611,10 +612,10 @@ const styles = StyleSheet.create({
 
   card: {
     backgroundColor: T.surface,
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginTop: 14,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    marginTop: 10,
   },
 
   /* ---- concert ---- */
@@ -626,12 +627,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   concertBody: { flex: 1, minWidth: 0 },
-  concertHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  concertHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 5 },
   concertTitle: {
     flex: 1,
     color: T.text,
     fontFamily: 'WorkSans-Bold',
-    fontSize: 18,
+    fontSize: 14,
   },
   livePill: {
     flexDirection: 'row',
@@ -643,17 +644,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(248,113,113,0.45)',
   },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444' },
+  liveDot: { width: 4, height: 4, borderRadius: 3, backgroundColor: '#EF4444' },
   liveText: {
     color: '#F87171',
     fontFamily: 'WorkSans-SemiBold',
-    fontSize: 9.5,
+    fontSize: 8,
     letterSpacing: 0.4,
   },
   artist: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 13.5,
+    fontSize: 12,
     marginTop: 2,
     marginBottom: 8,
   },
@@ -662,12 +663,12 @@ const styles = StyleSheet.create({
     flex: 1,
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 12.5,
+    fontSize: 10,
   },
 
   /* ---- sections ---- */
   sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  sectionTitle: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 16 },
+  sectionTitle: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 14 },
 
   /* ---- tickets ---- */
   ticketBox: {
@@ -676,38 +677,38 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: T.border,
     borderRadius: 12,
-    padding: 12,
+    padding: 10,
     marginBottom: 8,
   },
   tierChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: 'rgba(206,143,82,0.55)',
   },
-  tierText: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 15 },
+  tierText: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 12 },
   ticketTopRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
-  ticketCount: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 15.5 },
+  ticketCount: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 12 },
   statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 5 },
-  statusText: { fontFamily: 'WorkSans-SemiBold', fontSize: 9.5, letterSpacing: 0.4 },
+  statusText: { fontFamily: 'WorkSans-SemiBold', fontSize: 8, letterSpacing: 0.4 },
   bookingId: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 13,
-    marginTop: 6,
+    fontSize: 12,
+    marginTop: 4,
   },
   bookingIdValue: { color: T.text, fontFamily: 'WorkSans-SemiBold' },
 
   /* ---- venue ---- */
-  venueRow: { flexDirection: 'row', gap: 14 },
+  venueRow: { flexDirection: 'row', gap: 10 },
   venueLeft: { flex: 1, minWidth: 0 },
-  venueRight: { width: '46%' },
-  venueName: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 15 },
+  venueRight: { width: '50%' },
+  venueName: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 12 },
   venueAddr: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 12.5,
+    fontSize: 12,
     marginTop: 3,
   },
   dirBtn: {
@@ -716,13 +717,13 @@ const styles = StyleSheet.create({
     gap: 6,
     alignSelf: 'flex-start',
     marginTop: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
     borderRadius: 9,
     borderWidth: 1,
     borderColor: 'rgba(206,143,82,0.5)',
   },
-  dirText: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 12.5 },
+  dirText: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 10 },
 
   /* ---- payment ---- */
   payHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
@@ -730,19 +731,19 @@ const styles = StyleSheet.create({
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: T.border,
-    marginVertical: 12,
+    marginVertical: 8,
   },
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 5,
-    gap: 12,
+    gap: 8,
   },
-  rowLeft: { flex: 1, color: T.textMuted, fontFamily: 'WorkSans-Regular', fontSize: 13.5 },
-  rowRight: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 13.5 },
-  rowStrongLeft: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 16 },
-  rowStrongRight: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 17 },
+  rowLeft: { flex: 1, color: T.textMuted, fontFamily: 'WorkSans-Regular', fontSize: 12 },
+  rowRight: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 12 },
+  rowStrongLeft: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 14 },
+  rowStrongRight: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 14 },
   rowGreen: { color: T.balance },
   infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 },
   infoText: {

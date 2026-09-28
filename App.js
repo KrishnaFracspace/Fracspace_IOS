@@ -48,6 +48,7 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
   const navigateWithAuthCheck = async (redirectData) => {
     store.dispatch(setDeepLinkNav(true));
     const token = await AsyncStorage.getItem('mytoken');
+    console.log('navigateWithAuthCheck: token:', token);
     if (token) {
       navigationRef.navigate(redirectData.screen, redirectData.params);
     } else {
@@ -350,7 +351,7 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
     <>
       {showSplash ? (
         <Video
-          source={{uri: "https://duixj37yn5405.cloudfront.net/videos/FracspaceSplash.mp4"}}
+          source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_.mp4"}}
           style={styles.video}
           // resizeMode="cover"
           muted

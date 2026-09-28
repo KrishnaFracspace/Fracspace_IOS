@@ -96,9 +96,9 @@ export default function VenueCarousel({ images = [], onOpenMaps, height = 105 })
           onPress={onOpenMaps}
           style={styles.mapsPill}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Icon name="map-outline" size={12} color={T.goldLight} />
+          <Icon name="map-outline" size={11} color={T.goldLight} />
           <Text style={styles.mapsText}>Open In Maps</Text>
-          <Icon name="chevron-forward" size={11} color={T.goldLight} />
+          <Icon name="chevron-forward" size={10} color={T.goldLight} />
         </TouchableOpacity>
       ) : null}
 
@@ -128,8 +128,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 9,
-    paddingVertical: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 4,
     borderRadius: 999,
     backgroundColor: 'rgba(8,8,10,0.82)',
     borderWidth: 1,
@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   mapsText: {
     color: T.goldLight,
     fontFamily: 'WorkSans-Medium',
-    fontSize: 11,
+    fontSize: 8,
   },
   dots: {
     position: 'absolute',
