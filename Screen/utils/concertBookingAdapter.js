@@ -369,6 +369,8 @@ export function normalizeBookingRecord(apiBooking) {
     status,
     concertId: pick(b.concertId, null),
     concertTitle: pick(b.concertTitle, ''),
+    artist: pick(b.artist, ''),
+    concertImage: pick(b.concertImage, null),
 
     name: pick(b.name, ''),
     email: pick(b.email, ''),
@@ -378,7 +380,20 @@ export function normalizeBookingRecord(apiBooking) {
     cityId: pick(b.cityId, null),
     city: pick(b.city, ''),
     venue: pick(b.venue, ''),
+    venueAddress: pick(b.venueAddress, null),
+    locationUrl: pick(b.locationUrl, null),
+    directionUrl: pick(b.directionUrl, null),
+    venueCoordinates:
+      filled(b.venueCoordinates) &&
+      num(b.venueCoordinates.lat) !== null &&
+      num(b.venueCoordinates.lng) !== null
+        ? { lat: b.venueCoordinates.lat, lng: b.venueCoordinates.lng }
+        : null,
+    // only real strings survive; a null in the array would render as a broken
+    // image tile in the carousel
+    venueImages: arr(b.venueImages).filter(u => typeof u === 'string' && u),
     eventDate: pick(b.eventDate, null),
+    timezone: pick(b.timezone, 'Asia/Kolkata'),
 
     items: normalizeItems(b.items),
     // NOTE: an integer count here, unlike `tickets` in /concerts/section
@@ -415,6 +430,52 @@ export function normalizeBookingRecord(apiBooking) {
     /** Cancel is offered only when the server says so AND on a confirmed row. */
     canCancel: status === BOOKING_STATUS.CONFIRMED && !!cancellation && cancellation.allowed,
   };
+}
+
+/* ------------------------------------------------------------------ *
+ *  Venue links                                                       *
+ * ------------------------------------------------------------------ */
+
+/**
+ * Where "Open in maps" and "Get directions" point.
+ *
+ * The server's own link wins when it sends one. Coordinates are the fallback
+ * because a venue can have them before anyone has pasted a share link, and a
+ * dead button is worse than a generic pin.
+ */
+export function venueMapUrl(booking) {
+  if (!booking) return null;
+  if (booking.locationUrl) return booking.locationUrl;
+  const c = booking.venueCoordinates;
+  if (c) {
+    return (
+      'https://www.google.com/maps/search/?api=1&query=' + c.lat + ',' + c.lng
+    );
+  }
+  const q = [booking.venue, booking.venueAddress, booking.city]
+    .filter(Boolean)
+    .join(', ');
+  return q
+    ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(q)
+    : null;
+}
+
+export function venueDirectionsUrl(booking) {
+  if (!booking) return null;
+  if (booking.directionUrl) return booking.directionUrl;
+  const c = booking.venueCoordinates;
+  if (c) {
+    return (
+      'https://www.google.com/maps/dir/?api=1&destination=' +
+      c.lat + ',' + c.lng + '&travelmode=driving'
+    );
+  }
+  const q = [booking.venue, booking.venueAddress, booking.city]
+    .filter(Boolean)
+    .join(', ');
+  return q
+    ? 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(q)
+    : null;
 }
 
 /* ------------------------------------------------------------------ *

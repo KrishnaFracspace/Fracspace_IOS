@@ -64,6 +64,32 @@ export function formatEventShort(iso, offsetMinutes) {
   return p.weekday + ', ' + p.day + ' ' + p.month + ', ' + p.time;
 }
 
+/** "Saturday, Nov 14 2026" - the concert card's date line. */
+export function formatEventDayLong(iso, offsetMinutes) {
+  const p = venueParts(iso, offsetMinutes);
+  if (!p) return '';
+  return p.weekday + ', ' + p.month + ' ' + p.day + ' ' + p.year;
+}
+
+/** "7:00 PM" on its own. */
+export function formatEventTime(iso, offsetMinutes) {
+  const p = venueParts(iso, offsetMinutes);
+  return p ? p.time : '';
+}
+
+/**
+ * "25 Sep 2026, 3:05 PM" - when a payment happened.
+ *
+ * Unlike the event time this is a moment in the user's own life, so it is
+ * shown in the venue zone too only because every other timestamp on the
+ * screen is: mixing zones on one card is worse than picking the wrong one.
+ */
+export function formatStamp(iso, offsetMinutes) {
+  const p = venueParts(iso, offsetMinutes);
+  if (!p) return '';
+  return p.day + ' ' + p.month + ' ' + p.year + ', ' + p.time;
+}
+
 /** "7 Nov" - for refund deadlines. */
 export function formatShortDate(iso, offsetMinutes) {
   const p = venueParts(iso, offsetMinutes);

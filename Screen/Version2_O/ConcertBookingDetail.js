@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Image,
+  Linking,
   Modal,
   ScrollView,
   StyleSheet,
@@ -14,7 +16,13 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BOOKING_THEME as T } from '../utils/concertData';
 import useBookingStatusBar from '../utils/useBookingStatusBar';
-import { formatEventDateTime, formatMoney } from '../utils/concertFormat';
+import VenueCarousel from '../components/VenueCarousel';
+import {
+  formatEventDayLong,
+  formatEventTime,
+  formatMoney,
+  formatStamp,
+} from '../utils/concertFormat';
 import {
   CancelConcertBooking,
   GetConcertBooking,
@@ -26,25 +34,25 @@ import {
   normalizeBookResponse,
   normalizeBookingRecord,
   normalizeCancelResponse,
+  venueDirectionsUrl,
+  venueMapUrl,
 } from '../utils/concertBookingAdapter';
 import { clearPendingBooking } from '../utils/concertPendingBooking';
 
 const TONE = {
-  good: { fg: '#5FBE89', bg: 'rgba(95,190,137,0.14)' },
-  warn: { fg: '#E0A85A', bg: 'rgba(224,168,90,0.14)' },
-  bad: { fg: '#E0736A', bg: 'rgba(224,115,106,0.14)' },
-  muted: { fg: T.textDim, bg: 'rgba(255,255,255,0.06)' },
+  good: { fg: '#CE8F52', bg: 'rgba(206,143,82,0.16)' },
+  warn: { fg: '#E0A85A', bg: 'rgba(224,168,90,0.16)' },
+  bad: { fg: '#E0736A', bg: 'rgba(224,115,106,0.16)' },
+  muted: { fg: T.textDim, bg: 'rgba(255,255,255,0.07)' },
 };
 
 /**
- * One booking, and the two things that can still be done to it: finish paying
- * for it, or cancel it.
+ * Booking Summary.
  *
- * The row from the list renders immediately and the full record is fetched
- * behind it. That matters for more than speed - the list response omits
- * nothing important, but a pending row is re-checked against PayU when the
- * server serves this endpoint, so the fetch can legitimately change the
- * status under the user.
+ * The row from the list renders immediately and the full record loads behind
+ * it. That is not only about speed: the server re-checks a stale pending
+ * booking against PayU while serving this endpoint, so the fetch can
+ * legitimately change the status under the user.
  */
 export default function ConcertBookingDetail({ route, navigation }) {
   useBookingStatusBar();
@@ -54,7 +62,6 @@ export default function ConcertBookingDetail({ route, navigation }) {
   const [loading, setLoading] = useState(!seed);
   const [error, setError] = useState(null);
   const [notice, setNotice] = useState(null);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [refund, setRefund] = useState(null);
@@ -111,6 +118,13 @@ export default function ConcertBookingDetail({ route, navigation }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  const openUrl = url => {
+    if (!url) return;
+    Linking.openURL(url).catch(() =>
+      setNotice('Could not open maps on this device.'),
+    );
+  };
 
   /* ---------------- resume an unfinished payment ---------------- */
 
@@ -218,6 +232,25 @@ export default function ConcertBookingDetail({ route, navigation }) {
   const cur = booking.currency || 'INR';
   const c = booking.cancellation;
   const shownRefund = refund || booking.refund;
+  const paidStamp = formatStamp(p.paidAt || booking.confirmedAt || booking.createdAt);
+  const onlineLabel = p.payuMode ? 'Via ' + p.payuMode : 'Via CRED/Gpay/PayTm';
+  const venueLine = [booking.venueAddress || booking.city]
+    .filter(Boolean)
+    .join(', ');
+
+  // Reads "X deducted from your Fracspace wallet & Y paid via UPI" - only the
+  // halves that actually happened.
+  const paidParts = [];
+  if (p.walletAmount > 0 && p.walletApplied) {
+    paidParts.push(formatMoney(p.walletAmount, cur) + ' deducted from your Fracspace wallet');
+  }
+  if (p.payuAmount > 0 && p.payuStatus === 'success') {
+    paidParts.push(
+      formatMoney(p.payuAmount, cur) +
+        ' paid via ' +
+        (p.payuMode || 'CRED/Gpay/PayTm'),
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -227,70 +260,173 @@ export default function ConcertBookingDetail({ route, navigation }) {
           activeOpacity={0.85}
           hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
           style={styles.circleBtn}>
-          <Icon name="chevron-back" size={20} color="#FFFFFF" />
+          <Icon name="chevron-back" size={22} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Booking details</Text>
+        <Text style={styles.headerTitle}>Booking Summary</Text>
         <View style={{ width: 48 }} />
       </View>
 
       <ScrollView
         contentContainerStyle={styles.body}
         showsVerticalScrollIndicator={false}>
-        <View style={[styles.statusPill, { backgroundColor: tone.bg }]}>
-          <Text style={[styles.statusText, { color: tone.fg }]}>{meta.label}</Text>
+        {/* ---------------- concert ---------------- */}
+        <View style={[styles.card, styles.concertCard]}>
+          {booking.concertImage ? (
+            <Image
+              source={{ uri: booking.concertImage }}
+              style={styles.poster}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={[styles.poster, styles.posterEmpty]}>
+              <Icon name="musical-notes-outline" size={22} color={T.textDim} />
+            </View>
+          )}
+
+          <View style={styles.concertBody}>
+            <View style={styles.concertHead}>
+              <Text style={styles.concertTitle} numberOfLines={2}>
+                {booking.concertTitle || 'Concert'}
+              </Text>
+              <View style={styles.livePill}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>LIVE MUSIC</Text>
+              </View>
+            </View>
+            {booking.artist ? (
+              <Text style={styles.artist} numberOfLines={1}>
+                {booking.artist}
+              </Text>
+            ) : null}
+
+            {booking.eventDate ? (
+              <Meta icon="calendar-outline" text={formatEventDayLong(booking.eventDate)} />
+            ) : null}
+            {booking.eventDate ? (
+              <Meta icon="time-outline" text={formatEventTime(booking.eventDate) + ' onwards'} />
+            ) : null}
+            {booking.venue || booking.city ? (
+              <Meta
+                icon="location-outline"
+                text={[booking.venue, booking.venueAddress || booking.city]
+                  .filter(Boolean)
+                  .join(', ')}
+              />
+            ) : null}
+          </View>
         </View>
 
-        {booking.referenceCode ? (
-          <View style={styles.refCard}>
-            <Text style={styles.refLabel}>BOOKING REFERENCE</Text>
-            <Text style={styles.refValue}>{booking.referenceCode}</Text>
+        {/* ---------------- tickets ---------------- */}
+        <View style={styles.card}>
+          <SectionHead icon="ticket-outline" title="Your Tickets" />
+          {booking.items.map((i, idx) => (
+            <View key={i.ticketTypeId || idx} style={styles.ticketBox}>
+              <View style={styles.tierChip}>
+                <Text style={styles.tierText}>{i.label}</Text>
+              </View>
+              <View style={{ flex: 1, marginLeft: 14 }}>
+                <View style={styles.ticketTopRow}>
+                  <Text style={styles.ticketCount}>
+                    {i.quantity} Ticket{i.quantity === 1 ? '' : 's'}
+                  </Text>
+                  <View style={[styles.statusPill, { backgroundColor: tone.bg }]}>
+                    <Text style={[styles.statusText, { color: tone.fg }]}>
+                      {meta.label.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+                {idx === 0 && booking.referenceCode ? (
+                  <Text style={styles.bookingId}>
+                    Booking ID: <Text style={styles.bookingIdValue}>{booking.referenceCode}</Text>
+                  </Text>
+                ) : null}
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* ---------------- venue ---------------- */}
+        {booking.venue || booking.venueImages.length ? (
+          <View style={styles.card}>
+            <SectionHead icon="location-outline" title="Venue" />
+            <View style={styles.venueRow}>
+              <View style={styles.venueLeft}>
+                <Text style={styles.venueName}>{booking.venue}</Text>
+                {venueLine ? <Text style={styles.venueAddr}>{venueLine}</Text> : null}
+                {venueDirectionsUrl(booking) ? (
+                  <TouchableOpacity
+                    activeOpacity={0.85}
+                    onPress={() => openUrl(venueDirectionsUrl(booking))}
+                    style={styles.dirBtn}>
+                    <Icon name="navigate-outline" size={13} color={T.gold} />
+                    <Text style={styles.dirText}>Get Directions</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+              <View style={styles.venueRight}>
+                <VenueCarousel
+                  images={booking.venueImages}
+                  onOpenMaps={
+                    venueMapUrl(booking)
+                      ? () => openUrl(venueMapUrl(booking))
+                      : null
+                  }
+                />
+              </View>
+            </View>
           </View>
         ) : null}
 
+        {/* ---------------- payment ---------------- */}
         <View style={styles.card}>
-          <Text style={styles.concert}>{booking.concertTitle || 'Concert'}</Text>
-          {booking.city ? (
-            <Line icon="location-outline" text={[booking.venue, booking.city].filter(Boolean).join(', ')} />
-          ) : null}
-          {booking.eventDate ? (
-            <Line icon="calendar-outline" text={formatEventDateTime(booking.eventDate)} />
-          ) : null}
-          {booking.email ? <Line icon="mail-outline" text={booking.email} /> : null}
-        </View>
+          <View style={styles.payHead}>
+            <SectionHead icon="receipt-outline" title="Payment" flush />
+            {paidStamp ? <Text style={styles.stamp}>{paidStamp}</Text> : null}
+          </View>
+          <View style={styles.divider} />
 
-        <View style={styles.card}>
-          {booking.items.map(i => (
+          {booking.items.map((i, idx) => (
             <Row
-              key={i.ticketTypeId}
-              left={i.label + ' × ' + i.quantity}
+              key={i.ticketTypeId || idx}
+              left={
+                (booking.items.length > 1 ? i.label + ' ' : 'Ticket amount ') +
+                '(' + i.quantity + ' × ' + formatMoney(i.unitPrice, cur) + ')'
+              }
               right={formatMoney(i.amount, cur)}
             />
           ))}
-          <View style={styles.divider} />
-          <Row left="Total" right={formatMoney(booking.totalAmount, cur)} strong />
           {p.walletAmount > 0 ? (
             <Row
-              left={p.walletApplied ? 'Paid from wallet' : 'Wallet (not yet debited)'}
-              right={formatMoney(p.walletAmount, cur)}
-              accent
+              left={p.walletApplied ? 'Wallet used' : 'Wallet (not yet debited)'}
+              right={'– ' + formatMoney(p.walletAmount, cur)}
+              green
             />
           ) : null}
           {p.payuAmount > 0 ? (
-            <Row
-              left={p.payuMode ? 'Paid online (' + p.payuMode + ')' : 'Paid online'}
-              right={formatMoney(p.payuAmount, cur)}
-            />
+            <Row left={onlineLabel} right={formatMoney(p.payuAmount, cur)} />
           ) : null}
-          {p.payuTxnId ? (
-            <Text style={styles.txn}>Transaction {p.payuTxnId}</Text>
+
+          <View style={styles.divider} />
+          <Row
+            left={booking.isConfirmed ? 'Total paid' : 'Total'}
+            right={formatMoney(booking.totalAmount, cur)}
+            strong
+          />
+
+          {paidParts.length ? (
+            <View style={styles.infoRow}>
+              <Icon name="information-circle-outline" size={15} color={T.textDim} />
+              <Text style={styles.infoText}>{paidParts.join(' & ')}</Text>
+            </View>
           ) : null}
         </View>
 
+        {/* ---------------- refund, once cancelled ---------------- */}
         {shownRefund ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Refund</Text>
+            <SectionHead icon="cash-outline" title="Refund" />
             {shownRefund.policyLabel ? (
-              <Text style={styles.sub}>{shownRefund.policyLabel}</Text>
+              <Text style={styles.venueAddr}>{shownRefund.policyLabel}</Text>
             ) : null}
             <View style={styles.divider} />
             <Row
@@ -302,75 +438,70 @@ export default function ConcertBookingDetail({ route, navigation }) {
               <Row
                 left={shownRefund.walletCreditedImmediately ? 'To your wallet (done)' : 'To your wallet'}
                 right={formatMoney(shownRefund.walletRefundAmount, cur)}
-                accent
+                green
               />
             ) : null}
             {shownRefund.payuRefundAmount > 0 ? (
-              <Row
-                left="Back to your bank"
-                right={formatMoney(shownRefund.payuRefundAmount, cur)}
-              />
+              <Row left="Back to your bank" right={formatMoney(shownRefund.payuRefundAmount, cur)} />
             ) : null}
             {shownRefund.processingFee > 0 ? (
-              <Row
-                left="Processing fee"
-                right={'- ' + formatMoney(shownRefund.processingFee, cur)}
-              />
+              <Row left="Processing fee" right={'– ' + formatMoney(shownRefund.processingFee, cur)} />
             ) : null}
             {shownRefund.payuRefundEta ? (
-              <Text style={styles.sub}>
+              <Text style={styles.infoText}>
                 Bank refunds usually take {shownRefund.payuRefundEta}.
               </Text>
             ) : null}
           </View>
         ) : null}
 
-        {booking.canCancel && c ? (
-          <View style={styles.card}>
-            <Text style={styles.cardTitle}>If you cancel now</Text>
-            {c.policyLabel ? <Text style={styles.sub}>{c.policyLabel}</Text> : null}
-            <View style={styles.divider} />
-            <Row left="You get back" right={formatMoney(c.refundableAmount, cur)} strong />
-            <Row left="Refund rate" right={c.refundPercent + '%'} />
-            {c.note ? <Text style={styles.sub}>{c.note}</Text> : null}
-          </View>
+        {notice ? <Text style={styles.warnText}>{notice}</Text> : null}
+
+        {/* ---------------- actions ---------------- */}
+        {booking.canResumePayment ? (
+          <TouchableOpacity
+            activeOpacity={0.9}
+            disabled={busy}
+            onPress={onResume}
+            style={{ marginTop: 22 }}>
+            <LinearGradient
+              colors={[T.goldDark, T.goldLight, T.goldDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.cta, busy && { opacity: 0.6 }]}>
+              {busy ? (
+                <ActivityIndicator color="#1A1206" />
+              ) : (
+                <Text style={styles.ctaText}>Complete payment</Text>
+              )}
+            </LinearGradient>
+          </TouchableOpacity>
         ) : null}
 
-        {notice ? <Text style={styles.warnText}>{notice}</Text> : null}
+        {booking.canCancel ? (
+          <TouchableOpacity
+            disabled={busy}
+            activeOpacity={0.85}
+            onPress={() => setConfirmOpen(true)}
+            style={styles.cancelBtn}>
+            <Icon name="ticket-outline" size={17} color="#BA3939" />
+            <Text style={styles.cancelText}>Cancel Booking</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {booking.isConfirmed ? (
+          <View style={styles.signOff}>
+            <View style={styles.rule} />
+            <Icon name="diamond-outline" size={9} color={T.gold} />
+            <Text style={styles.signOffText}>SEE YOU AT THE CONCERT!</Text>
+            <Icon name="diamond-outline" size={9} color={T.gold} />
+            <View style={styles.rule} />
+          </View>
+        ) : null}
       </ScrollView>
 
-      {booking.canResumePayment || booking.canCancel ? (
-        <View style={styles.footer}>
-          {booking.canResumePayment ? (
-            <TouchableOpacity activeOpacity={0.9} disabled={busy} onPress={onResume}>
-              <LinearGradient
-                colors={[T.goldDark, T.goldLight, T.goldDark]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[styles.cta, busy && { opacity: 0.6 }]}>
-                {busy ? (
-                  <ActivityIndicator color="#1A1206" />
-                ) : (
-                  <Text style={styles.ctaText}>Complete payment</Text>
-                )}
-              </LinearGradient>
-            </TouchableOpacity>
-          ) : null}
-
-          {booking.canCancel ? (
-            <TouchableOpacity
-              disabled={busy}
-              onPress={() => setConfirmOpen(true)}
-              style={styles.cancelBtn}
-              activeOpacity={0.8}>
-              <Text style={styles.cancelText}>Cancel booking</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      ) : null}
-
-      {/* The exact refund, shown before anything is cancelled - these figures
-          come from the server's own cancellation block, not from arithmetic
+      {/* The exact refund, shown before anything is cancelled. Every figure
+          comes from the server's cancellation block, not from arithmetic
           done here. */}
       <Modal visible={confirmOpen} transparent animationType="fade" statusBarTranslucent>
         <View style={styles.backdrop}>
@@ -386,17 +517,13 @@ export default function ConcertBookingDetail({ route, navigation }) {
               <View style={styles.sheetCard}>
                 <Row left="Refund amount" right={formatMoney(c.refundableAmount, cur)} strong />
                 {c.walletRefundAmount > 0 ? (
-                  <Row
-                    left="To your wallet"
-                    right={formatMoney(c.walletRefundAmount, cur)}
-                    accent
-                  />
+                  <Row left="To your wallet" right={formatMoney(c.walletRefundAmount, cur)} green />
                 ) : null}
                 {c.payuRefundAmount > 0 ? (
                   <Row left="Back to your bank" right={formatMoney(c.payuRefundAmount, cur)} />
                 ) : null}
                 {c.processingFee > 0 ? (
-                  <Row left="Processing fee" right={'- ' + formatMoney(c.processingFee, cur)} />
+                  <Row left="Processing fee" right={'– ' + formatMoney(c.processingFee, cur)} />
                 ) : null}
               </View>
             ) : null}
@@ -407,7 +534,7 @@ export default function ConcertBookingDetail({ route, navigation }) {
               style={[styles.destructive, busy && { opacity: 0.6 }]}
               activeOpacity={0.85}>
               {busy ? (
-                <ActivityIndicator color="#E0736A" />
+                <ActivityIndicator color="#BA3939" />
               ) : (
                 <Text style={styles.destructiveText}>Yes, cancel booking</Text>
               )}
@@ -426,22 +553,34 @@ export default function ConcertBookingDetail({ route, navigation }) {
   );
 }
 
-function Line({ icon, text }) {
+function SectionHead({ icon, title, flush }) {
   return (
-    <View style={styles.line}>
-      <Icon name={icon} size={15} color={T.gold} />
-      <Text style={styles.lineText}>{text}</Text>
+    <View style={[styles.sectionHead, flush && { marginBottom: 0 }]}>
+      <Icon name={icon} size={17} color={T.gold} />
+      <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
 }
 
-function Row({ left, right, strong, accent }) {
+function Meta({ icon, text }) {
+  return (
+    <View style={styles.metaRow}>
+      <Icon name={icon} size={14} color={T.gold} />
+      <Text style={styles.metaText}>{text}</Text>
+    </View>
+  );
+}
+
+function Row({ left, right, strong, green }) {
   return (
     <View style={styles.row}>
-      <Text style={[styles.rowLeft, strong && styles.rowStrong, accent && styles.rowAccent]}>
-        {left}
-      </Text>
-      <Text style={[styles.rowRight, strong && styles.rowStrong, accent && styles.rowAccent]}>
+      <Text style={[styles.rowLeft, strong && styles.rowStrongLeft]}>{left}</Text>
+      <Text
+        style={[
+          styles.rowRight,
+          strong && styles.rowStrongRight,
+          green && styles.rowGreen,
+        ]}>
         {right}
       </Text>
     </View>
@@ -451,103 +590,198 @@ function Row({ left, right, strong, accent }) {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: T.bg },
   centre: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40 },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 22,
-    paddingVertical: 12,
+    paddingVertical: 14,
   },
   circleBtn: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: T.circle,
+    backgroundColor: '#202021',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  headerTitle: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 17 },
-  body: { paddingHorizontal: 22, paddingBottom: 28 },
-
-  statusPill: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    marginTop: 4,
-  },
-  statusText: { fontFamily: 'WorkSans-SemiBold', fontSize: 12 },
-
-  refCard: {
-    backgroundColor: 'rgba(206,143,82,0.09)',
-    borderWidth: 1,
-    borderColor: 'rgba(206,143,82,0.4)',
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 14,
-  },
-  refLabel: {
-    color: T.gold,
-    fontFamily: 'WorkSans-Regular',
-    fontSize: 10,
-    letterSpacing: 1.2,
-  },
-  refValue: {
-    color: T.text,
-    fontFamily: 'WorkSans-Bold',
-    fontSize: 17,
-    letterSpacing: 0.5,
-    marginTop: 5,
-  },
+  headerTitle: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 19 },
+  body: { paddingHorizontal: 22, paddingBottom: 34 },
 
   card: {
     backgroundColor: T.surface,
     borderRadius: 16,
-    paddingHorizontal: 18,
+    paddingHorizontal: 16,
     paddingVertical: 16,
-    marginTop: 12,
+    marginTop: 14,
   },
-  cardTitle: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 14.5 },
-  concert: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 17, marginBottom: 6 },
-  line: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
-  lineText: {
+
+  /* ---- concert ---- */
+  concertCard: { flexDirection: 'row', gap: 14 },
+  poster: { width: 108, height: 108, borderRadius: 12 },
+  posterEmpty: {
+    backgroundColor: '#171B24',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  concertBody: { flex: 1, minWidth: 0 },
+  concertHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  concertTitle: {
+    flex: 1,
+    color: T.text,
+    fontFamily: 'WorkSans-Bold',
+    fontSize: 18,
+  },
+  livePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(248,113,113,0.45)',
+  },
+  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#EF4444' },
+  liveText: {
+    color: '#F87171',
+    fontFamily: 'WorkSans-SemiBold',
+    fontSize: 9.5,
+    letterSpacing: 0.4,
+  },
+  artist: {
+    color: T.textMuted,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 13.5,
+    marginTop: 2,
+    marginBottom: 8,
+  },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 2.5 },
+  metaText: {
     flex: 1,
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
-    fontSize: 13,
-    marginLeft: 9,
+    fontSize: 12.5,
   },
-  sub: {
+
+  /* ---- sections ---- */
+  sectionHead: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  sectionTitle: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 16 },
+
+  /* ---- tickets ---- */
+  ticketBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: T.border,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 8,
+  },
+  tierChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(206,143,82,0.55)',
+  },
+  tierText: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 15 },
+  ticketTopRow: { flexDirection: 'row', alignItems: 'center', gap: 9 },
+  ticketCount: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 15.5 },
+  statusPill: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 5 },
+  statusText: { fontFamily: 'WorkSans-SemiBold', fontSize: 9.5, letterSpacing: 0.4 },
+  bookingId: {
+    color: T.textMuted,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 13,
+    marginTop: 6,
+  },
+  bookingIdValue: { color: T.text, fontFamily: 'WorkSans-SemiBold' },
+
+  /* ---- venue ---- */
+  venueRow: { flexDirection: 'row', gap: 14 },
+  venueLeft: { flex: 1, minWidth: 0 },
+  venueRight: { width: '46%' },
+  venueName: { color: T.text, fontFamily: 'WorkSans-SemiBold', fontSize: 15 },
+  venueAddr: {
     color: T.textMuted,
     fontFamily: 'WorkSans-Regular',
     fontSize: 12.5,
-    lineHeight: 19,
-    marginTop: 5,
+    marginTop: 3,
   },
-  txn: {
-    color: T.textDim,
-    fontFamily: 'WorkSans-Regular',
-    fontSize: 11,
-    marginTop: 10,
+  dirBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginTop: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 9,
+    borderWidth: 1,
+    borderColor: 'rgba(206,143,82,0.5)',
   },
+  dirText: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 12.5 },
+
+  /* ---- payment ---- */
+  payHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  stamp: { color: T.textMuted, fontFamily: 'WorkSans-Regular', fontSize: 12 },
   divider: {
     height: StyleSheet.hairlineWidth,
     backgroundColor: T.border,
-    marginVertical: 11,
+    marginVertical: 12,
   },
-
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingVertical: 5,
     gap: 12,
   },
-  rowLeft: { flex: 1, color: T.textMuted, fontFamily: 'WorkSans-Regular', fontSize: 13 },
-  rowRight: { color: T.textMuted, fontFamily: 'WorkSans-Medium', fontSize: 13 },
-  rowStrong: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 15 },
-  rowAccent: { color: T.gold },
+  rowLeft: { flex: 1, color: T.textMuted, fontFamily: 'WorkSans-Regular', fontSize: 13.5 },
+  rowRight: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 13.5 },
+  rowStrongLeft: { color: T.text, fontFamily: 'WorkSans-Bold', fontSize: 16 },
+  rowStrongRight: { color: T.gold, fontFamily: 'WorkSans-Bold', fontSize: 17 },
+  rowGreen: { color: T.balance },
+  infoRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginTop: 12 },
+  infoText: {
+    flex: 1,
+    color: T.textMuted,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+
+  /* ---- actions ---- */
+  cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  ctaText: { color: '#1A1206', fontFamily: 'WorkSans-Bold', fontSize: 15.5 },
+  cancelBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 9,
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#BA3939',
+    marginTop: 26,
+  },
+  cancelText: { color: '#BA3939', fontFamily: 'WorkSans-SemiBold', fontSize: 16 },
+
+  signOff: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 24,
+  },
+  rule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(206,143,82,0.35)' },
+  signOffText: {
+    color: T.textMuted,
+    fontFamily: 'WorkSans-Medium',
+    fontSize: 12,
+    letterSpacing: 1.1,
+  },
 
   warnText: {
     color: '#E0A85A',
@@ -575,17 +809,8 @@ const styles = StyleSheet.create({
   },
   retryText: { color: T.gold, fontFamily: 'WorkSans-SemiBold', fontSize: 13.5 },
 
-  footer: { paddingHorizontal: 22, paddingTop: 8, paddingBottom: 16 },
-  cta: { height: 50, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  ctaText: { color: '#1A1206', fontFamily: 'WorkSans-Bold', fontSize: 15.5 },
-  cancelBtn: { paddingVertical: 15, alignItems: 'center' },
-  cancelText: { color: '#E0736A', fontFamily: 'WorkSans-Medium', fontSize: 14 },
-
-  backdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.65)',
-    justifyContent: 'flex-end',
-  },
+  /* ---- cancel sheet ---- */
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.65)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: T.bg,
     borderTopLeftRadius: 24,
@@ -614,12 +839,12 @@ const styles = StyleSheet.create({
     height: 50,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(224,115,106,0.5)',
-    backgroundColor: 'rgba(224,115,106,0.1)',
+    borderColor: 'rgba(186,57,57,0.6)',
+    backgroundColor: 'rgba(186,57,57,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  destructiveText: { color: '#E0736A', fontFamily: 'WorkSans-SemiBold', fontSize: 15 },
+  destructiveText: { color: '#BA3939', fontFamily: 'WorkSans-SemiBold', fontSize: 15 },
   keepBtn: { paddingVertical: 14, alignItems: 'center' },
   keepText: { color: T.textMuted, fontFamily: 'WorkSans-Medium', fontSize: 14 },
 });
