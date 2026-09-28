@@ -811,7 +811,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    minHeight: 138,
+    // minHeight: 138,
     justifyContent: 'center',
   },
   tierCardOn: { borderColor: T.borderActive },
