@@ -194,6 +194,31 @@ function normalizeCancellation(apiCancellation) {
   };
 }
 
+/**
+ * Where the money actually went, per channel.
+ *
+ * Preferred over deriving rows from walletRefundAmount / payuRefundAmount,
+ * because each destination carries its own status: a wallet credit can be
+ * done while a bank refund is still in flight, and one line saying "refunded"
+ * over both would be a lie.
+ */
+function normalizeRefundDestinations(apiRefundedTo) {
+  const o = filled(apiRefundedTo);
+  if (!o) return null;
+  const destinations = arr(o.destinations)
+    .filter(d => d && (d.label || d.channel))
+    .map(d => ({
+      channel: pick(d.channel, null),
+      label: pick(d.label, d.channel),
+      amount: amount(d.amount),
+      status: pick(d.status, null),
+      settled: d.status === 'refunded' || d.status === 'credited',
+    }));
+  return destinations.length
+    ? { summary: pick(o.summary, ''), destinations }
+    : null;
+}
+
 function normalizeRefund(apiRefund) {
   const r = filled(apiRefund);
   if (!r) return null;
@@ -208,6 +233,8 @@ function normalizeRefund(apiRefund) {
     payuRefundStatus: pick(r.payuRefundStatus, null),
     payuRefundEta: pick(r.payuRefundEta, null),
     walletCreditedImmediately: r.walletCreditedImmediately === true,
+    refundedAt: pick(r.refundedAt, null),
+    refundedTo: normalizeRefundDestinations(r.refundedTo),
   };
 }
 
@@ -593,10 +620,30 @@ export function normalizeBookingList(payload) {
 export function normalizeCancelResponse(payload) {
   const d = unwrap(payload);
   const booking = normalizeBookingRecord(d.booking);
+  const bookingRefund = filled(d.booking) ? filled(d.booking.refund) : null;
   return {
     booking,
-    refund: normalizeRefund(d.refund) || (booking && booking.refund) || null,
+    // The two refund blocks in the response are not identical: the top-level one
+    // carries the delivery fields (eta, walletCreditedImmediately) while the one
+    // inside the booking carries the record fields (reason, refundedAt). Reading
+    // only one of them loses half the card, so they are merged key by key before
+    // normalising - a key present on the top-level block wins.
+    refund: normalizeRefund(mergeRefundBlocks(d.refund, bookingRefund)) || null,
   };
+}
+
+/** Top-level refund block wins per key; the booking's copy fills the gaps. */
+function mergeRefundBlocks(primary, fallback) {
+  const a = filled(primary);
+  const b = filled(fallback);
+  if (!a) return b;
+  if (!b) return a;
+  const out = {};
+  Object.keys(b).forEach(k => { out[k] = b[k]; });
+  Object.keys(a).forEach(k => {
+    if (a[k] !== undefined && a[k] !== null) out[k] = a[k];
+  });
+  return out;
 }
 
 /**

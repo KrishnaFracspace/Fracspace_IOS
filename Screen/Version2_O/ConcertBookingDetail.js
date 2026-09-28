@@ -441,24 +441,57 @@ export default function ConcertBookingDetail({ route, navigation }) {
             {shownRefund.policyLabel ? (
               <Text style={styles.venueAddr}>{shownRefund.policyLabel}</Text>
             ) : null}
+            {shownRefund.reason ? (
+              <Text style={styles.venueAddr}>Reason: {shownRefund.reason}</Text>
+            ) : null}
             <View style={styles.divider} />
             <Row
-              left="Refund amount"
+              left={
+                shownRefund.refundPercent > 0
+                  ? 'Refund amount (' + shownRefund.refundPercent + '%)'
+                  : 'Refund amount'
+              }
               right={formatMoney(shownRefund.refundableAmount, cur)}
               strong
             />
-            {shownRefund.walletRefundAmount > 0 ? (
-              <Row
-                left={shownRefund.walletCreditedImmediately ? 'To your wallet (done)' : 'To your wallet'}
-                right={formatMoney(shownRefund.walletRefundAmount, cur)}
-                green
-              />
-            ) : null}
-            {shownRefund.payuRefundAmount > 0 ? (
-              <Row left="Back to your bank" right={formatMoney(shownRefund.payuRefundAmount, cur)} />
-            ) : null}
+
+            {/* The server's own per-channel breakdown when it sends one. Each
+                destination carries its own status, so a credited wallet and a
+                bank refund still in flight cannot share one misleading label. */}
+            {shownRefund.refundedTo ? (
+              shownRefund.refundedTo.destinations.map((d, i) => (
+                <Row
+                  key={(d.channel || 'dest') + i}
+                  left={d.label + (d.settled ? '' : ' (in progress)')}
+                  right={formatMoney(d.amount, cur)}
+                  green={d.channel === 'wallet'}
+                />
+              ))
+            ) : (
+              <>
+                {shownRefund.walletRefundAmount > 0 ? (
+                  <Row
+                    left={shownRefund.walletCreditedImmediately ? 'To your wallet (done)' : 'To your wallet'}
+                    right={formatMoney(shownRefund.walletRefundAmount, cur)}
+                    green
+                  />
+                ) : null}
+                {shownRefund.payuRefundAmount > 0 ? (
+                  <Row left="Back to your bank" right={formatMoney(shownRefund.payuRefundAmount, cur)} />
+                ) : null}
+              </>
+            )}
             {shownRefund.processingFee > 0 ? (
               <Row left="Processing fee" right={'– ' + formatMoney(shownRefund.processingFee, cur)} />
+            ) : null}
+            {shownRefund.refundedAt ? (
+              <Text style={styles.infoText}>
+                Refunded on {formatStamp(shownRefund.refundedAt)}
+                {shownRefund.refundedTo && shownRefund.refundedTo.summary
+                  ? ' to your ' + shownRefund.refundedTo.summary.toLowerCase()
+                  : ''}
+                .
+              </Text>
             ) : null}
             {shownRefund.payuRefundEta ? (
               <Text style={styles.infoText}>
@@ -521,12 +554,14 @@ export default function ConcertBookingDetail({ route, navigation }) {
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Cancel this booking?</Text>
             <Text style={styles.sheetBody}>
-              {c?.policyLabel
-                ? c.policyLabel + ' — you get ' + (c.refundPercent || 0) + '% back.'
-                : 'This cannot be undone.'}
+              {!c?.policyLabel
+                ? 'This cannot be undone.'
+                : c.refundPercent > 0
+                ? c.policyLabel + ' — you get ' + c.refundPercent + '% back.'
+                : c.policyLabel + ' — this booking is no longer refundable.'}
             </Text>
 
-            {c ? (
+            {c && c.refundableAmount > 0 ? (
               <View style={styles.sheetCard}>
                 <Row left="Refund amount" right={formatMoney(c.refundableAmount, cur)} strong />
                 {c.walletRefundAmount > 0 ? (
@@ -539,6 +574,10 @@ export default function ConcertBookingDetail({ route, navigation }) {
                   <Row left="Processing fee" right={'– ' + formatMoney(c.processingFee, cur)} />
                 ) : null}
               </View>
+            ) : null}
+
+            {c && c.refundableAmount <= 0 && c.note ? (
+              <Text style={styles.sheetNote}>{c.note}</Text>
             ) : null}
 
             <TouchableOpacity
@@ -839,6 +878,17 @@ const styles = StyleSheet.create({
     fontSize: 13.5,
     lineHeight: 21,
     marginTop: 8,
+  },
+  sheetNote: {
+    color: T.textMuted,
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 12.5,
+    lineHeight: 19,
+    marginTop: 14,
+    backgroundColor: T.surface,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   sheetCard: {
     backgroundColor: T.surface,

@@ -12,9 +12,23 @@ const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov
 const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 
 /** 1234567 -> "₹12,34,567" (Indian grouping, not thousands). */
+/*
+ * Paise are shown ONLY when there are any: a price stays clean at 3,999 but a
+ * 90% refund of 2 is 1.80 and must not round to 2. Percentage-based refunds
+ * make fractional amounts routine, and rounding them up quietly overstates
+ * what the user got back.
+ *
+ * Works in integer paise internally so 0.1 + 0.2 drift never reaches the
+ * screen, and non-finite input degrades to zero rather than printing
+ * "Infin,ity".
+ */
 export function formatMoney(value, currency = 'INR') {
-  const v = Math.round(Number(value) || 0);
-  const s = String(Math.abs(v));
+  const raw = Number(value);
+  const safe = isFinite(raw) ? raw : 0;
+  const paise = Math.round(Math.abs(safe) * 100);
+  const whole = Math.floor(paise / 100);
+  const frac = paise % 100;
+  const s = String(whole);
   let grouped;
   if (s.length <= 3) {
     grouped = s;
@@ -23,8 +37,11 @@ export function formatMoney(value, currency = 'INR') {
     const rest = s.slice(0, -3);
     grouped = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3;
   }
+  if (frac) grouped += '.' + (frac < 10 ? '0' + frac : String(frac));
   const symbol = currency === 'INR' ? '₹' : currency + ' ';
-  return (v < 0 ? '-' : '') + symbol + grouped;
+  // a value that rounds to nothing must not print as "-0"
+  const sign = paise > 0 && safe < 0 ? '-' : '';
+  return sign + symbol + grouped;
 }
 
 /**
