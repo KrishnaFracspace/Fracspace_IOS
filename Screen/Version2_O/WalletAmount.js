@@ -736,6 +736,22 @@ const handleOtpVerification = async () => {
             }
         };
 
+  /**
+   * Concert bookings move money through the same wallet as payouts, but they
+   * are not payouts. The server's description is the only thing on the row that
+   * says which booking a debit or credit belongs to, so it is shown on these
+   * rows and left off the ordinary payout rows, where it adds nothing.
+   */
+  const isConcertTransaction = item => {
+    const reason = item?.reason;
+    if (typeof reason === 'string' && reason.indexOf('concert') === 0) {
+      return true;
+    }
+    // A concert row that arrives without a reason is still recognisable by the
+    // booking it points at.
+    return typeof item?.relatedBookingId === 'string' && item.relatedBookingId.length > 0;
+  };
+
   const groupedTransaction = {};
   history.forEach(item => {
     const date = moment(item.completedAt);
@@ -1234,6 +1250,7 @@ const handleOtpVerification = async () => {
                             </View>
 
                             {filteredItems.map((item, index) => {
+                              const isConcert = isConcertTransaction(item);
                               const date = new Date(
                                 item?.completedAt,
                               ).toLocaleDateString('en-GB', {
@@ -1254,6 +1271,8 @@ const handleOtpVerification = async () => {
                               return (
                                 <View key={index}>
                                   <TouchableOpacity
+                                    activeOpacity={isConcert ? 1 : 0.2}
+                                    disabled={isConcert}
                                     onPress={() => {
                                       if (
                                         item?.transactionType === 'withdrawal'
@@ -1349,6 +1368,18 @@ const handleOtpVerification = async () => {
                                       </View>
                                     </View>
                                   </TouchableOpacity>
+                                  {isConcert && item?.description ? (
+                                    <Text
+                                      style={{
+                                        fontFamily: 'WorkSans-Regular',
+                                        fontSize: 12,
+                                        color: '#00000099',
+                                        marginLeft: 10,
+                                        marginTop: 6,
+                                      }}>
+                                      {item.description}
+                                    </Text>
+                                  ) : null}
                                   <View
                                     style={{
                                       borderTopColor: '#62626233',
