@@ -61,6 +61,7 @@ export default function ConcertBookingDetail({ route, navigation }) {
   const [booking, setBooking] = useState(seed || null);
   const [loading, setLoading] = useState(!seed);
   const [error, setError] = useState(null);
+  const [needsLogin, setNeedsLogin] = useState(false);
   const [notice, setNotice] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -104,8 +105,11 @@ export default function ConcertBookingDetail({ route, navigation }) {
       const e = classifyBookingError(err);
       // the seeded row is still worth showing; only a cold load is fatal
       if (!seed) {
+        setNeedsLogin(e.kind === 'auth');
         setError(
-          e.kind === 'notFound'
+          e.kind === 'auth'
+            ? 'Log in to see this booking.'
+            : e.kind === 'notFound'
             ? 'This booking could not be found.'
             : e.message || 'Could not load this booking.',
         );
@@ -219,8 +223,16 @@ export default function ConcertBookingDetail({ route, navigation }) {
       <SafeAreaView style={[styles.safe, styles.centre]}>
         <Icon name="alert-circle-outline" size={28} color={T.textDim} />
         <Text style={styles.emptyText}>{error || 'Booking not found.'}</Text>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.retryBtn}>
-          <Text style={styles.retryText}>Go back</Text>
+        <TouchableOpacity
+          onPress={() =>
+            needsLogin
+              ? navigation.navigate('NewLogin', {
+                  redirectAfterLogin: { screen: 'ConcertBookings', params: {} },
+                })
+              : navigation.goBack()
+          }
+          style={styles.retryBtn}>
+          <Text style={styles.retryText}>{needsLogin ? 'Log in' : 'Go back'}</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );

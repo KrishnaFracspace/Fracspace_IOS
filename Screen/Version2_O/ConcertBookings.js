@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -48,10 +48,21 @@ export default function ConcertBookings({ navigation }) {
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
+  const [needsLogin, setNeedsLogin] = useState(false);
 
   // Guards a second page request while one is already in flight; onEndReached
   // fires repeatedly as the list settles.
   const fetching = useRef(false);
+  // This screen is easy to leave mid-request - it loads on focus, so a quick
+  // back tap lands every setState on an unmounted component.
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const load = useCallback(async ({ nextPage = 1, mode = 'initial' } = {}) => {
     if (fetching.current) return;
@@ -66,19 +77,23 @@ export default function ConcertBookings({ navigation }) {
         limit: PAGE_SIZE,
         token,
       });
+      if (!mounted.current) return;
       const data = normalizeBookingList(res?.data);
       setRows(prev => (nextPage === 1 ? data.bookings : prev.concat(data.bookings)));
       setPage(data.pagination.page || nextPage);
       setPages(data.pagination.pages || 1);
       setError(null);
+      setNeedsLogin(false);
     } catch (err) {
+      if (!mounted.current) return;
       const e = classifyBookingError(err);
       // a failed "load more" must not wipe the rows already on screen
       if (mode !== 'more') {
         setRows([]);
+        setNeedsLogin(e.kind === 'auth');
         setError(
           e.kind === 'auth'
-            ? 'Please log in to see your tickets.'
+            ? 'Log in to see the tickets you have booked.'
             : e.kind === 'network'
             ? 'Could not reach the server. Check your connection.'
             : e.message || 'Could not load your tickets.',
@@ -86,9 +101,11 @@ export default function ConcertBookings({ navigation }) {
       }
     } finally {
       fetching.current = false;
-      setLoading(false);
-      setRefreshing(false);
-      setLoadingMore(false);
+      if (mounted.current) {
+        setLoading(false);
+        setRefreshing(false);
+        setLoadingMore(false);
+      }
     }
   }, []);
 
@@ -186,9 +203,17 @@ export default function ConcertBookings({ navigation }) {
           <Icon name="alert-circle-outline" size={28} color={T.textDim} />
           <Text style={styles.emptyText}>{error}</Text>
           <TouchableOpacity
-            onPress={() => load({ nextPage: 1, mode: 'initial' })}
+            onPress={() =>
+              needsLogin
+                ? navigation.navigate('NewLogin', {
+                    redirectAfterLogin: { screen: 'ConcertBookings', params: {} },
+                  })
+                : load({ nextPage: 1, mode: 'initial' })
+            }
             style={styles.retryBtn}>
-            <Text style={styles.retryText}>Try again</Text>
+            <Text style={styles.retryText}>
+              {needsLogin ? 'Log in' : 'Try again'}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : empty ? (

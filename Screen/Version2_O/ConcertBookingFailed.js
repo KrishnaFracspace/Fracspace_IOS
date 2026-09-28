@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -92,6 +92,16 @@ export default function ConcertBookingFailed({ route, navigation }) {
 
   const [retrying, setRetrying] = useState(false);
   const retryingRef = useRef(false);
+  // retry replaces this screen on success, but every other branch comes back
+  // to it after an await - and the user may have left by then
+  const mounted = useRef(true);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
   const copy = COPY[outcome] || COPY.default;
   // Offer retry whenever a booking exists and nothing says it is finished.
@@ -140,12 +150,14 @@ export default function ConcertBookingFailed({ route, navigation }) {
       }
       // neither a confirmed booking nor a usable form came back: say so
       // rather than letting the button spin and stop
+      if (!mounted.current) return;
       setRetrying(false);
       retryingRef.current = false;
       navigation.setParams({
         message: 'We could not reopen the payment. Please try again in a moment.',
       });
     } catch (err) {
+      if (!mounted.current) return;
       const e = classifyBookingError(err);
       setRetrying(false);
       retryingRef.current = false;

@@ -12,7 +12,6 @@ import {
   Dimensions,
   Image,
   Platform,
-  ScrollView,
   Share,
   StatusBar,
   StyleSheet,
@@ -34,7 +33,7 @@ import AudioWaveform from '../components/AudioWaveform';
 import ConcertInterestForm from '../components/ConcertInterestForm';
 import ConcertTicketsTab from '../components/ConcertTicketsTab';
 import ShinyTag from '../components/ShinyTag';
-import { CONCERT, CONCERT_THEME as T } from '../utils/concertData';
+import { CONCERT_THEME as T } from '../utils/concertData';
 import { normalizeSection } from '../utils/concertAdapter';
 import { GetConcertSection } from '../Services/UserApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
