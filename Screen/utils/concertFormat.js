@@ -25,7 +25,10 @@ const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','S
 export function formatMoney(value, currency = 'INR') {
   const raw = Number(value);
   const safe = isFinite(raw) ? raw : 0;
-  const paise = Math.round(Math.abs(safe) * 100);
+  // Math.round(x * 100) alone is wrong at the edges: 1.005 * 100 is
+  // 100.49999999999999 in binary floating point and would round down to a
+  // rupee. Trimming the noise first makes the half-rupee round up.
+  const paise = Math.round(Number((Math.abs(safe) * 100).toFixed(4)));
   const whole = Math.floor(paise / 100);
   const frac = paise % 100;
   const s = String(whole);
