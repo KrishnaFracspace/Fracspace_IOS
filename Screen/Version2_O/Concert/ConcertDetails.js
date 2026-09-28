@@ -29,15 +29,15 @@ import {
   useRoute,
 } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AudioWaveform from '../components/AudioWaveform';
-import ConcertInterestForm from '../components/ConcertInterestForm';
-import ConcertTicketsTab from '../components/ConcertTicketsTab';
-import ShinyTag from '../components/ShinyTag';
-import { CONCERT_THEME as T } from '../utils/concertData';
-import { normalizeSection } from '../utils/concertAdapter';
-import { GetConcertSection } from '../Services/UserApi';
+import AudioWaveform from './components/AudioWaveform';
+import ConcertInterestForm from './components/ConcertInterestForm';
+import ConcertTicketsTab from './components/ConcertTicketsTab';
+import ShinyTag from './components/ShinyTag';
+import { CONCERT_THEME as T } from './utils/concertData';
+import { normalizeSection } from './utils/concertAdapter';
+import { GetConcertSection } from '../../Services/UserApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { hasRegisteredConcert } from '../utils/concertInterestStore';
+import { hasRegisteredConcert } from './utils/concertInterestStore';
 
 const { width, height } = Dimensions.get('window');
 const HERO_H = Math.round(height * 0.42);

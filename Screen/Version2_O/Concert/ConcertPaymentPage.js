@@ -14,11 +14,11 @@ import { WebView } from 'react-native-webview';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CONCERT_THEME as T } from '../utils/concertData';
-import useBookingStatusBar from '../utils/useBookingStatusBar';
-import { VerifyConcertPayment, classifyBookingError } from '../Services/UserApi';
-import { classifyVerifyResponse } from '../utils/concertBookingAdapter';
-import { clearPendingBooking, savePendingBooking } from '../utils/concertPendingBooking';
+import { CONCERT_THEME as T } from './utils/concertData';
+import useBookingStatusBar from './utils/useBookingStatusBar';
+import { VerifyConcertPayment, classifyBookingError } from '../../Services/UserApi';
+import { classifyVerifyResponse } from './utils/concertBookingAdapter';
+import { clearPendingBooking, savePendingBooking } from './utils/concertPendingBooking';
 
 /**
  * Markers that mean PayU has handed the browser back.

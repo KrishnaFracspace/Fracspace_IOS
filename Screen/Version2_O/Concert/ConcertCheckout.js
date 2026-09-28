@@ -15,21 +15,21 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BOOKING_THEME as T } from '../utils/concertData';
+import { BOOKING_THEME as T } from './utils/concertData';
 import {
   formatEventDateTime,
   formatMoney,
   formatShortDate,
-} from '../utils/concertFormat';
+} from './utils/concertFormat';
 import {
   GetConcertBookingOptions,
   GetConcertCheckoutQuote,
   classifyBookingError,
-} from '../Services/UserApi';
+} from '../../Services/UserApi';
 import {
   normalizeBookingOptions,
   normalizeCheckoutQuote,
-} from '../utils/concertBookingAdapter';
+} from './utils/concertBookingAdapter';
 
 /** Re-quote this long after the last tap, so a held stepper fires once. */
 const QUOTE_DEBOUNCE_MS = 350;

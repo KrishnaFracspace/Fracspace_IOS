@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { CONCERT_THEME as T } from '../utils/concertData';
 import ConcertSuccessSheet from './ConcertSuccessSheet';
-import { AppContext } from '../Context/AppContext';
+import { AppContext } from '../../../Context/AppContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DeviceInfo from 'react-native-device-info';
 import { markConcertRegistered } from '../utils/concertInterestStore';
@@ -26,7 +26,7 @@ import {
   RegisterConcertInterest,
   classifyInterestResponse,
   classifyInterestError,
-} from '../Services/UserApi';
+} from '../../../Services/UserApi';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const PHONE_RE = /^[0-9]{10}$/;

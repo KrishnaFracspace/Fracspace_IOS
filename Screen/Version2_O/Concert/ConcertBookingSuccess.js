@@ -10,10 +10,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { CONCERT_THEME as T } from '../utils/concertData';
-import useBookingStatusBar from '../utils/useBookingStatusBar';
-import { formatEventShort, formatMoney } from '../utils/concertFormat';
-import { clearPendingBooking } from '../utils/concertPendingBooking';
+import { CONCERT_THEME as T } from './utils/concertData';
+import useBookingStatusBar from './utils/useBookingStatusBar';
+import { formatEventShort, formatMoney } from './utils/concertFormat';
+import { clearPendingBooking } from './utils/concertPendingBooking';
 
 /**
  * Back to the home tab.

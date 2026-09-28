@@ -12,14 +12,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BOOKING_THEME as T } from '../utils/concertData';
-import useBookingStatusBar from '../utils/useBookingStatusBar';
-import { formatEventShort, formatMoney } from '../utils/concertFormat';
-import { GetMyConcertBookings, classifyBookingError } from '../Services/UserApi';
+import { BOOKING_THEME as T } from './utils/concertData';
+import useBookingStatusBar from './utils/useBookingStatusBar';
+import { formatEventShort, formatMoney } from './utils/concertFormat';
+import { GetMyConcertBookings, classifyBookingError } from '../../Services/UserApi';
 import {
   bookingStatusMeta,
   normalizeBookingList,
-} from '../utils/concertBookingAdapter';
+} from './utils/concertBookingAdapter';
 
 const PAGE_SIZE = 20;
 

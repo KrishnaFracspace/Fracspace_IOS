@@ -13,23 +13,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BOOKING_THEME as T } from '../utils/concertData';
-import useBookingStatusBar from '../utils/useBookingStatusBar';
+import { BOOKING_THEME as T } from './utils/concertData';
+import useBookingStatusBar from './utils/useBookingStatusBar';
 import {
   formatCountdown,
   formatEventShort,
   formatMoney,
-} from '../utils/concertFormat';
+} from './utils/concertFormat';
 import {
   CreateConcertBooking,
   GetConcertCheckoutQuote,
   classifyBookingError,
-} from '../Services/UserApi';
+} from '../../Services/UserApi';
 import {
   buildPaymentSummary,
   normalizeBookResponse,
   normalizeCheckoutQuote,
-} from '../utils/concertBookingAdapter';
+} from './utils/concertBookingAdapter';
 
 /**
  * How long the selection is shown as held.

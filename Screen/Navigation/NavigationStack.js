@@ -87,14 +87,14 @@ import MembershipHome from '../Version2_O/escapeMembership/MembershipHome';
 import PackageDescription from '../Version2_O/PackageDescription';
 import AddressSearchScreen from '../Version2_O/AddressSearchScreen';
 import CompleteProfileScreen from '../Version2_O/CompleteProfileScreen';
-import ConcertDetails from '../Version2_O/ConcertDetails';
-import ConcertBookings from '../Version2_O/ConcertBookings';
-import ConcertBookingDetail from '../Version2_O/ConcertBookingDetail';
-import ConcertCheckout from '../Version2_O/ConcertCheckout';
-import ConcertReviewBooking from '../Version2_O/ConcertReviewBooking';
-import ConcertPaymentPage from '../Version2_O/ConcertPaymentPage';
-import ConcertBookingSuccess from '../Version2_O/ConcertBookingSuccess';
-import ConcertBookingFailed from '../Version2_O/ConcertBookingFailed';
+import ConcertDetails from '../Version2_O/Concert/ConcertDetails';
+import ConcertBookings from '../Version2_O/Concert/ConcertBookings';
+import ConcertBookingDetail from '../Version2_O/Concert/ConcertBookingDetail';
+import ConcertCheckout from '../Version2_O/Concert/ConcertCheckout';
+import ConcertReviewBooking from '../Version2_O/Concert/ConcertReviewBooking';
+import ConcertPaymentPage from '../Version2_O/Concert/ConcertPaymentPage';
+import ConcertBookingSuccess from '../Version2_O/Concert/ConcertBookingSuccess';
+import ConcertBookingFailed from '../Version2_O/Concert/ConcertBookingFailed';
 
 const { width, height } = Dimensions.get('window');
 

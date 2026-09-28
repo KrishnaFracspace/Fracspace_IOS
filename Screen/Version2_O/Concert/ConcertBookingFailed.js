@@ -10,11 +10,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { CONCERT_THEME as T } from '../utils/concertData';
-import useBookingStatusBar from '../utils/useBookingStatusBar';
-import { ResumeConcertPayment, classifyBookingError } from '../Services/UserApi';
-import { normalizeBookResponse } from '../utils/concertBookingAdapter';
-import { clearPendingBooking } from '../utils/concertPendingBooking';
+import { CONCERT_THEME as T } from './utils/concertData';
+import useBookingStatusBar from './utils/useBookingStatusBar';
+import { ResumeConcertPayment, classifyBookingError } from '../../Services/UserApi';
+import { normalizeBookResponse } from './utils/concertBookingAdapter';
+import { clearPendingBooking } from './utils/concertPendingBooking';
 
 /**
  * Shown whenever the payment did not end in a confirmed booking.

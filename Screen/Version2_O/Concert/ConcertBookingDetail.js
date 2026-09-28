@@ -14,21 +14,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BOOKING_THEME as T } from '../utils/concertData';
-import useBookingStatusBar from '../utils/useBookingStatusBar';
-import VenueCarousel from '../components/VenueCarousel';
+import { BOOKING_THEME as T } from './utils/concertData';
+import useBookingStatusBar from './utils/useBookingStatusBar';
+import VenueCarousel from './components/VenueCarousel';
 import {
   formatEventDayLong,
   formatEventTime,
   formatMoney,
   formatStamp,
-} from '../utils/concertFormat';
+} from './utils/concertFormat';
 import {
   CancelConcertBooking,
   GetConcertBooking,
   ResumeConcertPayment,
   classifyBookingError,
-} from '../Services/UserApi';
+} from '../../Services/UserApi';
 import {
   bookingStatusMeta,
   normalizeBookResponse,
@@ -36,8 +36,8 @@ import {
   normalizeCancelResponse,
   venueDirectionsUrl,
   venueMapUrl,
-} from '../utils/concertBookingAdapter';
-import { clearPendingBooking } from '../utils/concertPendingBooking';
+} from './utils/concertBookingAdapter';
+import { clearPendingBooking } from './utils/concertPendingBooking';
 
 const TONE = {
   good: { fg: '#CE8F52', bg: 'rgba(206,143,82,0.16)' },
