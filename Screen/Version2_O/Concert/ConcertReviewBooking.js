@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  AppState,
+  BackHandler,
   Platform,
   ScrollView,
   StyleSheet,
@@ -93,11 +95,27 @@ export default function ConcertReviewBooking({ route, navigation }) {
 
   /* ---------------- countdown ---------------- */
 
+  // Anchored to the clock rather than counted down tick by tick: JS timers are
+  // throttled or suspended while the app is backgrounded (Doze on Android), so
+  // a decrementing counter would still read "24:13" after 40 real minutes and
+  // let the user pay against a quote that long expired.
+  const holdUntil = useRef(Date.now() + HOLD_SECONDS * 1000);
+
   useEffect(() => {
-    const id = setInterval(() => {
-      setSecondsLeft(s => (s <= 1 ? 0 : s - 1));
-    }, 1000);
-    return () => clearInterval(id);
+    const tick = () => {
+      const left = Math.max(0, Math.round((holdUntil.current - Date.now()) / 1000));
+      setSecondsLeft(left);
+      return left;
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    const sub = AppState.addEventListener('change', next => {
+      if (next === 'active') tick();
+    });
+    return () => {
+      clearInterval(id);
+      sub.remove();
+    };
   }, []);
 
   useEffect(() => {
@@ -146,21 +164,37 @@ export default function ConcertReviewBooking({ route, navigation }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // /book is in flight: the response is the only thing that knows a booking was
+  // created, so leaving now loses it. The header button is already disabled
+  // while paying; Android's hardware back is not, so it is swallowed here.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => paying);
+    return () => sub.remove();
+  }, [paying]);
+
   /* ---------------- pay ---------------- */
 
   const onPay = async () => {
     if (payingRef.current || !quote || secondsLeft <= 0) return;
+    // Claimed BEFORE the first await. Reading the token is a native round trip
+    // (SQLite on Android), and a second tap landing inside it would otherwise
+    // pass this same check and create a second booking on a /book that is not
+    // idempotent. Every early return below has to hand the claim back.
+    payingRef.current = true;
+    setPaying(true);
+    setNotice(null);
+
     const token = await getToken();
+    if (!mounted.current) return;
     if (!token) {
+      payingRef.current = false;
+      setPaying(false);
       navigation.navigate('NewLogin', {
         redirectAfterLogin: { screen: 'ConcertDetails', params: { concertId } },
       });
       return;
     }
 
-    payingRef.current = true;
-    setPaying(true);
-    setNotice(null);
     try {
       const res = await CreateConcertBooking(
         concertId,
@@ -173,10 +207,19 @@ export default function ConcertReviewBooking({ route, navigation }) {
       // /book re-prices server-side and the quote is not an input, so the
       // booking's total can differ from what was on screen. It already
       // exists by now, so this is reported rather than blocked.
+      // The total is not enough on its own: if the wallet covers less than it
+      // did at quote time, the total is unchanged while the amount actually
+      // charged at the gateway goes up - and the gateway amount is the one the
+      // button promised.
+      const bookedTotal = result?.booking?.totalAmount;
+      const bookedPayu = result?.booking?.payment?.payuAmount;
       const priceChanged =
-        typeof quote.totalAmount === 'number' &&
-        typeof result?.booking?.totalAmount === 'number' &&
-        quote.totalAmount !== result.booking.totalAmount;
+        (typeof quote.totalAmount === 'number' &&
+          typeof bookedTotal === 'number' &&
+          quote.totalAmount !== bookedTotal) ||
+        (typeof quote.payuAmount === 'number' &&
+          typeof bookedPayu === 'number' &&
+          quote.payuAmount !== bookedPayu);
 
       if (result.settledImmediately) {
         navigation.replace('ConcertBookingSuccess', {

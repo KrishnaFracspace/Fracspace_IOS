@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -108,13 +109,34 @@ export default function ConcertBookingFailed({ route, navigation }) {
   // 'payment_failed' and the cancelled/expired family are final - /pay would
   // answer 409 - and an amount mismatch needs a human, not another attempt.
   const FINAL = ['payment_failed', 'expired', 'cancelled', 'refunded', 'confirmed'];
+  // `resumable` is the server's own verdict, reached by checking the booking's
+  // status - it is stricter than the outcome list. An 'error' outcome from a
+  // verify that threw is not in FINAL, so without this the screen offers
+  // "try again" in exactly the states where it could not establish whether the
+  // first attempt took the money.
   const canRetry =
-    !!bookingId && !needsSupport && FINAL.indexOf(outcome) === -1;
+    !!bookingId &&
+    !needsSupport &&
+    FINAL.indexOf(outcome) === -1 &&
+    (resumable || outcome === 'pending' || outcome === 'unknown');
 
   const goHome = () => {
     clearPendingBooking();
     goToHome(navigation);
   };
+
+  // Android back from here lands on the review screen with its old quote and
+  // an uncleared pending entry, with nothing saying a booking is outstanding.
+  // Back means the same thing the button means.
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (retryingRef.current) return true;
+      goHome();
+      return true;
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation]);
 
   const onRetry = useCallback(async () => {
     if (retryingRef.current || !bookingId) return;

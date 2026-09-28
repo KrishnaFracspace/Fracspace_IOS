@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -117,6 +117,17 @@ export default function ConcertInterestForm({
   const [alreadyMessage, setAlreadyMessage] = useState(null);
   
 
+  // The only screen in the feature that was missing this: the sheet can be
+  // dismissed while the request is in flight, and every branch below sets
+  // state.
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (visible) {
       setCityId(selectedCityId || fallbackCityId);
@@ -223,6 +234,7 @@ export default function ConcertInterestForm({
     try {
       const token = await AsyncStorage.getItem('mytoken');
       const res = await RegisterConcertInterest(concert?.id, payload, token);
+      if (!mounted.current) return;
       const result = classifyInterestResponse(res);
 
       switch (result.kind) {
@@ -247,6 +259,7 @@ export default function ConcertInterestForm({
           errorToast(result.message);
       }
     } catch (err) {
+      if (!mounted.current) return;
       const result = classifyInterestError(err);
 
       switch (result.kind) {
@@ -277,7 +290,7 @@ export default function ConcertInterestForm({
           errorToast(result.message);
       }
     } finally {
-      setSubmitting(false);
+      if (mounted.current) setSubmitting(false);
     }
   };
 

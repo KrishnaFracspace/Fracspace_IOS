@@ -70,6 +70,8 @@ export default function ConcertBookings({ navigation }) {
     if (mode === 'initial') setLoading(true);
     if (mode === 'refresh') setRefreshing(true);
     if (mode === 'more') setLoadingMore(true);
+    // 'silent' is the on-focus reload: it shows no indicator at all, because
+    // the list is already on screen and correct until proven otherwise.
     try {
       const token = await AsyncStorage.getItem('mytoken');
       const res = await GetMyConcertBookings({
@@ -79,8 +81,36 @@ export default function ConcertBookings({ navigation }) {
       });
       if (!mounted.current) return;
       const data = normalizeBookingList(res?.data);
-      setRows(prev => (nextPage === 1 ? data.bookings : prev.concat(data.bookings)));
-      setPage(data.pagination.page || nextPage);
+      setRows(prev => {
+        // A refresh re-reads page 1 only. Replacing the whole list would throw
+        // away the pages the user scrolled to load, so page 1 is merged over
+        // them instead and the rest is kept in order.
+        const merged =
+          nextPage === 1
+            ? mode === 'refresh' || mode === 'silent'
+              ? data.bookings.concat(
+                  prev.filter(
+                    r => !data.bookings.some(b => b.bookingId === r.bookingId),
+                  ),
+                )
+              : data.bookings
+            : prev.concat(data.bookings);
+        // A server that echoes the wrong page, or a list re-sorted between two
+        // requests, would otherwise put the same booking in twice and break
+        // keyExtractor.
+        const seen = {};
+        return merged.filter(r => {
+          const k = r.bookingId || '';
+          if (!k) return true;
+          if (seen[k]) return false;
+          seen[k] = true;
+          return true;
+        });
+      });
+      // The page we asked for, not the page the server says it sent: trusting
+      // an echoed 1 for a page-2 request pins the cursor and makes every
+      // further scroll re-append the same rows.
+      setPage(prev => (nextPage === 1 && prev > 1 ? prev : nextPage));
       setPages(data.pagination.pages || 1);
       setError(null);
       setNeedsLogin(false);
@@ -88,7 +118,7 @@ export default function ConcertBookings({ navigation }) {
       if (!mounted.current) return;
       const e = classifyBookingError(err);
       // a failed "load more" must not wipe the rows already on screen
-      if (mode !== 'more') {
+      if (mode !== 'more' && mode !== 'silent') {
         setRows([]);
         setNeedsLogin(e.kind === 'auth');
         setError(
@@ -107,11 +137,20 @@ export default function ConcertBookings({ navigation }) {
         setLoadingMore(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The first focus loads with a spinner; every later one refreshes in place.
+  // Using 'initial' every time unmounts the FlatList behind a full-screen
+  // spinner, so coming back from a booking lost the scroll position and every
+  // page after the first.
+  const loadedOnce = useRef(false);
 
   useFocusEffect(
     useCallback(() => {
-      load({ nextPage: 1, mode: 'initial' });
+      const mode = loadedOnce.current ? 'silent' : 'initial';
+      loadedOnce.current = true;
+      load({ nextPage: 1, mode });
     }, [load]),
   );
 

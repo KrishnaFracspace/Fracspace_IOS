@@ -98,8 +98,21 @@ export default function ConcertBookingDetail({ route, navigation }) {
       const res = await GetConcertBooking(id, token);
       if (!mounted.current) return;
       const next = normalizeBookingRecord(res?.data?.data || res?.data);
-      if (next) setBooking(next);
-      setError(null);
+      // normalizeBookingRecord answers for any object, so an envelope or a
+      // {data: null} body comes back as a record with no id, no items and no
+      // status - which renders as a real booking worth zero rupees and hides
+      // both Cancel and Complete payment. Only a record that identifies
+      // itself may replace the row we were handed.
+      if (next && next.bookingId) {
+        setBooking(next);
+        setError(null);
+        // The record may have just changed under an open confirmation sheet
+        // (this endpoint re-checks stale pending bookings), so a sheet that is
+        // no longer valid is taken down rather than left confirmable.
+        if (!next.canCancel) setConfirmOpen(false);
+      } else if (!seed) {
+        setError('Could not load this booking.');
+      }
     } catch (err) {
       if (!mounted.current) return;
       const e = classifyBookingError(err);
@@ -165,12 +178,15 @@ export default function ConcertBookingDetail({ route, navigation }) {
       setNotice('We could not reopen the payment. Please try again in a moment.');
     } catch (err) {
       const e = classifyBookingError(err);
+      if (!mounted.current) return;
       setNotice(
         e.kind === 'network'
           ? 'Could not reach the server. Check your connection.'
           : e.message || 'This booking can no longer be paid for.',
       );
-      load();
+      // Re-reading the booking only helps when the server disagreed with us.
+      // On a dead connection it is a second request that fails the same way.
+      if (e.kind !== 'network') load();
     } finally {
       if (mounted.current) {
         setBusy(false);
@@ -192,7 +208,14 @@ export default function ConcertBookingDetail({ route, navigation }) {
       if (!mounted.current) return;
       const result = normalizeCancelResponse(res?.data);
       setConfirmOpen(false);
-      if (result.booking) setBooking(result.booking);
+      if (result.booking) {
+        setBooking(result.booking);
+      } else {
+        // The cancel went through but the response did not echo the booking.
+        // Without this the pill still reads CONFIRMED and Cancel Booking stays
+        // live beside the refund card, and a second tap cancels again.
+        load();
+      }
       setRefund(result.refund);
     } catch (err) {
       if (!mounted.current) return;
@@ -549,7 +572,17 @@ export default function ConcertBookingDetail({ route, navigation }) {
       {/* The exact refund, shown before anything is cancelled. Every figure
           comes from the server's cancellation block, not from arithmetic
           done here. */}
-      <Modal visible={confirmOpen} transparent animationType="fade" statusBarTranslucent>
+      <Modal
+        visible={confirmOpen}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        // Android needs this: without it the hardware back button is swallowed
+        // and the sheet cannot be dismissed, leaving the destructive button as
+        // the most reachable way out.
+        onRequestClose={() => {
+          if (!busy) setConfirmOpen(false);
+        }}>
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>Cancel this booking?</Text>

@@ -24,11 +24,28 @@ const filled = o =>
     ? o
     : null;
 
-/** A real number, else null. Never coerces - '' and null must not become 0. */
-const num = v => (typeof v === 'number' && isFinite(v) ? v : null);
+/**
+ * A real number, else null.
+ *
+ * A numeric string counts: this API already serialises at least one amount as
+ * a string ("7000.00", see buildPayuForm), and a refund that arrives that way
+ * must not read as nothing. '' / null / true / [] / '12abc' still give null,
+ * so a missing value is never invented as 0.
+ */
+const num = v => {
+  if (typeof v === 'number') return isFinite(v) ? v : null;
+  if (typeof v === 'string' && v.trim() !== '') {
+    const n = Number(v);
+    return isFinite(n) ? n : null;
+  }
+  return null;
+};
 
-/** A real number, else 0. Only for amounts that are meaningfully zero. */
-const amount = v => (typeof v === 'number' && isFinite(v) ? v : 0);
+/** The same, but a missing amount is a meaningful zero. */
+const amount = v => {
+  const n = num(v);
+  return n === null ? 0 : n;
+};
 
 const arr = v => (Array.isArray(v) ? v : []);
 

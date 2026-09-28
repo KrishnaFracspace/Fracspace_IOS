@@ -27,6 +27,9 @@ export default function VenueCarousel({ images = [], onOpenMaps, height = 105 })
   const scroller = useRef(null);
   const [width, setWidth] = useState(0);
   const index = useRef(0);
+  // Mirrored in state purely so the dots can re-render; the ref stays the
+  // source of truth for the autoscroll, which must not depend on a render.
+  const [shown, setShown] = useState(0);
   const touchedAt = useRef(0);
   const focused = useRef(false);
 
@@ -37,6 +40,7 @@ export default function VenueCarousel({ images = [], onOpenMaps, height = 105 })
     if (!canScroll || !width) return;
     if (Date.now() - touchedAt.current < RESUME_AFTER_TOUCH_MS) return;
     index.current = (index.current + 1) % list.length;
+    setShown(index.current);
     scroller.current?.scrollTo({ x: index.current * width, animated: true });
   }, [canScroll, width, list.length]);
 
@@ -74,6 +78,7 @@ export default function VenueCarousel({ images = [], onOpenMaps, height = 105 })
           onMomentumScrollEnd={e => {
             if (!width) return;
             index.current = Math.round(e.nativeEvent.contentOffset.x / width);
+            setShown(index.current);
           }}>
           {list.map((uri, i) => (
             <Image
@@ -105,7 +110,7 @@ export default function VenueCarousel({ images = [], onOpenMaps, height = 105 })
       {canScroll ? (
         <View style={styles.dots} pointerEvents="none">
           {list.map((_, i) => (
-            <View key={i} style={styles.dot} />
+            <View key={i} style={[styles.dot, i === shown && styles.dotOn]} />
           ))}
         </View>
       ) : null}
@@ -154,5 +159,9 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 3,
     backgroundColor: 'rgba(255,255,255,0.45)',
+  },
+  dotOn: {
+    width: 11,
+    backgroundColor: T.goldLight,
   },
 });

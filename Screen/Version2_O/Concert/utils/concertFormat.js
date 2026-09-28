@@ -54,9 +54,43 @@ export function formatMoney(value, currency = 'INR') {
  */
 function venueParts(iso, offsetMinutes = VENUE_OFFSET_MIN) {
   if (!iso) return null;
-  const parsed = new Date(iso);
+
+  // Only a string can be a bare wall-clock timestamp. Anything else (a Date, an
+  // epoch number) keeps the behaviour it always had.
+  const raw = typeof iso === 'string' ? iso : null;
+  // "2026-11-14T19:00:00" with no Z and no +05:30 is a legal ISO string that
+  // Date() reads as DEVICE-local. Adding the venue offset on top of that gives
+  // a different day to someone abroad - the exact leak this function exists to
+  // prevent. A timestamp with no zone is the venue's own wall clock, so it is
+  // read component by component instead of handed to Date().
+  const bare = raw === null ? null : /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?$/.exec(raw);
+  if (bare) {
+    const y = Number(bare[1]);
+    const mo = Number(bare[2]);
+    const day = Number(bare[3]);
+    const hh = Number(bare[4]);
+    const mm = Number(bare[5]);
+    const ss = Number(bare[6] || 0);
+    // Date.UTC rolls out-of-range components over instead of rejecting them,
+    // so month 13 would quietly become January of the next year. new Date()
+    // would have returned Invalid Date for the same string, and an obviously
+    // broken timestamp should render as nothing, not as a plausible wrong day.
+    if (mo < 1 || mo > 12 || day < 1 || day > 31 || hh > 23 || mm > 59 || ss > 59) {
+      return null;
+    }
+    const ms = Date.UTC(y, mo - 1, day, hh, mm, ss);
+    if (isNaN(ms) || new Date(ms).getUTCMonth() !== mo - 1) return null;
+    return partsFromUtcMs(ms);
+  }
+
+  const parsed = new Date(raw === null ? iso : raw);
   if (isNaN(parsed.getTime())) return null;
-  const d = new Date(parsed.getTime() + offsetMinutes * 60000);
+  return partsFromUtcMs(parsed.getTime() + offsetMinutes * 60000);
+}
+
+/** Reads the UTC getters off an already-shifted instant. */
+function partsFromUtcMs(ms) {
+  const d = new Date(ms);
   let h = d.getUTCHours();
   const min = d.getUTCMinutes();
   const ampm = h >= 12 ? 'PM' : 'AM';

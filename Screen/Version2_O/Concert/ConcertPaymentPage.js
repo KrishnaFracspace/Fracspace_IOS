@@ -79,7 +79,16 @@ export default function ConcertPaymentPage({ route, navigation }) {
   // verify can be triggered by navigation, by app resume and by the user at
   // the same moment; only the first may run.
   const settling = useRef(false);
+  // Set only when the WebView handed off to another app (a UPI intent). It is
+  // what separates "the user came back from GPay" from "the user glanced at a
+  // notification", which AppState reports identically.
+  const leftForUpi = useRef(false);
   const mounted = useRef(true);
+  // Android's back button is the in-page back button on a gateway: stepping
+  // from the bank page back to the method list must not read as "leave".
+  const webRef = useRef(null);
+  const canGoBack = useRef(false);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   useEffect(() => {
     mounted.current = true;
@@ -120,7 +129,7 @@ export default function ConcertPaymentPage({ route, navigation }) {
    * Asks the server what actually happened. The WebView URL only says the
    * browser came back - it is never taken as the outcome.
    */
-  const settle = useCallback(async () => {
+  const settle = useCallback(async (trigger = 'return') => {
     if (settling.current || !mounted.current) return;
     settling.current = true;
     setVerifying(true);
@@ -189,6 +198,19 @@ export default function ConcertPaymentPage({ route, navigation }) {
       };
     }
 
+    // Coming back into the app is not the same signal as PayU redirecting us.
+    // The user may have opened their banking app for an OTP, glanced at a
+    // notification, or backed out of the UPI app without paying - the payment
+    // is still live on the page behind us. Leaving them on the gateway costs
+    // nothing; replacing it with a failure screen loses a payment in progress.
+    if (trigger === 'resume' && !last.paid && last.outcome !== 'not_found') {
+      const settled =
+        last.outcome === 'payment_failed' ||
+        last.outcome === 'expired' ||
+        last.outcome === 'cancelled';
+      if (!settled) return;
+    }
+
     // Still unresolved after polling: the booking stays payable, so it is
     // left in the pending store for the resume flow to pick up.
     goFailed(
@@ -207,6 +229,10 @@ export default function ConcertPaymentPage({ route, navigation }) {
     // PhonePe, Paytm, BHIM...). Matching on scheme rather than on app names
     // means a new wallet works without a code change.
     if (!/^(https?|about|data|blob):/i.test(url)) {
+      // The only case where coming back to the app means "a payment may have
+      // happened elsewhere". Reaching the gateway is not: pulling down the
+      // notification shade would otherwise look identical.
+      leftForUpi.current = true;
       Linking.openURL(url).catch(() =>
         Alert.alert(
           'App not found',
@@ -220,10 +246,11 @@ export default function ConcertPaymentPage({ route, navigation }) {
   };
 
   const onNavigationStateChange = state => {
+    canGoBack.current = !!state?.canGoBack;
     const url = (state?.url || '').toLowerCase();
     if (!url) return;
     if (atGateway(url)) payuAttempted.current = true;
-    if (RETURN_MARKERS.some(m => url.indexOf(m) !== -1)) settle();
+    if (RETURN_MARKERS.some(m => url.indexOf(m) !== -1)) settle('return');
   };
 
   // A UPI handoff takes the user out of the app entirely, and PayU's page
@@ -231,8 +258,9 @@ export default function ConcertPaymentPage({ route, navigation }) {
   // catches a GPay payment that completed outside the WebView.
   useEffect(() => {
     const sub = AppState.addEventListener('change', next => {
-      if (next === 'active' && payuAttempted.current && !settling.current) {
-        settle();
+      if (next === 'active' && leftForUpi.current && !settling.current) {
+        leftForUpi.current = false;
+        settle('resume');
       }
     });
     return () => sub?.remove?.();
@@ -240,6 +268,12 @@ export default function ConcertPaymentPage({ route, navigation }) {
 
   const confirmExit = useCallback(() => {
     if (settling.current) return true;
+    // Inside the gateway, back means back a page. Only at its first page does
+    // back mean leaving the payment.
+    if (canGoBack.current && webRef.current) {
+      webRef.current.goBack();
+      return true;
+    }
     if (!payuAttempted.current) {
       navigation.goBack();
       return true;
@@ -249,7 +283,7 @@ export default function ConcertPaymentPage({ route, navigation }) {
       'If you have already paid, we will check and confirm your booking.',
       [
         { text: 'Stay', style: 'cancel' },
-        { text: 'I have paid', onPress: () => settle() },
+        { text: 'I have paid', onPress: () => settle('return') },
         {
           text: 'Leave',
           style: 'destructive',
@@ -350,16 +384,42 @@ export default function ConcertPaymentPage({ route, navigation }) {
               </Text>
             </View>
           )}
+          ref={webRef}
           onError={syntheticEvent => {
             const url = syntheticEvent?.nativeEvent?.url || '';
             // the return markers are pages that need not exist; a load error
             // on one of them is the normal end of the flow, not a failure
             if (RETURN_MARKERS.some(m => url.toLowerCase().indexOf(m) !== -1)) {
-              settle();
+              settle('return');
+              return;
             }
+            // Anything else leaves a blank white WebView with no way out, so
+            // it is surfaced. The booking is untouched and still payable.
+            if (mounted.current) setLoadFailed(true);
           }}
         />
       </View>
+
+      {loadFailed && !verifying ? (
+        <View style={styles.veil}>
+          <View style={styles.veilCard}>
+            <Icon name="cloud-offline-outline" size={30} color={T.textDim} />
+            <Text style={styles.veilTitle}>Could not load the payment page</Text>
+            <Text style={styles.veilNote}>
+              Your booking has not been paid for and is still open.
+            </Text>
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                setLoadFailed(false);
+                webRef.current?.reload?.();
+              }}
+              style={styles.fallbackBtn}>
+              <Text style={styles.fallbackBtnText}>Try again</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
 
       {verifying ? (
         <View style={styles.veil}>
