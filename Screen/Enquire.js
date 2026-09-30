@@ -309,6 +309,24 @@ export default function Enquire(props) {
             </TouchableOpacity>
       </View>
 
+      <View style={styles.noteCard}>
+        <Text style={styles.noteLabel}>PLEASE NOTE</Text>
+        <Text style={styles.noteText}>
+          <Text style={styles.noteStrong}>Effective 1 October 2026</Text>, a
+          cleaning and laundry fee of{' '}
+          <Text style={styles.noteStrong}>₹1,500 per stay</Text> will apply
+          to all complimentary stays,{' '}
+          <Text style={styles.noteStrong}>
+            irrespective of the duration of your stay.
+          </Text>
+        </Text>
+        <Text style={styles.noteSub}>
+          Your accommodation remains complimentary. This fee covers cleaning and
+          laundry services and helps us maintain a comfortable and welcoming
+          environment for every guest.
+        </Text>
+      </View>
+
       <TouchableOpacity
         onPress={() => {
           handleBooking();
@@ -370,6 +388,42 @@ export default function Enquire(props) {
   );
 }
 const styles = StyleSheet.create({
+  /* ---- fee notice above the Submit button ---- */
+  noteCard: {
+    backgroundColor: 'rgba(4,56,98,0.06)',
+    borderWidth: 1,
+    borderColor: 'rgba(4,56,98,0.16)',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    // matches the Submit button below, which sits at marginHorizontal: 20
+    marginHorizontal: 20,
+    marginTop: 0,
+  },
+  noteLabel: {
+    color: '#043862',
+    fontFamily: 'WorkSans-SemiBold',
+    fontSize: 10,
+    letterSpacing: 1,
+    marginBottom: 6,
+  },
+  noteText: {
+    color: '#1E2135',
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 12.5,
+    lineHeight: 19,
+  },
+  noteStrong: {
+    color: '#021365',
+    fontFamily: 'WorkSans-SemiBold',
+  },
+  noteSub: {
+    color: 'rgba(30,33,53,0.72)',
+    fontFamily: 'WorkSans-Regular',
+    fontSize: 11.5,
+    lineHeight: 18,
+    marginTop: 8,
+  },
   iphone13Mini9: {
     backgroundColor: '#f5f7fe',
     //flex: 1,
