@@ -1246,7 +1246,7 @@ const formatIndianAmount = (amount) => {
                       Complimentary Stay
                     </Text>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <View
+                      {/* <View
                         style={{
                           backgroundColor: '#759CCE',
                           alignItems: 'center',
@@ -1268,7 +1268,7 @@ const formatIndianAmount = (amount) => {
                           {' '}
                           {OwnedPropertyDetails?.AvailableFreeStays}/N{' '}
                         </Text>
-                      </View>
+                      </View> */}
                       <Icon1 name="chevron-right" size={25} color="#000000" />
                     </View>
                   </View>
