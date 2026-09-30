@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Image,
   Platform,
@@ -15,6 +16,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ShinyTag from './components/ShinyTag';
 import { BOOKING_THEME as T } from './utils/concertData';
 import {
   formatEventDateTime,
@@ -163,6 +165,36 @@ export default function ConcertCheckout({ route, navigation }) {
 
   const wallet = quote?.wallet || options?.wallet || null;
   const walletUsable = !!wallet && wallet.enabled && wallet.available;
+
+  /**
+   * The INSTANT chip wears the same shine as the FRACSPACE PRESENTS tag on the
+   * details screen, so the wallet row is noticed on a screen the eye otherwise
+   * runs straight down to the total.
+   *
+   * It keeps sweeping for as long as the wallet is usable, including across a
+   * toggle - the row is the thing being advertised, not the switch. The only
+   * thing that stops it is the OS asking for reduced motion.
+   */
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then(on => {
+        if (alive) setReduceMotion(!!on);
+      })
+      .catch(() => {});
+    const sub = AccessibilityInfo.addEventListener(
+      'reduceMotionChanged',
+      on => setReduceMotion(!!on),
+    );
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+
+  const shineOn = walletUsable && !reduceMotion;
 
   /** Why + is capped, so the limit explains itself instead of going dead. */
   const capReason = useCallback(
@@ -508,7 +540,6 @@ export default function ConcertCheckout({ route, navigation }) {
           {maxPerBooking ? (
             <Text style={styles.limitNote}>
               Max {maxPerBooking} tickets per booking
-              {alreadyHeld > 0 ? '  ·  you already hold ' + alreadyHeld : ''}
             </Text>
           ) : null}
 
@@ -525,19 +556,25 @@ export default function ConcertCheckout({ route, navigation }) {
                 <Icon
                   name="wallet-outline"
                   size={17}
-                  color={useWallet && walletUsable ? '#1A1206' : T.textDim}
+                  color={useWallet && walletUsable ? '#1A1206' : '#1A1206'}
                 />
               </View>
-              <View style={{ flex: 1, marginLeft: 8 }}>
+              <View style={{ flex: 1, marginLeft: 5 }}>
                 <View style={styles.walletTitleRow}>
                   <Text style={styles.walletTitle}>
                     {wallet.label || 'Pay through FS Wallet'}
                   </Text>
                   {walletUsable ? (
-                    <View style={styles.instantPill}>
-                      <Icon name="flash" size={9} color={T.goldLight} />
-                      <Text style={styles.instantText}>INSTANT</Text>
-                    </View>
+                    <ShinyTag
+                      label="INSTANT"
+                      active={shineOn}
+                      interval={2200}
+                      sweepMs={900}
+                      shineWidth={20}
+                      style={styles.instantPill}
+                      labelStyle={styles.instantText}
+                      icon={<Icon name="flash" size={9} color="#FBEEDD" />}
+                    />
                   ) : null}
                 </View>
                 <Text style={styles.walletSub}>
@@ -629,7 +666,7 @@ export default function ConcertCheckout({ route, navigation }) {
           </TouchableOpacity>
 
           {/* ---------- refunds ---------- */}
-          {options?.refundPolicy?.enabled && options.refundPolicy.rules.length ? (
+          {options?.refundPolicy?.showInApp && options.refundPolicy.rules.length ? (
             <View style={styles.refundCard}>
               <TouchableOpacity
                 activeOpacity={0.8}
@@ -678,10 +715,10 @@ export default function ConcertCheckout({ route, navigation }) {
             </View>
           ) : null}
 
-          <Text style={styles.footNote}>
+          {/* <Text style={styles.footNote}>
             {options?.booking?.requireLogin ? 'Login required  ·  ' : ''}
             confirmed instantly on payment
-          </Text>
+          </Text> */}
         </View>
       </ScrollView>
     </View>
@@ -958,19 +995,22 @@ const styles = StyleSheet.create({
   walletTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   walletTitle: { color: T.text, fontFamily: 'WorkSans-Medium', fontSize: 12 },
   instantPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    // ShinyTag paints the gradient, so no backgroundColor here. Its own
+    // overflow:'hidden' is what clips the sweep - do not override it.
+    // alignSelf has to come back to center: ShinyTag's wrap sets flex-start
+    // for the hero tag, which would top-align this chip against the title.
+    alignSelf: 'center',
     gap: 2,
-    paddingHorizontal: 5,
-    paddingVertical: 2,
+    paddingHorizontal: 6,
+    paddingVertical: 2.5,
     borderRadius: 4,
-    backgroundColor: 'rgba(206,143,82,0.18)',
   },
   instantText: {
-    color: T.goldLight,
+    color: '#FBF2E7',
     fontFamily: 'WorkSans-SemiBold',
     fontSize: 8,
     letterSpacing: 0.5,
+    marginLeft: 3,
   },
   walletSub: {
     color: T.textMuted,
@@ -980,8 +1020,8 @@ const styles = StyleSheet.create({
   },
   walletBalance: { color: T.balance, fontFamily: 'WorkSans-SemiBold' },
   toggle: {
-    width: 42,
-    height: 25,
+    width: 36,
+    height: 22,
     borderRadius: 13,
     backgroundColor: T.surfaceActive,
     borderWidth: 1,
@@ -990,7 +1030,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   toggleOn: { backgroundColor: T.gold, borderColor: T.gold },
-  knob: { width: 19, height: 19, borderRadius: 10, backgroundColor: T.textDim },
+  knob: { width: 15, height: 15, borderRadius: 10, backgroundColor: T.textDim },
   knobOn: { backgroundColor: '#FFFFFF', alignSelf: 'flex-end' },
 
   summary: { marginTop: 18 },

@@ -178,6 +178,7 @@ function normalizeRefundPolicy(apiPolicy) {
   const p = filled(apiPolicy) || {};
   return {
     enabled: p.enabled !== false,
+    showInApp: p.showInApp !== false,
     cancellationAllowed: p.cancellationAllowed === true,
     processingFee: amount(p.processingFee),
     processingFeePercent: amount(p.processingFeePercent),

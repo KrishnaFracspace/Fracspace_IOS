@@ -12,16 +12,30 @@ import Svg, { Path } from 'react-native-svg';
 const SHINE_W = 46;
 const SWEEP_MS = 1000;
 const DEFAULT_INTERVAL = 1500;
+const GOLD = ['#6B4720', '#9C6C34', '#CE8F52', '#8C5F2D', '#6B4720'];
+const GOLD_STOPS = [0, 0.3, 0.55, 0.78, 1];
 
 /**
  * Gold gradient pill with a sparkle glyph and a shine band that sweeps
  * across it on an interval.
+ *
+ * Everything past `style` is optional and defaults to the hero tag on the
+ * details screen, so the same shine can dress a much smaller chip without a
+ * second copy of the animation: pass `icon` to swap the sparkle (null for
+ * none), `labelStyle` to resize the text, and `shineWidth` to narrow the band
+ * so it does not wash a short pill out in one frame.
  */
 export default function ShinyTag({
   label = 'FRACSPACE PRESENTS',
   interval = DEFAULT_INTERVAL,
   active = true,
   style,
+  labelStyle,
+  icon,
+  colors = GOLD,
+  locations = GOLD_STOPS,
+  shineWidth = SHINE_W,
+  sweepMs = SWEEP_MS,
 }) {
   const [pillWidth, setPillWidth] = useState(0);
   const progress = useRef(new Animated.Value(0)).current;
@@ -38,7 +52,7 @@ export default function ShinyTag({
         Animated.delay(interval),
         Animated.timing(progress, {
           toValue: 1,
-          duration: SWEEP_MS,
+          duration: sweepMs,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
@@ -54,11 +68,11 @@ export default function ShinyTag({
     loop.start();
 
     return () => loop.stop();
-  }, [active, interval, pillWidth, progress]);
+  }, [active, interval, pillWidth, progress, sweepMs]);
 
   const translateX = progress.interpolate({
     inputRange: [0, 1],
-    outputRange: [-SHINE_W * 1.6, pillWidth + SHINE_W],
+    outputRange: [-shineWidth * 1.6, pillWidth + shineWidth],
   });
 
   return (
@@ -66,8 +80,8 @@ export default function ShinyTag({
       style={[styles.wrap, style]}
       onLayout={e => setPillWidth(e.nativeEvent.layout.width)}>
       <LinearGradient
-        colors={['#6B4720', '#9C6C34', '#CE8F52', '#8C5F2D', '#6B4720']}
-        locations={[0, 0.3, 0.55, 0.78, 1]}
+        colors={colors}
+        locations={locations}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={StyleSheet.absoluteFill}
@@ -76,7 +90,10 @@ export default function ShinyTag({
       {/* shine sweep */}
       <Animated.View
         pointerEvents="none"
-        style={[styles.shine, { transform: [{ translateX }, { rotate: '18deg' }] }]}>
+        style={[
+          styles.shine,
+          { width: shineWidth, transform: [{ translateX }, { rotate: '18deg' }] },
+        ]}>
         <LinearGradient
           colors={[
             'rgba(255,255,255,0)',
@@ -91,8 +108,8 @@ export default function ShinyTag({
         />
       </Animated.View>
 
-      <Sparkle />
-      <Text style={styles.label}>{label}</Text>
+      {icon === undefined ? <Sparkle /> : icon}
+      <Text style={[styles.label, labelStyle]}>{label}</Text>
     </View>
   );
 }

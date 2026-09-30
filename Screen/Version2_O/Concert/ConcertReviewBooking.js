@@ -323,13 +323,13 @@ export default function ConcertReviewBooking({ route, navigation }) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.body}>
-        <View style={styles.holdBar}>
+        {/* <View style={styles.holdBar}>
           <Icon name="timer-outline" size={14} color={T.goldLight} />
           <Text style={styles.holdText}>
             Seats held for{' '}
             <Text style={styles.holdTime}>{formatCountdown(secondsLeft)}</Text>
           </Text>
-        </View>
+        </View> */}
 
         {/* ---------- what ---------- */}
         <View style={styles.card}>
@@ -366,7 +366,7 @@ export default function ConcertReviewBooking({ route, navigation }) {
           ))}
         </View>
 
-        {bestRule && options?.refundPolicy?.cancellationAllowed ? (
+        {/* {bestRule && options?.refundPolicy?.cancellationAllowed ? (
           <View style={styles.noteRow}>
             <Icon name="alert-circle-outline" size={13} color={T.textDim} />
             <Text style={styles.noteText}>
@@ -374,7 +374,7 @@ export default function ConcertReviewBooking({ route, navigation }) {
               {bestRule.label ? ' – ' + bestRule.label.toLowerCase() : ''}.
             </Text>
           </View>
-        ) : null}
+        ) : null} */}
 
         {changed ? (
           <Text style={styles.warnText}>
