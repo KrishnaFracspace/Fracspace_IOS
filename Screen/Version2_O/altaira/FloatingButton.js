@@ -79,7 +79,11 @@ const EdgeFab = ({ scrollY }) => {
             style={styles.fabButton}
           >
             <Image
-              source={{ uri: Properties?.stage1?.logo }}
+              source={{
+                uri: Properties?.stage1?.logo?.trim()
+                  ? Properties.stage1.logo
+                  : 'https://duixj37yn5405.cloudfront.net/appImages/altaira_promo/stage1.jpeg',
+              }}
               style={styles.fabLogo}
             //resizeMode='contain'
             />

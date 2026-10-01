@@ -80,10 +80,10 @@ export default function MembershipHome() {
     const membershipAmt = selectedPlan ? (selectedPlan?.bookingAmount ?? 0) : (investmentData[0]?.minimumInvestment ?? 0);
     const platform = (membershipAmt * (2.2 / 100));
     const gst = (platform * (18 / 100));
-    const platformFeeFromBackend = selectedPlan?.platformFeeAmount;
-    const gstFromBackend = selectedPlan?.gstAmount;
+    const platformFeeFromBackend = selectedPlan?.platformFeeAmount || 0;
+    const gstFromBackend = selectedPlan?.gstAmount || 0;
     const totalAmt = (membershipAmt + gst + platform);
-    const totalAmountFromBackend = membershipAmt + platformFeeFromBackend + gstFromBackend;
+    const totalAmountFromBackend = (membershipAmt + platformFeeFromBackend + gstFromBackend) || 0;
 
     useEffect(() => {
         translateX.value = withRepeat(
@@ -1045,7 +1045,7 @@ export default function MembershipHome() {
                     </View>
                 </Modal>
 
-                <Modal visible={showFullAgreement} transparent animationType='fade'>
+                <Modal visible={showFullAgreement} transparent animationType='fade' onRequestClose={() => setShowFullAgreement(false)}>
                     <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', paddingHorizontal: 15, paddingVertical: 20, backgroundColor: '#ac935c', }}>
                             <TouchableOpacity onPress={() => { setShowFullAgreement(false) }}>
@@ -1102,7 +1102,9 @@ export default function MembershipHome() {
                                 </Text>
                             </View>
 
-                            <View style={{ marginTop: 24, borderWidth: 1, borderColor: '#D9C394', borderRadius: 12, overflow: 'hidden', backgroundColor: '#FFF', alignSelf: 'center', elevation: 4 }}>
+                            <TouchableOpacity onPress={() => {
+                                setShowFullAgreement(true);
+                            }} style={{ marginTop: 24, borderWidth: 1, borderColor: '#D9C394', borderRadius: 12, overflow: 'hidden', backgroundColor: '#FFF', alignSelf: 'center', elevation: 4 }}>
                                 {agreementBase64 ? (
                                     <Pdf
                                         source={{
@@ -1124,7 +1126,7 @@ export default function MembershipHome() {
                                     </View>
                                 )}
 
-                            </View>
+                            </TouchableOpacity>
 
                             {/* TERMS */}
 

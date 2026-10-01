@@ -34,7 +34,10 @@ export default function VideoTour(props) {
     };
 
     useEffect(() => {
-        handleListedHotels();
+        // Testimonial videos are not tied to a hotel, so there is nothing to look up
+        if (hotelName != 'Testimonials') {
+            handleListedHotels();
+        }
     }, []);
 
     const roomDetails = hotelDetails?.find(hotel => hotel?.name === hotelName); 
@@ -91,10 +94,12 @@ export default function VideoTour(props) {
                         }}>
                             <Icon name={'left'} size={20} color={'#FFFFFF'}/>
                         </TouchableOpacity>
-                        <View style={{marginLeft:20}}>
+                        {hotelName != 'Testimonials' ? <View style={{marginLeft:20}}>
                             <Text style={{fontFamily:'Poppins-Medium',fontSize:16,color:'#FFFFFF'}}>{roomDetails?.name}</Text>
                             <Text style={{fontFamily:'Poppins-Regular',fontSize:12,color:'#FFFFFF'}}>{roomDetails?.location?.city}</Text>
-                        </View>
+                        </View> :
+                            <Text style={{fontFamily:'Poppins-Medium',fontSize:18,color:'#FFFFFF',marginLeft:5}}>Testimonials</Text>
+                        }
                     </TouchableOpacity>
                 </View>
             </View>
@@ -105,12 +110,12 @@ export default function VideoTour(props) {
                 </View> }
                 <View style={{padding:20,justifyContent:'flex-end',flex:1}}>
                     <View style={{flexDirection:'row',justifyContent:'space-between',}}>
-                        <TouchableOpacity onPress={() => {
+                        {hotelName != 'Testimonials' && <TouchableOpacity onPress={() => {
                             navigation.navigate("SelectRoom", {detail: roomDetails});
                         }} style={{backgroundColor:'#0424CBC9',borderRadius:10,padding:10,alignItems:'center',flexDirection:'row',alignSelf:'flex-end'}}>
                             <Text style={{fontFamily:'Poppins-SemiBold',fontSize:12,color:'#FFFFFF'}}>Book Now</Text>
                             <Icon name={'arrowright'} size={20} color={'#FFFFFF'} style={{marginLeft:10}}/>
-                        </TouchableOpacity>
+                        </TouchableOpacity>}
                     </View>
 
                     <View style={{width:'80%'}}>

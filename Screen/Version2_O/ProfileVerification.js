@@ -1,4 +1,5 @@
-import { View, Text, SafeAreaView, ScrollView, Dimensions, Image, TouchableOpacity, Alert, Animated, StyleSheet, Modal, TextInput } from 'react-native'
+import { View, Text, ScrollView, Dimensions, Image, TouchableOpacity, Alert, Animated, StyleSheet, Modal, TextInput } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import React, { useContext, useRef, useState } from 'react'
 import LinearGradient from 'react-native-linear-gradient'
 import Icon from 'react-native-vector-icons/Feather';

@@ -10,7 +10,7 @@ import {
 
 const { width } = Dimensions.get('window');
 
-const CompleteProfilePopup = ({ visible, onComplete, onLater }) => {
+const CompleteProfilePopup = ({ visible, onComplete, onLater, onUpdateNow }) => {
   if (!visible) return null;
 
   return (
@@ -42,7 +42,7 @@ const CompleteProfilePopup = ({ visible, onComplete, onLater }) => {
             <TouchableOpacity
               style={styles.completeButton}
               activeOpacity={0.8}
-              onPress={onComplete}
+              onPress={onComplete || onUpdateNow}
             >
               <Text style={styles.completeButtonText}>Complete Now</Text>
             </TouchableOpacity>

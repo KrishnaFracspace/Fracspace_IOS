@@ -12,12 +12,14 @@ import {
   Modal,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import Video from "react-native-video";
 import { useDispatch, useSelector } from 'react-redux';
 import { altairaPropertyPromo } from '../../redux/reducer/propertyReducer';
-import { AltairaInterest, profileDetails } from '../../redux/reducer/profileReducer';
 import { AppContext } from '../../Context/AppContext';
+import { UploadEnquiry } from '../../Services/UserApi';
+import HomeSkeleton from '../../components/HomeSkeleton';
 
 const AltairaExperience = () => {
   const navigation = useNavigation();
@@ -26,28 +28,35 @@ const AltairaExperience = () => {
   const Properties = useSelector(state => state.property.altairaPromoData);
   const loading = useSelector(state => state.property.loading);
   const [showModal, setShowModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const userData = useSelector(state => state.profile?.user);
 
   useEffect(() => {
     dispatch(altairaPropertyPromo())
   }, [])
 
+// Send the enquiry first; show the thank-you modal only if it succeeded.
 const interestButton = async () => {
+  if (isSubmitting) return;
+  setIsSubmitting(true);
   try {
-    const response = await dispatch(
-      AltairaInterest({
-        email: userData?.email,
-        name: userData?.userName,
-        phoneNumber: userData?.phoneNumber,
-        message: "Interested",
-      })
-    ).unwrap();
-   // console.log("SUCCESS RESPONSE ===>", response);
-    setShowModal(false);
-
+    const payload = JSON.stringify({
+      name: globalState?.userName || userData?.userName,
+      email: globalState?.userEmail || userData?.email,
+      phoneNumber: globalState?.userDetails?.phoneNumber || userData?.phoneNumber,
+      message: "Interested",
+    });
+    const { data: res } = await UploadEnquiry(payload);
+    if (res?.success) {
+      setShowModal(true);
+    } else {
+      Alert.alert("Error", res?.message || "Please try again");
+    }
   } catch (error) {
     console.log("FAILED RESPONSE ===>", error);
-    Alertlert.alert("Error", error?.message || "Please try again");
+    Alert.alert("Error", error?.response?.data?.message || error?.message || "Please try again");
+  } finally {
+    setIsSubmitting(false);
   }
 };
 
@@ -59,7 +68,12 @@ const interestButton = async () => {
   const block6 = Properties?.block6
 // console.log(block5,"=====55")
 
+  if (loading || !Properties || Object.keys(Properties)?.length === 0) {
+    return <HomeSkeleton />;
+  }
+
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.heroContainer}>
         {block1?.video ? (
@@ -180,7 +194,7 @@ const interestButton = async () => {
         <View style={styles.section1}>
           <Text style={[styles.sectionTitle, { textAlign: "center" }]}>{block4?.heading.toUpperCase()}</Text>
           <Text style={[styles.experienceTitle1, { textAlign: "center" }]}>{block4?.subHeading}</Text>
-          <Text style={{ fontSize: 12, fontWeight: 400, color: "rgba(0, 0, 0, 1)", textAlign: "center", lineHeight: 20, fontFamily: "Work Sans" }}>Experience the private unveiling of Altaira - a curated livestream revealing the master vision, architecture, and philosophy behind the destination.</Text>
+          <Text style={{ fontSize: 12, color: "rgba(0, 0, 0, 1)", textAlign: "center", lineHeight: 20, fontFamily: "WorkSans-Regular" }}>Experience the private unveiling of Altaira - a curated livestream revealing the master vision, architecture, and philosophy behind the destination.</Text>
           <TouchableOpacity onPress={() => {
             navigation.navigate(block4?.screen, {liveStreamUrl: block4?.liveStreamUrl})
           }} style={styles.ctaButton}>
@@ -193,7 +207,7 @@ const interestButton = async () => {
         <View style={[styles.section1,{paddingTop:0}]}>
           <Text style={[styles.sectionTitle]}>{block5?.heading.toUpperCase()}</Text>
           <ImageBackground source={{ uri:block5?.logo}} style={{ height: 200, width: '100%', borderRadius: 10, alignItems: "center" }} imageStyle={styles.imageStyle}>
-            <Text style={{top:40,color:"#fff",fontFamily:"Work Sans",fontSize:14,fontWeight:500}}>{block5?.subHeading}</Text>
+            <Text style={{top:40,color:"#fff",fontFamily:"WorkSans-Medium",fontSize:14}}>{block5?.subHeading}</Text>
             <TouchableOpacity onPress={()=> navigation.navigate("PdfViewer",{pdf:block5?.conceptPlan})} style={{ top: 130, alignItems: "center", backgroundColor: "rgba(255, 255, 255, 0.2)", padding: 10, width: 100,borderRadius:5 }}>
               <Text style={styles.ctaText}>{block5?.button}</Text>
             </TouchableOpacity>
@@ -220,9 +234,8 @@ const interestButton = async () => {
         <Text style={styles.contactDesc}>{block6?.subHeading} </Text>
 
         <TouchableOpacity
-         onPress={() => {
-          dispatch(profileDetails({email:globalState?.userEmail}))
-          setShowModal(true)}}
+         disabled={isSubmitting}
+         onPress={() => interestButton()}
           style={[
             styles.ctaButton,
             { backgroundColor: "rgba(99, 78, 54, 1)", marginBottom: 20 }
@@ -255,7 +268,7 @@ const interestButton = async () => {
 
       <TouchableOpacity
         style={styles.okButton}
-        onPress={() => interestButton()}
+        onPress={() => setShowModal(false)}
       >
         <Text style={styles.okText}>OK</Text>
       </TouchableOpacity>
@@ -263,6 +276,7 @@ const interestButton = async () => {
   </View>
 </Modal>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -376,9 +390,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     letterSpacing: 1.8,
     color: "rgba(7, 38, 67, 0.65)",
-    fontWeight: "600",
+    
     marginBottom: 8,
-    fontFamily: "Work Sans"
+    fontFamily: "WorkSans-SemiBold"
   },
 
   sectionCenterTitle: {
@@ -526,11 +540,11 @@ const styles = StyleSheet.create({
   },
   contactDesc: {
     fontSize: 12,
-    fontWeight: "400",
+    
     color: "rgba(0,0,0,1)",
     textAlign: "center",
     lineHeight: 20,
-    fontFamily: "Work Sans",
+    fontFamily: "WorkSans-Regular",
     marginVertical: 6,
   },
   //Modal.....

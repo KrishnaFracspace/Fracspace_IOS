@@ -67,6 +67,11 @@ export default function DisplayDoc(props) {
         </TouchableOpacity>} */}
         {/* <Icon name={'cross'} size={30} color={'#ffff'} /> */}
       </View>
+      {!pdfLink ? (
+        <View style={{flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+          <Text style={{color: '#000000'}}>Invalid PDF link</Text>
+        </View>
+      ) : (
       <Pdf
         trustAllCerts={false}
         source={{
@@ -87,6 +92,7 @@ export default function DisplayDoc(props) {
         }}
         style={styles.pdf}
       />
+      )}
     </View>
     </SafeAreaView>
   );

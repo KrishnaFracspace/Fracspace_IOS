@@ -3,13 +3,13 @@ import React, { useState } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   StatusBar,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   ImageBackground,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const PaymentSuccessEscape = (props) => {
     // console.log("Data from props: ", props?.route?.params?.paymentData);

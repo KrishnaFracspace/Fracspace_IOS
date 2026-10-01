@@ -11,7 +11,8 @@ import {
   TextInput,
   Linking,
   Modal,
-  StatusBar
+  StatusBar,
+  Platform,
 } from 'react-native';
 import {useState, useEffect, useContext, useRef} from 'react';
 import Footer from './Footer';
@@ -61,7 +62,8 @@ export default function Profile() {
 const phone = globalState?.userDetails?.phoneNumber || '';
 const isIndian = phone.startsWith('+91');
 
-const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
+// Strip any query string (signed S3/CloudFront URLs) before checking the extension
+const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith('.pdf');
 
 
 
@@ -76,8 +78,8 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
       quality: 0.2,
     };
     ImagePicker.launchImageLibrary(options, async response => {
-      if (response.didCancel != true) {
-        setProfileDisplay(response?.assets[0]?.uri);
+      if (response?.didCancel != true && response?.assets?.[0]) {
+        setProfileDisplay(response?.assets?.[0]?.uri);
         setModalVisible(false);
         handleProfilePic(response?.assets);
         // navigation.push(Screens.Post, {images:response.assets})
@@ -98,8 +100,8 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
     };
     ImagePicker.launchCamera(options, async response => {
       // console.log('check response ',response);
-      if (response.didCancel != true) {
-        setProfileDisplay(response?.assets[0]?.uri);
+      if (response?.didCancel != true && response?.assets?.[0]) {
+        setProfileDisplay(response?.assets?.[0]?.uri);
 
         setModalVisible(false);
         handleProfilePic(response.assets);
@@ -232,7 +234,10 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
     }
   };
   const handleRating = () => {
-    const appStoreUrl = 'https://apps.apple.com/in/app/fracspace/id6498551006';
+    const appStoreUrl =
+      Platform.OS === 'ios'
+        ? 'https://apps.apple.com/in/app/fracspace/id6498551006'
+        : 'https://play.google.com/store/apps/details?id=com.fracspace';
     Linking.openURL(appStoreUrl).catch(error =>
       console.error('Error opening Play Store', error),
     );
@@ -289,7 +294,8 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert('WhatsApp is not installed');
+        // e.g. only WhatsApp Business installed: wa.me opens whichever WhatsApp app (or the browser)
+        await Linking.openURL(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`);
       }
 
     } catch (error) {
@@ -334,7 +340,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
               borderRadius: ThemeUtils.relativeWidth(15),
             }}
             source={
-              ProfileDisplay != undefined
+              ProfileDisplay && ProfileDisplay.trim() !== ''
                 ? {
                     uri: ProfileDisplay,
                   }
@@ -466,10 +472,17 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
               <TouchableOpacity
                onPress={() => {
   if (!isIndian) {
-    navigation.navigate('DisplayDoc', {
-      Link: Docs?.[0], // only 1 doc for international
-      screen: 'Doc',
-    });
+    // only 1 doc for international; it can be a PDF or an image
+    if (!Docs?.[0]) return;
+    if (isPDF(Docs[0])) {
+      navigation.navigate('DisplayDoc', {
+        Link: Docs[0],
+        screen: 'Doc',
+      });
+    } else {
+      setPanDoc(Docs[0]);
+      setVisible(true);
+    }
   } else {
     setDocument(!document);
   }
@@ -522,6 +535,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
                   <TouchableOpacity
                     style={{alignItems: 'center', gap: 10}}
                     onPress={() => {
+  if (!Docs[0]) return;
   if (isPDF(Docs[0])) {
     navigation.navigate('DisplayDoc', {
       Link: Docs[0],
@@ -550,6 +564,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
                   </TouchableOpacity>
                   <TouchableOpacity 
                  onPress={() => {
+  if (!Docs[1]) return;
   if (isPDF(Docs[1])) {
     navigation.navigate('DisplayDoc', {
       Link: Docs[1],
@@ -579,6 +594,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
                   </TouchableOpacity>
                   <TouchableOpacity
                    onPress={() => {
+  if (!Docs[2]) return;
   if (isPDF(Docs[2])) {
     navigation.navigate('DisplayDoc', {
       Link: Docs[2],
@@ -933,6 +949,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
       <Modal transparent animationType='fade'
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
+        onRequestClose={() => setModalVisible(false)}
         modalStyle={styles.customModal}>
         <View style={{flex:1, backgroundColor:'#00000065'}}>
           <TouchableOpacity onPress={() => {setModalVisible(false)}} style={{flex:1}}/>
@@ -1026,7 +1043,7 @@ const isPDF = (url) => url?.toLowerCase().endsWith('.pdf');
         </View>
       </Modal>
 
-      <Modal visible={Visible} transparent animationType="fade">
+      <Modal visible={Visible} transparent animationType="fade" onRequestClose={() => setVisible(false)}>
         <View
           style={{
             flex: 1,

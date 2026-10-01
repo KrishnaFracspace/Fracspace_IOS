@@ -208,13 +208,14 @@ const handleOTPLogin = async () => {
         }
       }
 
-      // Final Navigation Reset
+      // Final Navigation Reset (don't stack a second BottomNavigations when there is no deep link)
+      const routes =
+        targetRoute.name === 'BottomNavigations'
+          ? [targetRoute]
+          : [{ name: 'BottomNavigations' }, targetRoute];
       navigation.reset({
-        index: 0,
-        routes: [
-          { name: 'BottomNavigations' },
-          targetRoute,
-        ],
+        index: routes.length - 1,
+        routes,
       });
     }
   } catch (error) {
@@ -399,6 +400,24 @@ const handleOTPLogin = async () => {
                   >
                     <Text style={{ color: '#fff', fontWeight: '600' }}>
                       Continue
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (selectedCode.code === '+91') {
+                        handleLogin();
+                      } else {
+                        handleLoginWithEmail();
+                      }
+                    }}
+                    style={{ alignItems: 'center', marginTop: 30 }}
+                  >
+                    <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#8E9398' }}>
+                      Didn’t get ?{' '}
+                      <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 15, color: '#272A2B', textDecorationLine: 'underline' }}>
+                        Send me a new OTP
+                      </Text>
                     </Text>
                   </TouchableOpacity>
                 </View>

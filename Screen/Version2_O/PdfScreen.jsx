@@ -5,16 +5,17 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
-  SafeAreaView,
   Text
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Pdf from 'react-native-pdf';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Icon1 from 'react-native-vector-icons/MaterialIcons';
 
 export default function PdfViewerScreen(props) {
   const navigation = useNavigation();
- const PdFView = props.route?.params?.pdf;
+ // iOS callers pass { pdf }, Android callers (PdfViewerScreen route) pass { url }
+ const PdFView = props.route?.params?.pdf || props.route?.params?.url;
  //console.log(PdFView,"=====ffff===")
 
   const source = {
@@ -50,6 +51,7 @@ export default function PdfViewerScreen(props) {
       {/* PDF VIEW */}
       <Pdf
       showsVerticalScrollIndicator={false}
+        trustAllCerts={false}
         source={source}
         style={styles.pdf}
         onLoadComplete={(pages) => {

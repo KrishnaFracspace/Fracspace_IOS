@@ -66,6 +66,7 @@ console.log(liveStreamUrl,"====live======")
           resizeMode="contain"
           controls
           paused={paused}
+          onError={(e) => console.log('Video error:', e)}
         />
       </View>
 

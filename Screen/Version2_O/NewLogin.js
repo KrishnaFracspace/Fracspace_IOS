@@ -41,37 +41,7 @@ export default function NewLogin() {
     }
   };
 
-  const handleLoginSuccess1 = async (resData, userEmailOrPhone) => {
-    console.log(resData, "====resDatta====")
-    await AsyncStorage.setItem('mytoken', resData?.data);
-    await AsyncStorage.setItem('Email', resData?.email);
-    setGlobalState((prevState) => ({
-      ...prevState,
-      userName: resData?.userName,
-      userEmail: resData?.email,
-      userPhone: resData?.phoneNumber,
-      token: resData?.data,
-    }));
-
-    const pendingJson = await AsyncStorage.getItem('pendingDeepLink');
-    const redirect = route.params?.redirectAfterLogin;
-    if (!redirect && pendingJson) {
-      redirect = JSON.parse(pendingJson);
-      // Clean up so it doesn't repeat on next login
-      await AsyncStorage.removeItem('pendingDeepLink');
-    }
-
-    console.log(redirect, "=====redi-====")
-    if (redirect) {
-      // Deep link was waiting → go there with params
-      navigation.replace(redirect.screen, redirect.params);
-    } else {
-      // Normal login flow
-      navigation.replace('BottomNavigations');
-    }
-  };
-
-const handleLoginSuccess = async (resData) => {
+const handleLoginSuccess = async (resData, fallbackPhone) => {
   // console.log("Res dTA: ", resData);
   try {
     // Save auth data
@@ -82,7 +52,7 @@ const handleLoginSuccess = async (resData) => {
       ...prevState,
       userName: resData?.userName,
       userEmail: resData?.email,
-      userPhone: resData?.phoneNumber,
+      userPhone: resData?.phoneNumber || fallbackPhone,
       token: resData?.data,
     }));
 
@@ -121,13 +91,14 @@ const handleLoginSuccess = async (resData) => {
       }
     }
 
-    // Final Navigation Reset
+    // Final Navigation Reset (don't stack a second BottomNavigations when there is no deep link)
+    const routes =
+      targetRoute.name === 'BottomNavigations'
+        ? [targetRoute]
+        : [{ name: 'BottomNavigations' }, targetRoute];
     navigation.reset({
-      index: 0,
-      routes: [
-        { name: 'BottomNavigations' },
-        targetRoute,
-      ],
+      index: routes.length - 1,
+      routes,
     });
   } catch (error) {
     console.error('Error in handleLoginSuccess:', error);
@@ -238,7 +209,7 @@ const handleLoginSuccess = async (resData) => {
         analytics().logEvent('user_login_international', {
           user_id: res?.email
         });
-        await handleLoginSuccess(res, email);
+        await handleLoginSuccess(res, selectedCode?.code + phone);
       }
     } catch (error) {
       if (error?.response) {
@@ -432,7 +403,7 @@ const handleLoginSuccess = async (resData) => {
                           maxLength={1}
                           value={otpDigits[index]}
                           textContentType="oneTimeCode"
-                          autoComplete="one-time-code"
+                          autoComplete="sms-otp"
                           onChangeText={(text) => handleChange(text, index)}
                           onKeyPress={(e) => handleKeyPress(e, index)}
                       />

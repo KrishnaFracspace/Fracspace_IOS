@@ -2,7 +2,6 @@ import React, { useContext, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
-  SafeAreaView,
   ScrollView,
   Image,
   TouchableOpacity,
@@ -10,6 +9,7 @@ import {
   ActivityIndicator,
   Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Feather';
 import Ico from 'react-native-vector-icons/Ionicons';
@@ -28,7 +28,7 @@ const DEFAULT_PROFILE_IMAGE =
 export default function CompleteProfileScreen() {
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { globalState } = useContext(AppContext);
+  const { globalState, setGlobalState } = useContext(AppContext);
   const userProfile = useSelector(state => state.profile?.user);
 
   const [selectedImage, setSelectedImage] = useState(null);
@@ -158,8 +158,29 @@ export default function CompleteProfileScreen() {
           text2: 'Profile updated successfully!',
         });
 
+        // Refresh the profile and mirror it into globalState so screens that read
+        // globalState.userDetails (e.g. Profile) don't show the old address/photo.
+        let freshUser = null;
         if (email) {
-          dispatch(profileDetails({ email }));
+          try {
+            const refreshRes = await dispatch(profileDetails({ email })).unwrap();
+            freshUser = refreshRes?.data;
+          } catch (refreshErr) {}
+        }
+
+        if (setGlobalState) {
+          setGlobalState((prevState) => {
+            const updatedUserDetails = freshUser || {
+              ...prevState.userDetails,
+              postalAddress: displayAddress,
+              pincode: displayPincode,
+            };
+            return {
+              ...prevState,
+              userDetails: updatedUserDetails,
+              userProfile: updatedUserDetails?.profilePicture || prevState.userProfile,
+            };
+          });
         }
 
         navigation.navigate('BottomNavigations', { screen: 'Home' });
@@ -192,6 +213,7 @@ export default function CompleteProfileScreen() {
     email,
     dispatch,
     navigation,
+    setGlobalState,
   ]);
 
   return (
