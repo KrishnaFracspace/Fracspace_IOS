@@ -1,4 +1,8 @@
-import { View, Text, TextInput, Image, TouchableOpacity, Alert, BackHandler } from 'react-native'
+import { View, Text, TextInput, Image, TouchableOpacity, Alert, BackHandler, Platform } from 'react-native'
+
+// Android TextInput adds its own vertical/font padding on top of ours; strip it
+// so inputs match the iOS size.
+const androidInputReset = Platform.OS === 'android' ? { includeFontPadding: false, textAlignVertical: 'center' } : null;
 import React, { useContext, useRef, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo'
 import Ico from 'react-native-vector-icons/Ionicons'
@@ -275,7 +279,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                       <TextInput
                         placeholder='Enter your Number'
                         placeholderTextColor={'#B2B8BD'}
-                        style={{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#160D1F', paddingVertical: 15 }}
+                        style={[{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#160D1F', paddingVertical: Platform.OS === 'android' ? 12 : 15 }, androidInputReset]}
                         keyboardType='number-pad'
                         maxLength={10}
                         value={phone}
@@ -292,7 +296,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                       <TextInput
                         placeholder='Enter your email'
                         placeholderTextColor={'#B2B8BD'}
-                        style={{ fontFamily: 'Montserrat-Regular', fontSize: 14, color: '#160D1F', paddingVertical: 15 }}
+                        style={[{ fontFamily: 'Montserrat-Regular', fontSize: 14, color: '#160D1F', paddingVertical: Platform.OS === 'android' ? 12 : 15 }, androidInputReset]}
                         value={email}
                         onChangeText={setEmail}
                       />
@@ -376,7 +380,11 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                     {[0, 1, 2, 3, 4, 5].map((index) => (
                       <View
                         key={index}
-                        style={{ borderColor: '#E1E6EB', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8 }}
+                        style={[
+                          { borderColor: '#E1E6EB', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8 },
+                          // Android: fixed, equal box size (empty and filled boxes otherwise differ in width)
+                          Platform.OS === 'android' && { width: 46, paddingHorizontal: 0, alignItems: 'center' },
+                        ]}
                       >
                         {/* <TextInput
                           ref={(ref) => (inputRefs.current[index] = ref)}
@@ -392,13 +400,17 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                         /> */}
                         <TextInput
                           ref={(ref) => (inputRefs.current[index] = ref)}
-                          style={{
-                            fontFamily: 'WorkSans-Medium',
-                            fontSize: 20,
-                            color: '#000000',
-                            textAlign: 'center',
-                            padding: 10,
-                          }}
+                          style={[
+                            {
+                              fontFamily: 'WorkSans-Medium',
+                              fontSize: 20,
+                              color: '#000000',
+                              textAlign: 'center',
+                              padding: 10,
+                            },
+                            Platform.OS === 'android' && { width: 46, height: 44, padding: 0 },
+                            androidInputReset,
+                          ]}
                           keyboardType="number-pad"
                           maxLength={1}
                           value={otpDigits[index]}

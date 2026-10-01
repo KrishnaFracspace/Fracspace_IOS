@@ -2197,7 +2197,7 @@ const handleOtpVerification = async () => {
                             flexDirection: 'row',
                             alignItems: 'center',
                             alignSelf: 'center',
-                            gap: 10,
+                            gap: Platform.OS === 'android' ? 8 : 10,
                             marginTop: 30,
                           }}>
                           {[0, 1, 2, 3, 4, 5].map(index => (
@@ -2208,6 +2208,8 @@ const handleOtpVerification = async () => {
                                 borderWidth: 1,
                                 borderRadius: 10,
                                 paddingHorizontal: 5,
+                                // Android: fixed width so six boxes fit inside the sheet
+                                ...(Platform.OS === 'android' && { width: 44, paddingHorizontal: 0, alignItems: 'center' }),
                               }}>
                               <TextInput
                                 ref={ref => (inputRefs.current[index] = ref)}
@@ -2217,7 +2219,8 @@ const handleOtpVerification = async () => {
                                   color: '#000000',
                                   textAlign: 'center',
                                   //width: 30,
-                                  padding:10
+                                  padding:10,
+                                  ...(Platform.OS === 'android' && { width: 44, height: 42, padding: 0, includeFontPadding: false, textAlignVertical: 'center' }),
                                 }}
                                 keyboardType={'numeric'}
                                 maxLength={1}

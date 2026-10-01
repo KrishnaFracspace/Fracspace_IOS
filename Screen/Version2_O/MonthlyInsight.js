@@ -24,6 +24,13 @@ import { AppContext } from '../Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { profileDetails } from '../redux/reducer/profileReducer';
 import { useDispatch } from 'react-redux';
+
+// Android TextInput sizes itself from its content plus built-in padding, so OTP
+// boxes come out uneven and too wide. Give each box a fixed size on Android.
+const ANDROID_OTP_BOX = Platform.OS === 'android'
+  ? { width: 44, height: 48, padding: 0, paddingHorizontal: 0, paddingVertical: 0, includeFontPadding: false, textAlign: 'center', textAlignVertical: 'center' }
+  : {};
+
 export default function MonthlyInsight(props) {
     const navigation = useNavigation();
     const { globalState, setGlobalState } = useContext(AppContext);
@@ -555,6 +562,7 @@ export default function MonthlyInsight(props) {
                                                         borderColor: '#0F113021',
                                                         borderRadius: 8,
                                                         textAlign: 'center',
+                                                        ...ANDROID_OTP_BOX,
                                                     }}
                                                     placeholder=""
                                                     // value={otp.charAt(0)}
@@ -577,6 +585,7 @@ export default function MonthlyInsight(props) {
                                                         borderColor: '#0F113021',
                                                         borderRadius: 8,
                                                         textAlign: 'center',
+                                                        ...ANDROID_OTP_BOX,
                                                     }}
                                                     placeholder=""
                                                     //value={otp.charAt(1)}
@@ -601,6 +610,7 @@ export default function MonthlyInsight(props) {
                                                         borderColor: '#0F113021',
                                                         borderRadius: 8,
                                                         textAlign: 'center',
+                                                        ...ANDROID_OTP_BOX,
                                                     }}
                                                     placeholder=""
                                                     //value={otp.charAt(2)}
@@ -625,6 +635,7 @@ export default function MonthlyInsight(props) {
                                                         borderColor: '#0F113021',
                                                         borderRadius: 8,
                                                         textAlign: 'center',
+                                                        ...ANDROID_OTP_BOX,
                                                     }}
                                                     placeholder=""
                                                     // value={otp.charAt(3)}
@@ -651,6 +662,7 @@ export default function MonthlyInsight(props) {
                                                         borderRadius: 8,
                                                         textAlign: 'center',
                                                         //padding: 10,
+                                                        ...ANDROID_OTP_BOX,
                                                     }}
                                                     placeholder=""
                                                     // value={otp.charAt(4)}
@@ -673,6 +685,7 @@ export default function MonthlyInsight(props) {
                                                         paddingHorizontal: 12,
                                                         paddingVertical: 10,
                                                         textAlign: 'center',
+                                                        ...ANDROID_OTP_BOX,
                                                     }}
                                                     placeholder=""
                                                     ref={sixInput}

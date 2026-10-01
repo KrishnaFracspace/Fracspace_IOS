@@ -308,7 +308,7 @@ const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith(
          <View style={{flex:1}}>
           {/* <StatusBar barStyle="light-content" /> */}
       <Back title={'Profile'} isBack={false}/>
-      <ScrollView style={{backgroundColor: '#F9F9F9', padding: 20}} showsVerticalScrollIndicator={false}>
+      <ScrollView style={{backgroundColor: '#F9F9F9'}} contentContainerStyle={{padding: 20}} showsVerticalScrollIndicator={false}>
         <TouchableOpacity
           onPress={() => {
             setModalVisible(true);

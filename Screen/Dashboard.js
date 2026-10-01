@@ -46,6 +46,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { fetchProperties } from './redux/reducer/homeReducer';
 import { profileDetails } from './redux/reducer/profileReducer';
 
+// Android TextInput sizes itself from its content plus built-in padding, so OTP
+// boxes come out uneven and too wide. Give each box a fixed size on Android.
+const ANDROID_OTP_BOX = Platform.OS === 'android'
+  ? { width: 44, height: 48, padding: 0, paddingHorizontal: 0, paddingVertical: 0, includeFontPadding: false, textAlign: 'center', textAlignVertical: 'center' }
+  : {};
+
 export default function Dashboard(props) {
   const { globalState, setGlobalState } = useContext(AppContext);
   const [OwnedPropertyDetails, setOwnedPropertyDetails] = useState(
@@ -1461,6 +1467,7 @@ const formatIndianAmount = (amount) => {
                       borderRadius: 5,
                       padding: 15,
                       alignItems: 'center',
+                        ...ANDROID_OTP_BOX,
                     }}
                     placeholder=""
                     ref={firstInput}
@@ -1481,6 +1488,7 @@ const formatIndianAmount = (amount) => {
                       borderRadius: 5,
                       padding: 15,
                       alignItems: 'center',
+                        ...ANDROID_OTP_BOX,
                     }}
                     placeholder=""
                     ref={secoundInput}
@@ -1502,6 +1510,7 @@ const formatIndianAmount = (amount) => {
                       borderRadius: 5,
                       padding: 15,
                       alignItems: 'center',
+                        ...ANDROID_OTP_BOX,
                     }}
                     placeholder=""
                     //value={otp.charAt(2)}
@@ -1526,6 +1535,7 @@ const formatIndianAmount = (amount) => {
                       borderRadius: 5,
                       padding: 15,
                       alignItems: 'center',
+                        ...ANDROID_OTP_BOX,
                     }}
                     placeholder=""
                     // value={otp.charAt(3)}
@@ -1549,6 +1559,7 @@ const formatIndianAmount = (amount) => {
                       borderRadius: 5,
                       padding: 15,
                       alignItems: 'center',
+                        ...ANDROID_OTP_BOX,
                     }}
                     placeholder=""
                     ref={fiveInput}
@@ -1569,6 +1580,7 @@ const formatIndianAmount = (amount) => {
                       borderRadius: 5,
                       padding: 15,
                       alignItems: 'center',
+                        ...ANDROID_OTP_BOX,
                     }}
                     placeholder=""
                     ref={sixInput}

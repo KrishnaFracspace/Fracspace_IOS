@@ -318,7 +318,7 @@ const handleOTPLogin = async () => {
                         maxLength={10}
                         value={phone}
                         onChangeText={setPhone}
-                        style={{ flex: 1, marginLeft: 10,fontFamily: 'Montserrat-SemiBold', }}
+                        style={{ flex: 1, marginLeft: 10,fontFamily: 'Montserrat-SemiBold', ...(Platform.OS === 'android' && { paddingVertical: 0, includeFontPadding: false }) }}
                       />
                     </View>
                   </View>
@@ -462,6 +462,8 @@ const styles = {
     marginTop: 8,
     fontWeight:'600',
     fontFamily: 'Montserrat-SemiBold',
+    // Android TextInput adds font padding on top of ours
+    ...Platform.select({ android: { paddingVertical: 12, includeFontPadding: false } }),
   },
   phoneContainer: {
     flexDirection: 'row',
@@ -493,6 +495,8 @@ const styles = {
     height: 55,
     textAlign: 'center',
     fontSize: 18,
+    // Android: no built-in padding so the digit is centred and boxes stay 45x50
+    ...Platform.select({ android: { height: 50, padding: 0, includeFontPadding: false, textAlignVertical: 'center' } }),
   },
   title:{
     fontWeight:'600',
