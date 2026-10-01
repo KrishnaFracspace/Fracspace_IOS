@@ -72,10 +72,7 @@ import BottomNavigations from './BottomNavigation';
 import LiveStream from '../Version2_O/altaira/LiveStream';
 import EnquirtyFS from '../Version2_O/EnquirtyFS';
 import VerificationOrWallet from './VerificationOrWallet';
-import CameraScreen from '../components/CCTVView';
 import PaymentSummaryScreen from '../Version2_O/PaymentSummaryScreen';
-import ChatBoat from '../Version2_O/chatboat/ChatBoat'
-import AISearchScreen from '../Version2_O/chatboat/APIChatBoat';
 import MembershipProfile from '../Version2_O/escapeMembership/MembershipProfile';
 import MembershipProprtyDesc from '../Version2_O/escapeMembership/MembershipProprtyDesc';
 import PaymentSuccessEscape from '../Version2_O/escapeMembership/PaymentSuccessEscape';
@@ -98,6 +95,17 @@ import ConcertBookingFailed from '../Version2_O/Concert/ConcertBookingFailed';
 
 const { width, height } = Dimensions.get('window');
 
+// Android passed {url} to "PdfViewerScreen"; the iOS PdfScreen reads {pdf}.
+const PdfViewerScreenAlias = props => {
+  const params = props?.route?.params || {};
+  return (
+    <PdfViewerScreen
+      {...props}
+      route={{ ...props.route, params: { ...params, pdf: params.pdf ?? params.url } }}
+    />
+  );
+};
+
 const Stack = createNativeStackNavigator();
 
 export default function NavigationStack() {
@@ -105,66 +113,6 @@ export default function NavigationStack() {
   const [Email, setEmail] = useState('');
   const [LoadingS, setLoadingS] = useState(true);
   const [token, setToken] = useState('');
-
-  const handleProfle1 = async (emailId, tokenid) => {
-    let payload = JSON.stringify({
-      email: emailId,
-    });
-    try {
-      let { data: res } = await ProfileDetails(payload, tokenid);
-      if (res?.success) {
-        setGlobalState(prevState => ({
-          ...prevState,
-          userName: res?.data?.userName,
-          userEmail: emailId,
-          token: tokenid,
-          userPhone: res?.data?.phoneNumber,
-          userDetails: res?.data,
-          userProfile: res?.data?.profilePicture,
-        }));
-      }
-      setLoadingS(false);
-    } catch (error) {
-      // console.log(error?.response?.data?.message );
-      if (error?.response) {
-        if (error?.response?.data?.message == 'Invalid token.') {
-          //  navigation.navigate('LoginPage');
-          setToken('');
-          setLoadingS(false);
-        } else {
-          Alert.alert(
-            'Response ErrorProfile',
-            `${error?.response?.data?.message}`,
-          );
-        }
-      } else if (error?.request) {
-        //Alert.alert('Request error:', ${JSON.stringify(error?.request)});
-        //console.log('profilr',${JSON.stringify(error?.request)});
-        //Alert.alert('Request error:', 'Please Check Your Internet Connection');
-      } else {
-        // Alert.alert('Error:', `${error}`);
-      }
-    }
-  };
-
-  const handleAuth1 = async () => {
-    try {
-      const token = await AsyncStorage.getItem('mytoken');
-      const email = await AsyncStorage.getItem('Email');
-      if (token) {
-       handleProfle(email, token);
-
-        setToken(token);
-      } else {
-        setToken('');
-        setLoadingS(false);
-      }
-    } catch (error) {
-      console.log('Error checking authentication:', error);
-      setToken('');
-      setLoadingS(false);
-    }
-  };
 
 // Updated handleProfile - More robust for deep linking
 const handleProfile = async (emailId, tokenid) => {
@@ -636,11 +584,6 @@ useLayoutEffect(() => {
           component={Packages}
           options={{ headerShown: false }}
         />
-          <Stack.Screen
-          name="CameraScreen"
-          component={CameraScreen}
-          options={{ headerShown: false }}
-        />
 
           <Stack.Screen
           name="PaymentSummary"
@@ -648,17 +591,14 @@ useLayoutEffect(() => {
           options={{ headerShown: false }}
         />
         
-          <Stack.Screen
-          name="ChatBoat"
-          component={ChatBoat}
-          options={{ headerShown: false }}
-        />
-       
-            <Stack.Screen
-          name="AISearchScreen"
-          component={AISearchScreen}
-          options={{ headerShown: false }}
-        />
+
+        {/* ------ Aliases: route names used by the Android app / backend ------ */}
+        <Stack.Screen name="SelectRoomFS" component={SelectRoom} options={{ headerShown: false }} />
+        <Stack.Screen name="LabelsDescription" component={LablePropertyDis} options={{ headerShown: false }} />
+        <Stack.Screen name="IntroAnim" component={LableProperty} options={{ headerShown: false }} />
+        <Stack.Screen name="PdfViewerScreen" component={PdfViewerScreenAlias} options={{ headerShown: false }} />
+        <Stack.Screen name="PropertyImages" component={Label} options={{ headerShown: false }} />
+        <Stack.Screen name="EdgeFab" component={EdgeFab} options={{ headerShown: false }} />
       </Stack.Navigator>
     );
   }

@@ -75,7 +75,8 @@ export const AltairaInterest = createAsyncThunk(
         message,
       };
 
-      const res = await axios.post(`https://apitest.fracspace.com/api/users/profile`,
+      // Same endpoint and fields as UploadEnquiry / endpoints.INTERESTAPI
+      const res = await axios.post(`https://apitest.fracspace.com/api/users/altairaEnquiryForm`,
   data,
         {
           headers: {

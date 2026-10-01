@@ -2,10 +2,13 @@
  * @format
  */
 
-// 1. Reanimated MUST be imported first (very important)
+// 1. Gesture handler must be the very first import
+import 'react-native-gesture-handler';
+
+// 2. Reanimated
 import 'react-native-reanimated';
 
-// 2. Firebase modules
+// 3. Firebase modules
 import { AppRegistry } from 'react-native';
 import messaging from '@react-native-firebase/messaging';
 //import crashlytics from '@react-native-firebase/crashlytics';

@@ -1,6 +1,5 @@
 import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
 import axios from 'axios';
-import LableProperty from '../../Version2_O/LableProperty';
 
 const initialState = {
   userName: '',
@@ -232,7 +231,7 @@ setDeepLinkNav(state, action) {
         state.LableProDetails = label;
         state.Properties = domastic;
        
-        international =res.properties
+        const international = res.properties
           .filter(item => item.PropertyType === 'International-Villa')
           .sort((a, b) => (a.num > b.num ? 1 : -1));
         state.InterNational = international 

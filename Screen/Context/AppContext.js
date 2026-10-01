@@ -33,6 +33,13 @@ const AppProvider = ({ children }) => {
         verificationPincode: '',
         walletNote: false,
         noteMessage: '',
+        // Keys used by screens ported from the Android app
+        prior: '',
+        AllProperty: [],
+        altairaPromo: [],
+        pendingDeepLinkType: '',
+        pendingDeepLinkId: '',
+        location: [],
     });
 
     return (

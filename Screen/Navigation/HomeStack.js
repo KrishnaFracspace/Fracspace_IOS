@@ -45,6 +45,9 @@ export default function HomeStack() {
         {/* ------ Altaira ----- */}
         <Stack.Screen name="LableProperty" component={LableProperty}/>
         <Stack.Screen name="LablePropertyDis" component={LablePropertyDis}/>
+        {/* Aliases for route names used by the Android app */}
+        <Stack.Screen name="IntroAnim" component={LableProperty}/>
+        <Stack.Screen name="LabelsDescription" component={LablePropertyDis}/>
         <Stack.Screen name="Packages" component={Packages}/>
 
         {/* ------ Interior ------- */}

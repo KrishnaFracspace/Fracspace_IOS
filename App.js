@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Dimensions, Linking, Alert, AppState, Platform } from 'react-native';
+import { StyleSheet, Dimensions, Linking, Alert, Platform, PermissionsAndroid, View } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { Provider } from 'react-redux';
 import messaging from '@react-native-firebase/messaging';
@@ -10,15 +10,45 @@ import store from './Screen/redux/store/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setDeepLinkNav } from './Screen/redux/reducer/homeReducer';
 import Toast from 'react-native-toast-message';
-import { withStallion, useStallionUpdate, restart, sync } from 'react-native-stallion';
 import analytics from '@react-native-firebase/analytics';
 import DeviceInfo from 'react-native-device-info';
 import UpdatePopup from './components/UpdatePopup';
 import { getAppVersionConfig } from './Screen/Services/versionService';
 import { compareVersions } from './Screen/utils/versionUtils';
 import { AppProvider } from './Screen/Context/AppContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import NetInfo from '@react-native-community/netinfo';
+import NoInternet from './Screen/components/NoInternet';
+
+// OTA is split per platform: Stallion on iOS, CodePush on Android.
+// Lazy requires so neither library's JS is evaluated on the other platform.
+const Stallion = Platform.OS === 'ios' ? require('react-native-stallion') : null;
+const codePush = Platform.OS === 'android' ? require('react-native-code-push') : null;
+
 const { width, height } = Dimensions.get('window');
 const navigationRef = createNavigationContainerRef();
+
+// iOS only: must render inside withStallion (useStallionUpdate needs its provider).
+const IOSStallionUpdater = () => {
+  const { isRestartRequired, currentlyRunningBundle } = Stallion.useStallionUpdate();
+
+  useEffect(() => {
+    if (!__DEV__) {
+      Stallion.sync();
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log('=== Stallion Debug ===');
+    console.log('isRestartRequired:', isRestartRequired);
+    if (!__DEV__ && isRestartRequired) {
+      console.log('currentlyRunningBundle:', currentlyRunningBundle);
+      Stallion.restart();
+    }
+  }, [isRestartRequired]);
+
+  return null;
+};
 
 
 const linking = {
@@ -42,8 +72,8 @@ const App = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [updateConfig, setUpdateConfig] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const splashVideo = require('./Screen/assets/Demovideo.mp4');
-const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStallionUpdate();
+  const [isConnected, setIsConnected] = useState(true);
+  const routeNameRef = useRef();
 
   const navigateWithAuthCheck = async (redirectData) => {
     store.dispatch(setDeepLinkNav(true));
@@ -75,39 +105,28 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
     sendEvent();
   }, []);
 
-// useEffect(() => {
-//   console.log('=== Stallion Debug ===');
-//   console.log('isRestartRequired:', isRestartRequired);
-//   // console.log('newReleaseBundle:', newReleaseBundle);
-//   console.log('currentlyRunningBundle:', currentlyRunningBundle); 
-
-//   if (isRestartRequired) {
-//     Alert.alert(
-//       'Update Available',
-//       newReleaseBundle?.releaseNote || 'A new version of Fracspace is ready.',
-//       [
-//         { text: 'Later', style: 'cancel' },
-//         { text: 'Restart Now', onPress: restart },
-//       ]
-//     );
-//   }
-// }, [isRestartRequired, newReleaseBundle]);
-
- useEffect(() => {
-    if (!__DEV__) {
-      sync();
-    }
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsConnected(state.isConnected !== false);
+    });
+    return () => unsubscribe();
   }, []);
 
+  const checkConnection = () => {
+    NetInfo.fetch().then(state => setIsConnected(state.isConnected !== false));
+  };
+
+  // Foreground push: show title/body; skip data-only messages.
   useEffect(() => {
-    console.log('=== Stallion Debug ===');
-    console.log('isRestartRequired:', isRestartRequired);
-    if (!__DEV__ && isRestartRequired) {
-      // console.log('newReleaseBundle:', newReleaseBundle);
-      console.log('currentlyRunningBundle:', currentlyRunningBundle); 
-      restart();
-    }
-  }, [isRestartRequired]);
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      const title = remoteMessage?.notification?.title;
+      const body = remoteMessage?.notification?.body;
+      if (title || body) {
+        Alert.alert(title || '', body || '');
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const getDeviceToken = async() => {
@@ -139,20 +158,23 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
       redirectData = {
         screen: 'Property',
         params: {
-          Id: data.af_sub2 || data?.af_sub1 || data?.deep_link_sub1 || 'MISSING',
+          Id: data?.af_sub2 || data?.deep_link_sub1 || data?.af_sub1 || 'MISSING',
           referralCode: data.af_sub1 || 'MISSING',
         },
       };
     } else if (data.deep_link_value === 'wallet_section') {
       redirectData = { screen: 'WalletAmount', params: {} };
     } else if (data.deep_link_value === 'payment_link') {
-      redirectData = { screen: 'Book', params: { Id: data?.deep_link_sub1 || 'MISSING' } };
+      redirectData = {
+        screen: 'Book',
+        params: { Id: data?.deep_link_sub1 || data?.af_sub2 || data?.af_sub1 || 'MISSING' },
+      };
     } else if (data.deep_link_value === 'escape_section'){
       redirectData = { screen: 'MembershipHome', params: {}};
     } else if (data.deep_link_value === 'concert_section') {
       redirectData = {
         screen: 'ConcertDetails',
-        params: { concertId: data?.deep_link_sub1 || data?.af_sub1 || null },
+        params: { concertId: data?.deep_link_sub1 || data?.af_sub2 || data?.af_sub1 || null },
       };
     } else {
       return;
@@ -187,8 +209,11 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
       if (res?.deepLinkStatus === 'FOUND') tryNavigate(res.data, 'onDeepLink');
     });
 
+    // Conversion data is re-delivered on later launches; only act on the first launch.
     const installUnsub = appsFlyer.onInstallConversionData((res) => {
-      tryNavigate(res?.data || {}, 'onInstallConversionData');
+      const data = res?.data || {};
+      const isFirstLaunch = data?.is_first_launch === true || data?.is_first_launch === 'true';
+      if (isFirstLaunch) tryNavigate(data, 'onInstallConversionData');
     });
 
     const attributionUnsub = appsFlyer.onAppOpenAttribution((res) => {
@@ -227,6 +252,15 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
   useEffect(() => {
     const requestPermission = async () => {
       try {
+        if (Platform.OS === 'android') {
+          if (Platform.Version >= 33) {
+            await PermissionsAndroid.request(
+              PermissionsAndroid.PERMISSIONS.POST_NOTIFICATIONS,
+            );
+          }
+          await messaging().getToken();
+          return;
+        }
         const authStatus = await messaging().requestPermission();
         const enabled =
           authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
@@ -349,22 +383,52 @@ const { isRestartRequired, newReleaseBundle, currentlyRunningBundle } = useStall
 
   return (
     <>
+      {Platform.OS === 'ios' && <IOSStallionUpdater />}
       {showSplash ? (
         <Video
           source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_.mp4"}}
           style={styles.video}
           // resizeMode="cover"
+          hideShutterView
           muted
           onError={(e) => console.log('Video error:', e)}
         />
       ) : (
-        <Provider store={store}>
-          <AppProvider>
-            <NavigationContainer ref={navigationRef} linking={linking}>
-              <NavigationStack />
-            </NavigationContainer>
-          </AppProvider>
-        </Provider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <Provider store={store}>
+            <AppProvider>
+              <NavigationContainer
+                ref={navigationRef}
+                linking={linking}
+                onReady={() => {
+                  routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+                }}
+                onStateChange={async () => {
+                  const previousRouteName = routeNameRef.current;
+                  const currentRouteName = navigationRef.getCurrentRoute()?.name;
+                  if (currentRouteName && previousRouteName !== currentRouteName) {
+                    try {
+                      await analytics().logScreenView({
+                        screen_name: currentRouteName,
+                        screen_class: currentRouteName,
+                      });
+                    } catch (e) {
+                      console.log('Screen view analytics error:', e);
+                    }
+                  }
+                  routeNameRef.current = currentRouteName;
+                }}
+              >
+                <NavigationStack />
+              </NavigationContainer>
+              {!isConnected && (
+                <View style={styles.offlineOverlay}>
+                  <NoInternet onRetry={checkConnection} />
+                </View>
+              )}
+            </AppProvider>
+          </Provider>
+        </GestureHandlerRootView>
       )}
       <Toast />
       <UpdatePopup
@@ -385,6 +449,22 @@ const styles = StyleSheet.create({
     width,
     height,
   },
+  offlineOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
+    elevation: 1000,
+  },
 });
 
-export default withStallion(App);
+// iOS: Stallion. Android: CodePush HOC (checks on app start, installs immediately).
+let RootApp = App;
+if (Platform.OS === 'ios') {
+  RootApp = Stallion.withStallion(App);
+} else if (!__DEV__) {
+  RootApp = codePush({
+    checkFrequency: codePush.CheckFrequency.ON_APP_START,
+    installMode: codePush.InstallMode.IMMEDIATE,
+  })(App);
+}
+
+export default RootApp;

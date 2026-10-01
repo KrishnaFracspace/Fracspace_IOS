@@ -446,6 +446,46 @@ export const InteriorForm = async payload => {
   );
 };
 
+export const ConstructionForm = async payload => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/v1/interiorConstruction/submitConstruction',
+    payload,
+    {
+      headers: {
+       //'content-type': 'multipart/form-data',
+       'content-type': 'application/json',
+       'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+export const PropertyMetaDataApi = async () => {
+  return await axios.get(
+    'https://apitest.fracspace.com/api/expo/fetchPropertyMetadata',
+    {
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
+export const ChangePropertySoldOutStatus = async payload => {
+  return await axios.post(
+    'https://apitest.fracspace.com/api/expo/changePropertySoldOutStatus',
+    payload,
+    {
+      headers: {
+       //'content-type': 'multipart/form-data',
+       'content-type': 'application/json',
+       'x-api-key': 'Fracspace@2024'
+      },
+    },
+  );
+};
+
 export const SearchFSHotelContent = async payload => {
   return await axios.post(
     'https://apitest.fracspace.com/api/v1/travel/getHotelContentHotelId',
@@ -932,7 +972,19 @@ export const handleEnquiryPackage = async (payload,PackagId )=> {
 
 export const GetLabelsProp = async () => {
     return await axios.get(
-        'https://apitest.fracspace.com/api/users/getPropertyDetails',
+        'https://apitest.fracspace.com/api/v1/altaira/getAllProperties',
+        {
+            headers: {
+                'Content-Type' : 'application/json',
+                'x-api-key' : 'Fracspace@2024'
+            },
+        },
+    );
+};
+
+export const AltairaExp = async () => {
+    return await axios.get(
+        'https://apitest.fracspace.com/api/altaira/promo',
         {
             headers: {
                 'Content-Type' : 'application/json',
