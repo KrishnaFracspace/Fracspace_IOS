@@ -25,9 +25,11 @@ export default function Enquire(props) {
   const [Email, setEmail] = useState(globalState?.userDetails?.email);
   const [Guest, setGuest] = useState('');
   const [Name, setName] = useState(globalState?.userDetails?.userName);
-  const [PropertyName, setPropertyName] = useState(
-    props?.route?.params?.propertyid,
+  // Dashboard passes the whole owned-property object (same contract as Android).
+  const [Property, setProperty] = useState(
+    props?.route?.params?.property,
   );
+  const PropertyName = Property?.propertyDetails?.name;
   const [open, setOpen] = useState(false);
   const [open1, setOpen1] = useState(false);
   const [date, setDate] = useState(new Date());
@@ -40,7 +42,8 @@ export default function Enquire(props) {
       email: Email,
       checkInDate: CheckIn,
       checkOutDate: CheckOut,
-      numberOfGuests: Guest
+      numberOfGuests: Guest,
+      bookingFor: "me"
     });
    // console.log(payload);
   
@@ -53,7 +56,7 @@ export default function Enquire(props) {
           'Thanks for your submission!',
           'Our team is currently reviewing your booking request. Please allow us upto 24 hours to confirm your booking status.',
         );
-      navigation.navigate('Dashboard');
+      navigation.navigate('Dashboard', { ownedProDetails: Property });
       
       }
     } catch (error) {
@@ -194,9 +197,7 @@ export default function Enquire(props) {
           }}
           placeholder=""
           value={PropertyName}
-          onChangeText={txt => {
-            setPropertyName(txt);
-          }}
+          editable={false}
         />
       </View>
       <View
@@ -376,11 +377,11 @@ export default function Enquire(props) {
         onConfirm={(date) => {
           console.log('dtafsghysy',date);
           setCheckOut(new Date(date).toLocaleString());
-          setOpen(false)
+          setOpen1(false)
           //setDate(date)
         }}
         onCancel={() => {
-          setOpen(false)
+          setOpen1(false)
         }}
       />
     </ScrollView>

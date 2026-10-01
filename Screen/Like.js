@@ -6,6 +6,7 @@ import {
   Dimensions,
   ScrollView,
   Alert,
+  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import React, {useContext, useEffect, useState} from 'react';
@@ -31,7 +32,10 @@ export default function Like() {
   const [IsLike, setIsLike] = useState([]);
   const [EventStatus, setEventStatus] = useState(0);
   const [Massage, setMassage] = useState('');
+  // Spinner instead of flashing the empty-wishlist screen while loading (Android).
+  const [loading, setLoading] = useState(true);
   const handleAllLike = async () => {
+    setLoading(true);
     const email = await AsyncStorage.getItem('Email');
     let payload = JSON.stringify({
       email: email,
@@ -39,7 +43,7 @@ export default function Like() {
     try {
       let {data: res} = await LikeData(payload);
       if (res?.success) {
-        if (res?.properties.length != 0) {
+        if (res?.properties?.length) {
           setGlobalState(prevState => ({
             ...prevState,
             LikeData: res?.pIds,
@@ -62,6 +66,8 @@ export default function Like() {
       setMassage(
         'Great news! The properties you liked have been wishlisted for your convenience. Happy browsing!',
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -164,7 +170,11 @@ export default function Like() {
         {/* <Back title={'Wishlist'} /> */}
       
       
-          {IsLike.length !== 0 ? (
+          {loading && IsLike.length === 0 ? (
+            <View style={{flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FAFAFF'}}>
+              <ActivityIndicator size="large" color="#021265" />
+            </View>
+          ) : IsLike.length !== 0 ? (
             <>
             <Header/>
              <ScrollView style={{padding: 15, backgroundColor: '#FAFAFF'}}>

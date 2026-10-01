@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
-import { View, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 import Icon from 'react-native-vector-icons/Feather';
 import { GOOGLE_MAPS_API_KEY } from '../Services/googleConfig';
@@ -64,6 +65,7 @@ export default function AddressSearchScreen({ navigation }) {
       </View>
       <GooglePlacesAutocomplete
         placeholder="Search your residential address"
+        placeholderTextColor="#000000"
         fetchDetails={true}
         debounce={300}
         enablePoweredByContainer={false}

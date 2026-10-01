@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
 
   title: {
     fontSize: 12,
-    fontFamily: 'Work Sans',
+    fontFamily: 'WorkSans-Regular',
     color: '#000',
     marginTop: 2,
   },

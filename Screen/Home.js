@@ -1,4 +1,4 @@
-import { View, Text,  ScrollView, TouchableOpacity, TextInput, Image, ImageBackground, Dimensions, Modal, Animated, Alert,Share  } from 'react-native'
+import { View, Text,  ScrollView, TouchableOpacity, TextInput, Image, ImageBackground, Dimensions, Modal, Animated, Alert,Share,Platform  } from 'react-native'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import Icon from 'react-native-vector-icons/AntDesign';
 import Ico from 'react-native-vector-icons/Ionicons';
@@ -61,9 +61,9 @@ export default function Home(props) {
       setPropDetails(indianProperties);
     } else {
       const srilankaProperties = PropertyDetails.filter(
-        item => item.country == 'International',
+        item => item.country == 'International' || item?.PropertyType === 'International-Villa',
       );
-      srilankaProperties.sort((a, b) => (a.num > b.num ? 1 : 1));
+      srilankaProperties.sort((a, b) => (a.num > b.num ? 1 : -1));
       setPropDetails(srilankaProperties);
      // console.log(srilankaProperties,"srilankaProperties")
     }
@@ -74,6 +74,11 @@ useEffect(() => {
   dispatch(refrerLink());
 }, []);
 
+
+const formatIndianAmount = (amount) => {
+  if (amount == null) return '0';
+  return Number(amount).toLocaleString('en-IN');
+};
 
 const shareReferral = async (propertyId) => {
   try {
@@ -104,7 +109,7 @@ const shareReferral = async (propertyId) => {
           LikeData: res?.pIds,
         }));
 
-        const likeProp = res?.properties.map(item => item._id);
+        const likeProp = res?.properties?.map(item => item._id);
         setLikedProperty(likeProp);
       }
     } catch (error) {
@@ -624,8 +629,8 @@ const shareReferral = async (propertyId) => {
       {/* --------------------------------------Filters-------------------------------------- */}
 
       {visible &&
-        <Modal visible={true} modalStyle={{ width: width, flex: 1}}>
-          <View style={{ flex: 1, backgroundColor: '#FAFAFA' ,paddingTop:51}}>
+        <Modal visible={true} modalStyle={{ width: width, flex: 1}} onRequestClose={() => setVisible(false)}>
+          <View style={{ flex: 1, backgroundColor: '#FAFAFA' ,paddingTop: Platform.OS === 'ios' ? 51 : 0}}>
             <View style={{ backgroundColor: '#FFFFFF', padding: 20, flexDirection: 'row', justifyContent: 'space-between', elevation: 5, alignItems: 'center' }}>
               <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 20, color: '#191D31' }}>Filter by</Text>
               <TouchableOpacity onPress={() => {
@@ -762,13 +767,13 @@ const shareReferral = async (propertyId) => {
                         <View style={{}}>
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#101010' }}>Min</Text>
                           <Text style={{ color: '#386BF6', fontFamily: 'Montserrat-SemiBold', fontSize: 15, marginTop: 5 }}>
-                            {`₹${priceRange[0]}`}
+                            {`₹${formatIndianAmount(priceRange[0])}`}
                           </Text>
                         </View>
                         <View style={{}}>
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 12, color: '#101010' }}>Max</Text>
                           <Text style={{ color: '#386BF6', fontFamily: 'Montserrat-SemiBold', fontSize: 15, marginTop: 5 }}>
-                            {`₹${priceRange[1]}`}
+                            {`₹${formatIndianAmount(priceRange[1])}`}
                           </Text>
                         </View>
                       </View>

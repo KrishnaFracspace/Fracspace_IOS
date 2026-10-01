@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Linking, Alert, Dimensions } from 'react-native'
+import { View, Text, ScrollView, Image, TouchableOpacity, StyleSheet, Linking, Alert, Dimensions, Platform } from 'react-native'
 import React, { useContext, useState } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconF from 'react-native-vector-icons/FontAwesome';
@@ -97,7 +97,7 @@ export default function PropertyDetailsNew(props) {
                 // elevation: 1,
               //  borderBottomColor: '#DDE1E5'
             }}>
-                <TouchableOpacity style={{ flex: 1 ,paddingTop: height * 0.05,}}
+                <TouchableOpacity style={{ flex: 1 ,paddingTop: Platform.OS === 'ios' ? height * 0.05 : 0,}}
                     onPress={() => {
                         navigation.navigate('PropertyListing');
 
@@ -111,7 +111,7 @@ export default function PropertyDetailsNew(props) {
                 }}>
                     {PropertiesArray?.name}
                 </Text> */}
-                <TouchableOpacity style={{ flex: 1 ,paddingTop: height * 0.05,}}
+                <TouchableOpacity style={{ flex: 1 ,paddingTop: Platform.OS === 'ios' ? height * 0.05 : 0,}}
                     onPress={() => {
                         navigation.navigate('HomePage');
 

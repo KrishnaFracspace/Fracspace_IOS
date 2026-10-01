@@ -50,14 +50,9 @@ export default function PopularDestination(props) {
         // console.log(link);
         const url = link;
         try {
-          const supported = await Linking.canOpenURL(url);
-          if (supported) {
-            await Linking.openURL(url);
-          } else {
-            // console.log(link);
-            handlewhatsapplink(link);
-            //  Alert.alert('Error', "Can't handle URL: " + url);
-          }
+          // canOpenURL returns false for https links on Android 11+ without
+          // <queries>, so just try to open and fall back on failure.
+          await Linking.openURL(url);
         } catch (error) {
           handlewhatsapplink(link);
           // Alert.alert('Error', 'An error occurred: ' + error.message);
@@ -360,7 +355,7 @@ export default function PopularDestination(props) {
                 </View>
                 <ScrollView horizontal={true}>
                     <View style={{ flexDirection: 'row' }}>
-                        {PropertiesArray?.majorAmenities.includes('Free WiFi') &&
+                        {PropertiesArray?.majorAmenities?.includes('Free WiFi') &&
                             <View style={{
                                 marginRight: 20,
                                 borderRadius: 20
@@ -386,7 +381,7 @@ export default function PopularDestination(props) {
                                     lineHeight: 20
                                 }}>Free WiFi</Text>
                             </View>}
-                        {PropertiesArray?.majorAmenities.includes('Room service') &&
+                        {PropertiesArray?.majorAmenities?.includes('Room service') &&
                             <View style={{
                                 marginRight: 20,
                                 borderRadius: 20,
@@ -405,7 +400,7 @@ export default function PopularDestination(props) {
                                     lineHeight: 20, color: '#101010', fontFamily: 'Montserrat-Medium', fontSize: 10
                                 }}>Room service</Text>
                             </View>}
-                        {PropertiesArray?.majorAmenities.includes('Family Room') &&
+                        {PropertiesArray?.majorAmenities?.includes('Family Room') &&
                             <View style={{
                                 marginRight: 20,
                                 borderRadius: 20,
@@ -424,7 +419,7 @@ export default function PopularDestination(props) {
                                 <IconMa name={'family-restroom'} size={30} color={'#101010'} />
                                 <Text style={{ lineHeight: 20, color: '#101010', fontFamily: 'Montserrat-Medium', fontSize: 10 }}>Family Rooms</Text>
                             </View>}
-                        {PropertiesArray?.majorAmenities.includes('Couple Room') &&
+                        {PropertiesArray?.majorAmenities?.includes('Couple Room') &&
                             <View style={{
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.01,
@@ -441,7 +436,7 @@ export default function PopularDestination(props) {
                                 <IconMa name={'people-alt'} size={30} color={'#101010'} />
                                 <Text style={{ lineHeight: 20, color: '#101010', fontFamily: 'Montserrat-Medium', fontSize: 10 }}>Couple Room</Text>
                             </View>}
-                        {PropertiesArray?.majorAmenities.includes('Garden view') &&
+                        {PropertiesArray?.majorAmenities?.includes('Garden view') &&
                             <View style={{
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.01,
@@ -455,7 +450,7 @@ export default function PopularDestination(props) {
                                 <IconM name={'flower-tulip'} size={30} color={'#101010'} />
                                 <Text style={{ lineHeight: 20, color: '#101010', fontFamily: 'Montserrat-Medium', fontSize: 10 }}>Garden view</Text>
                             </View>}
-                        {PropertiesArray?.majorAmenities.includes('CCTV (Outside Property)') &&
+                        {PropertiesArray?.majorAmenities?.includes('CCTV (Outside Property)') &&
                             <View style={{
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.01,
@@ -466,7 +461,7 @@ export default function PopularDestination(props) {
                                 <IconM name={'cctv'} size={30} color={'#101010'} />
                                 <Text style={{ lineHeight: 20, color: '#101010', fontFamily: 'Montserrat-Medium', fontSize: 10 }}>CCTV (Outside Property)</Text>
                             </View>}
-                        {PropertiesArray?.majorAmenities.includes('Non-smoking rooms') &&
+                        {PropertiesArray?.majorAmenities?.includes('Non-smoking rooms') &&
                             <View style={{
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.01,
@@ -478,7 +473,7 @@ export default function PopularDestination(props) {
                                 <Text style={{ lineHeight: 20, color: '#101010', fontFamily: 'Montserrat-Medium', fontSize: 10 }}>Non-smoking Rooms</Text>
                             </View>}
 
-                        {PropertiesArray?.majorAmenities.includes('Flat-screen TV') &&
+                        {PropertiesArray?.majorAmenities?.includes('Flat-screen TV') &&
                             <View style={{
                                 shadowOffset: { width: 0, height: 2 },
                                 shadowOpacity: 0.01,
@@ -649,7 +644,7 @@ export default function PopularDestination(props) {
             <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                 <ScrollView horizontal={true}>
 
-                    {PropertiesArray?.locationHighlights.map((item, index) => (<View
+                    {PropertiesArray?.locationHighlights?.map((item, index) => (<View
                         key={index}
                         style={{
                             backgroundColor: 'white',
@@ -692,7 +687,7 @@ export default function PopularDestination(props) {
             onPress={() => {
                // handleCallRecord(PropertiesArray?.name,PropertiesArray?.contactDetails?.phone);
             //    {PropertiesArray?.name=='Hilltop By Fracspace'?openApp('https://wa.me/message/2GE5PMLTQFN5E1'):openApp('https://wa.me/qr/GTDPDDHK5X5MA1')}
-                {globalState?.userDetails?.phoneNumber.startsWith('+91') && globalState?.userDetails?.phoneNumber.length ==13 ?handleCallRecord(PropertiesArray?.name,PropertiesArray?.contactDetails?.phone):PropertiesArray?.name=='Hilltop By Fracspace'?openApp('https://wa.me/message/2GE5PMLTQFN5E1'):openApp('https://wa.me/qr/GTDPDDHK5X5MA1')}
+                {globalState?.userDetails?.phoneNumber?.startsWith('+91') && globalState?.userDetails?.phoneNumber?.length ==13 ?handleCallRecord(PropertiesArray?.name,PropertiesArray?.contactDetails?.phone):PropertiesArray?.name=='Hilltop By Fracspace'?openApp('https://wa.me/message/2GE5PMLTQFN5E1'):openApp('https://wa.me/qr/GTDPDDHK5X5MA1')}
             }}
             style={{
                 alignItems: 'center',

@@ -23,9 +23,9 @@ export default function EnquirtyFS(props) {
     const [Name, setName] = useState(globalState?.userName);
     const [countryCode, setCountryCode] = useState("+91");
     const [BookingFor, setBookingFor] = useState('Myself');
-    const [Rooms, setRooms] = useState(1);
-    const [Aduts, setAduts] = useState(1);
-    const [Child, setChild] = useState(0);
+    const [Rooms, setRooms] = useState('1');
+    const [Aduts, setAduts] = useState('1');
+    const [Child, setChild] = useState('0');
     const [Open, setOpen] = useState(false);
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
@@ -115,8 +115,8 @@ export default function EnquirtyFS(props) {
                     }
                 ]
             },
-            adults: Aduts,
-            children: Child,
+            adults: parseInt(Aduts, 10),
+            children: parseInt(Child, 10),
             checkIn: startDate,
             checkOut: endDate,
             paymentDetails: [

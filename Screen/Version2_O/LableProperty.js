@@ -181,7 +181,7 @@ export default function LableProperty() {
                     ))}
                 </View>
                 <View style={{justifyContent:"center",alignItems:"center",marginTop:20}}>
-<Text style={{color:"rgba(0, 0, 0, 0.7)",fontFamily:"Work Sans"}}>A landmark experience by</Text>
+<Text style={{color:"rgba(0, 0, 0, 0.7)",fontFamily:"WorkSans-Regular"}}>A landmark experience by</Text>
 <Image source={fracspaceLogos} style={{height:60,width:'65%'}} resizeMode='cover'/>
                 </View>
                 

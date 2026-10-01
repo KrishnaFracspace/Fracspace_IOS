@@ -16,7 +16,7 @@ export default function SelectRoom(props) {
         <SafeAreaView style={{ flex: 1, }}>
             <View style={{ backgroundColor: '#0D2038', paddingVertical: 20, paddingHorizontal: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
                 <TouchableOpacity onPress={() => {
-                    navigation.navigate('DreamscapeHome')}}>
+                    navigation.goBack()}}>
                     <Icon name={'left'} size={18} color={'#FFFFFF'} />
                 </TouchableOpacity>
                 <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#FFFFFF' }}>{RoomDetails?.name}</Text>
@@ -24,7 +24,7 @@ export default function SelectRoom(props) {
             </View>
             <ScrollView style={{}}>
                 <View style={{ margin: 20, }}>
-                    {RoomDetails?.roomsAndCorrespondingPrice.map((item, index) => (
+                    {RoomDetails?.roomsAndCorrespondingPrice?.map((item, index) => (
                         <TouchableOpacity onPress={() => {
                             navigation.navigate('RoomDescription', { detail: RoomDetails, name: item, });
                         }} key={index} style={{ backgroundColor: '#FFFFFF', borderRadius: 25, marginHorizontal: 20, marginVertical: 15, elevation: 5, alignSelf: 'center', width: width * 0.9, overflow: 'hidden' }}>
@@ -40,10 +40,10 @@ export default function SelectRoom(props) {
                                     activeDotStyle={{ backgroundColor: '#0E2138', width: 8, height: 8, borderRadius: 4 }}
                                     autoplay={false}>
                                     {RoomDetails?.name === "DREAMSCAPE" ?
-                                        item?.roomImages.map((img, imgIndex) => (
+                                        item?.roomImages?.map((img, imgIndex) => (
                                             <Image key={imgIndex} source={{ uri: img }} style={{ width: width * 0.9, height: height * 0.22 }} />
                                         )) :
-                                        RoomDetails?.images.map((img, imgIndex) => (
+                                        RoomDetails?.images?.map((img, imgIndex) => (
                                             <Image key={imgIndex} source={{ uri: img }} style={{ width: width * 0.9, height: height * 0.22 }} />
                                         ))}
                                 </Swiper>

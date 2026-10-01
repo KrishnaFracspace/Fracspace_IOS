@@ -162,7 +162,7 @@ const handleListedHotels1 = async () => {
 };
 
 const filterHotelsByLocation = (city) => {
-  const filteredHotels = hotelDetails?.filter(
+  const filteredHotels = HotelDetails?.filter(
     hotel => hotel?.location?.city === city
   );
 
@@ -742,7 +742,7 @@ const filterHotelsByLocation = (city) => {
    
 
   <FlatList
-  data={ourStays}
+  data={(ourStays || []).filter(item => item?.isVisible)}
   horizontal
   keyExtractor={(item, index) => index.toString()}
   showsHorizontalScrollIndicator={false}

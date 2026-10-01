@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useContext, useRef } from 'react';
@@ -117,8 +118,8 @@ export default function Dashboard(props) {
   const handleResell = async () => {
     setLoader(true);
     if (
-      globalState?.userDetails?.phoneNumber.startsWith('+91') &&
-      globalState?.userDetails?.phoneNumber.length === 13
+      globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
+      globalState?.userDetails?.phoneNumber?.length === 13
     ) {
       let payload = JSON.stringify({
         propertyName: OwnedPropertyDetails?.propertyDetails?.name,
@@ -187,8 +188,8 @@ export default function Dashboard(props) {
   const handleResellVerification = async (code, message) => {
     setLoader(true);
     if (
-      globalState?.userDetails?.phoneNumber.startsWith('+91') &&
-      globalState?.userDetails?.phoneNumber.length === 13
+      globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
+      globalState?.userDetails?.phoneNumber?.length === 13
     ) {
       let payload = JSON.stringify({
         phoneNumber: globalState?.userDetails?.phoneNumber,
@@ -414,11 +415,15 @@ export default function Dashboard(props) {
     }
   };
   useEffect(() => {
-    const filteredNumbers = Properties.filter(
-      number => number._id == OwnedPropertyDetails?.propertyDetails?._id,
+    // Re-run when the property list arrives (e.g. a cold start from a notification).
+    const filteredNumbers = (Properties || []).filter(
+      number => number?._id == OwnedPropertyDetails?.propertyDetails?._id,
     );
     // console.log("Filtere: ",filteredNumbers);
     setPropertiesArray(filteredNumbers[0]);
+  }, [Properties]);
+
+  useEffect(() => {
     if (propertyStatu == 100) {
       handleGuestUpdate();
     }
@@ -551,15 +556,24 @@ const yearsData = Array.from(
 ).sort((a, b) => b - a);
 
 
-const selectedYear = Number(yearBy) || new Date().getFullYear();
-const currentDate = new Date();
-
-const monthsData = Array.from({ length: 12 }, (_, i) => i + 1).filter(m => {
-  if (selectedYear === currentDate.getFullYear()) {
-    return m <= currentDate.getMonth() + 1; // till current month
+// Android behaviour: preselect the latest year that has bookings once the
+// rentals load, and only list months that have bookings in the chosen year.
+useEffect(() => {
+  if (yearsData.length && !yearBy) {
+    setYearBy(yearsData[0]);
   }
-  return true;
-});
+}, [GestArray]);
+
+const selectedYear = Number(yearBy) || yearsData[0] || null;
+
+const monthsData = Array.from(
+  new Set(
+    (GestArray || [])
+      .map(item => parseDate(item?.checkOutDate))
+      .filter(date => date && date.getFullYear() === selectedYear)
+      .map(date => date.getMonth() + 1)
+  )
+).sort((a, b) => b - a);
 
 const getMonthRevenue = (year, month) => {
   return (GestArray || [])
@@ -592,16 +606,17 @@ const getYearRevenue = (year) => {
     }, 0);
 };
 
-const getSelectedLabel = () => {
-  const monthName = monthBy
-    ? new Date(0, Number(monthBy) - 1).toLocaleString('default', { month: 'short' })
-    : '';
+const monthNames = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
 
-  if (monthBy && yearBy) return `${monthName} ${yearBy}`;
-  if (monthBy) return monthName;
-  if (yearBy) return yearBy;
-
-  return '';
+// Same labels as the Android app.
+const getRevenueLabel = () => {
+  if (!yearBy && !monthBy) return 'Total Sales';
+  if (yearBy && !monthBy) return `Year ${yearBy} Sales`;
+  if (yearBy && monthBy) return `${monthNames[Number(monthBy) - 1]} ${yearBy} Monthly Sales`;
+  return 'Revenue';
 };
 
 const getSortLabel = () => {
@@ -1184,7 +1199,7 @@ const formatIndianAmount = (amount) => {
                     {OwnedPropertyDetails?.totalSharesOwned?.length || 0}
                   </Text>
                 </View>
-                {OwnedPropertyDetails?.totalSharesOwned.map((item, index) => (
+                {OwnedPropertyDetails?.totalSharesOwned?.map((item, index) => (
                   <View
                     key={index}
                     style={{
@@ -1219,7 +1234,7 @@ const formatIndianAmount = (amount) => {
                   onPress={() => {
                     // handleLogOut();
                     navigation.navigate('Enquire', {
-                      propertyid: OwnedPropertyDetails?.propertyDetails?.name,
+                      property: OwnedPropertyDetails,
                     });
                   }}
                   style={{
@@ -1274,7 +1289,7 @@ const formatIndianAmount = (amount) => {
                   </View>
                 </TouchableOpacity>
               )}
-              {OwnedPropertyDetails?.ownershipDocuments.length != 0 && (
+              {OwnedPropertyDetails?.ownershipDocuments?.length > 0 && (
                 <View
                   style={{
                     //backgroundColor: 'white',
@@ -1290,7 +1305,7 @@ const formatIndianAmount = (amount) => {
                       justifyContent: 'space-between',
                       width: '100%',
                     }}>
-                    {OwnedPropertyDetails?.ownershipDocuments.map(
+                    {OwnedPropertyDetails?.ownershipDocuments?.map(
                       (item, index) => (
 
                         <TouchableOpacity
@@ -1359,9 +1374,9 @@ const formatIndianAmount = (amount) => {
           )}
         </View>
 
-        <Modal visible={showFeedback} transparent animationType='fade'>
+        <Modal visible={showFeedback} transparent animationType='fade' onRequestClose={() => setShowFeedback(false)}>
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{
               flex: 1,
               width:'100%',
@@ -1387,10 +1402,10 @@ const formatIndianAmount = (amount) => {
 
         <Modal transparent animationType='fade'
           visible={modalVisible}
-          onClose={() => setModalVisible(false)}
+          onRequestClose={() => setModalVisible(false)}
         >
           <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
             style={{
               flex: 1,
               width:'100%',
@@ -1424,8 +1439,8 @@ const formatIndianAmount = (amount) => {
                     marginHorizontal: 20,
                   }}>
                   Enter the code one time password sent to{' '}
-                  {globalState?.userDetails?.phoneNumber.startsWith('+91') &&
-                    globalState?.userDetails?.phoneNumber.length === 13
+                  {globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
+                    globalState?.userDetails?.phoneNumber?.length === 13
                     ? globalState?.userDetails?.phoneNumber
                     : globalState?.userDetails?.email}
                 </Text>
@@ -1659,7 +1674,11 @@ const formatIndianAmount = (amount) => {
         </Modal>
 
         {success === true &&
-            <Modal visible={true} transparent animationType='fade' modalStyle={{ width }}>
+            <Modal visible={true} transparent animationType='fade' modalStyle={{ width }}
+              onRequestClose={() => {
+                setSuccess(false);
+                navigation.navigate('Owned');
+              }}>
                 <View style={{flex:1,backgroundColor:'#00000065'}}>
                     <TouchableOpacity onPress={() => {
                         setSuccess(false);
@@ -1832,19 +1851,26 @@ const formatIndianAmount = (amount) => {
             </Text>
 
             {(() => {
-  const filteredData = [...GestArray]
+  const periodData = [...(GestArray || [])]
     .filter(item => {
-      const date = parseDate(item.checkOutDate);
+      const date = parseDate(item?.checkOutDate);
+      if (!date) return !yearBy && !monthBy;
 
       if (yearBy && date.getFullYear() !== Number(yearBy)) return false;
 
       if (monthBy && (date.getMonth() + 1 !== Number(monthBy))) return false;
 
       return true;
-    })
+    });
+
+  const filteredData = periodData
     .filter(item => {
       if (sortBy === 'Complimentary Stays') {
         return (item.rentalAmount || 0) === 0;
+      }
+      // As on Android, price sorting only lists paid stays.
+      if (sortBy === 'Low to High' || sortBy === 'High to Low') {
+        return (item.rentalAmount || 0) > 0;
       }
       return true;
     })
@@ -1861,15 +1887,16 @@ const formatIndianAmount = (amount) => {
       return 0;
     });
 
-  const totalRevenue = filteredData.reduce(
+  // Period revenue (year/month), independent of the sort option, as on Android.
+  const totalRevenue = Math.round(periodData.reduce(
     (acc, curr) => acc + (curr.rentalAmount || 0),
     0,
-  );
+  ));
 
   return (
     <>
       <View style={{ marginTop: 20 }}>
-           {getSelectedLabel() ?   <View
+           {(sortBy || yearBy || monthBy) ?   <View
           style={{
             backgroundColor: '#ECF7FE',
             flexDirection: 'row',
@@ -1885,7 +1912,7 @@ const formatIndianAmount = (amount) => {
               fontSize: 16,
               color: '#000000',
             }}>
-    {getSelectedLabel() ? `${getSelectedLabel()}` : ''} Revenue
+    {getRevenueLabel()}
           </Text>
           <Text
             style={{
@@ -1895,7 +1922,7 @@ const formatIndianAmount = (amount) => {
             }}>
             ₹ {totalRevenue.toLocaleString('en-IN')}
           </Text>
-        </View> : ''}
+        </View> : null}
         
       
       </View>
@@ -2192,7 +2219,7 @@ const formatIndianAmount = (amount) => {
                   {PropertiesArray?.FC_Price}
                 </Text>
               </View>
-              {!isNaN(Number(PropertiesArray?.SPV)) && (
+              {PropertiesArray?.SPV != null && PropertiesArray?.SPV !== '' && !isNaN(Number(PropertiesArray?.SPV)) && (
                 <View
                   style={{
                     flexDirection: 'row',
@@ -2557,7 +2584,7 @@ const formatIndianAmount = (amount) => {
       </ScrollView>
 
       {sort && (
-        <Modal visible={true} transparent animationType='fade' modalStyle={{ width: '100%' }} >
+        <Modal visible={true} transparent animationType='fade' modalStyle={{ width: '100%' }} onRequestClose={() => setSort(false)}>
           <View style={{flex:1,backgroundColor:'#00000052'}}>
             <TouchableOpacity onPress={() => {setSort(false)}} style={{flex:1}}/>
             <View
@@ -2695,7 +2722,7 @@ const formatIndianAmount = (amount) => {
         </Modal>
       )}
       {month && (
-        <Modal visible={true} transparent animationType='fade' modalStyle={{ width: '100%' }}>
+        <Modal visible={true} transparent animationType='fade' modalStyle={{ width: '100%' }} onRequestClose={() => setMonth(false)}>
           <View style={{flex:1,backgroundColor:'#00000052'}}>
             <TouchableOpacity onPress={() => {setMonth(false)}} style={{flex:1}}/>
             <View
@@ -2739,6 +2766,7 @@ const formatIndianAmount = (amount) => {
                     key={m}
                     onPress={() => {
                       setMonthBy(m);
+                      if (!yearBy && selectedYear) setYearBy(selectedYear);
                       setMonth(false);
                     }}
                     style={{
@@ -2795,7 +2823,7 @@ const formatIndianAmount = (amount) => {
         </Modal>
       )}
       {yearData && (
-        <Modal visible={true} transparent animationType='fade' modalStyle={{ width: '100%' }}>
+        <Modal visible={true} transparent animationType='fade' modalStyle={{ width: '100%' }} onRequestClose={() => setYearData(false)}>
           <View style={{flex:1,backgroundColor:'#00000052'}}>
             <TouchableOpacity onPress={() => {setYearData(false)}} style={{flex:1}}/>
             <View
@@ -2839,6 +2867,7 @@ const formatIndianAmount = (amount) => {
                     key={y}
                     onPress={() => {
                       setYearBy(y);
+                      setMonthBy(null); // a new year resets the month (Android)
                       setYearData(false);
                     }}
                     style={{

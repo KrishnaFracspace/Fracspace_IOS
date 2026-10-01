@@ -33,7 +33,7 @@ export default function InteriorFormThird(props) {
   const [Location, setLocation] = useState(globalState?.currentLocation?.City||'Hyderabad');
   const [Adress, setAdress] = useState('');
   const [AdressSec, setAdressSec] = useState(globalState?.currentLocation?.Address||'');
-  const [Pin, setPin] = useState(globalState?.currentLocation?.Pincode);
+  const [Pin, setPin] = useState(globalState?.currentLocation?.Pincode || '');
 
  const CityData = [
     { label: 'Agartala', value: 'Agartala' },

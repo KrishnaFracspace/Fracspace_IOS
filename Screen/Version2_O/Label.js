@@ -46,7 +46,7 @@ export default function Label(props) {
             />
         </View>
 
-        <Modal visible={fullImg} transparent animationType='fade'>
+        <Modal visible={fullImg} transparent animationType='fade' onRequestClose={() => setFullImg(false)}>
             <TouchableOpacity onPress={() => {
                 setFullImg(false);
             }} style={{backgroundColor:'#000000b3',flex:1,alignItems:'center',justifyContent:'center'}}>

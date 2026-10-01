@@ -3,6 +3,7 @@ import {
   Text,
   Alert,
   PermissionsAndroid,
+  Platform,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -28,8 +29,33 @@ export default function Locationview(props) {
     City: '',
   });
 
-  const getLocation = () => {
-  
+  const getLocation = async () => {
+    // Android asks for location here, when it is needed, not at app launch.
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+          {
+            title: 'Location Permission',
+            message: 'Fracspace needs your location to detect your address.',
+            buttonPositive: 'OK',
+            buttonNegative: 'Cancel',
+          },
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert(
+            'Location permission required',
+            'Please allow location access to detect your address.',
+          );
+          navigation.goBack();
+          return;
+        }
+      } catch (error) {
+        console.log('Location permission error:', error);
+        return;
+      }
+    }
+
     Geolocation.getCurrentPosition(
       position => {
         //openMap({ latitude: 78.42718862140957, longitude: 78.42718862140957 });

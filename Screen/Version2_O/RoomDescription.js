@@ -68,7 +68,7 @@ export default function RoomDescription(props) {
                     activeDotStyle={{ backgroundColor: '#0E2138', width: 8, height: 8, borderRadius: 4 }}
                     autoplay
                 >
-                    {description?.images.map((img, imgIndex) => (
+                    {description?.images?.map((img, imgIndex) => (
                         <Image resizeMode='cover' key={imgIndex} source={{ uri: img }} style={{ width: width, flex: 1 }} />
                     ))}
                 </Swiper> */}
@@ -91,7 +91,7 @@ export default function RoomDescription(props) {
           }}
           autoplay>
           {description?.name == 'DREAMSCAPE'
-            ? RoomType?.roomImages.map((img, imgIndex) => (
+            ? RoomType?.roomImages?.map((img, imgIndex) => (
                 <Image
                   resizeMode="cover"
                   key={imgIndex}
@@ -99,7 +99,7 @@ export default function RoomDescription(props) {
                   style={{width: width, flex: 1}}
                 />
               ))
-            : description?.images.map((img, imgIndex) => (
+            : description?.images?.map((img, imgIndex) => (
                 <Image
                   resizeMode="cover"
                   key={imgIndex}
@@ -647,7 +647,7 @@ export default function RoomDescription(props) {
 
           {visible1 == 'Restaurants' && (
             <View style={{marginTop: 15, gap: 15}}>
-              {description?.sightseeing?.Restaurants.map((item, index) => (
+              {description?.sightseeing?.Restaurants?.map((item, index) => (
                 <View
                   key={index}
                   style={{
@@ -717,7 +717,7 @@ export default function RoomDescription(props) {
 
           {visible1 == 'Cafe' && (
             <View style={{marginTop: 15, gap: 10}}>
-              {description?.sightseeing?.Cafe.map((item, index) => (
+              {description?.sightseeing?.Cafe?.map((item, index) => (
                 <View
                   key={index}
                   style={{flexDirection: 'row', alignItems: 'center'}}>
@@ -742,7 +742,7 @@ export default function RoomDescription(props) {
 
           {visible1 == 'Shopping' && (
             <View style={{marginTop: 15, gap: 15}}>
-              {description?.sightseeing?.Shopping.map((item, index) => (
+              {description?.sightseeing?.Shopping?.map((item, index) => (
                 <View
                   key={index}
                   style={{flexDirection: 'row', alignItems: 'center'}}>

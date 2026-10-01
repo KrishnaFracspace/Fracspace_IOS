@@ -1,11 +1,11 @@
 let hasShownHomePopup = false;
-import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ToastAndroid,FlatList,Platform} from 'react-native';
+import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ToastAndroid,FlatList,Platform,BackHandler} from 'react-native';
 import React, {useCallback,useContext,useEffect,useMemo,useRef,useState,} from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconF from 'react-native-vector-icons/FontAwesome6';
 import IconI from 'react-native-vector-icons/AntDesign';
 import Iconn from 'react-native-vector-icons/Feather';
-import {findFocusedRoute,useFocusEffect,useNavigation,} from '@react-navigation/native';
+import {findFocusedRoute,useFocusEffect,useIsFocused,useNavigation,} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Video, { VideoRef } from 'react-native-video';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -167,8 +167,21 @@ export default function HomePage() {
       console.log('Error in Listed Hotels:', error);
     }
   };
-  const popupData = carousel?.popup?.[0];
-   
+  // First visible popup (as Android), falling back to the first entry.
+  const popupData =
+    carousel?.popup?.find?.(p => p?.visibility === true) || carousel?.popup?.[0];
+  // The backend sends a separate screen name per platform.
+  const popupLink = Platform.OS === 'ios'
+    ? popupData?.iosNavigationLink
+    : (popupData?.navigationLink || popupData?.iosNavigationLink);
+  const openPopupLink = () => {
+    dispatch(hidePopup());
+    if (popupLink) {
+      navigation.navigate(popupLink);
+    }
+  };
+  const isFocused = useIsFocused();
+
   useEffect(() => {
     dispatch(showPopup());
   }, []);
@@ -183,7 +196,9 @@ export default function HomePage() {
       setCarousel(res?.data);
       setGlobalState(prevState => ({
         ...prevState,
-        liveVersion: res?.data?.appVersion?.iosCurrentVersion,
+        liveVersion: Platform.OS === 'ios'
+          ? res?.data?.appVersion?.iosCurrentVersion
+          : res?.data?.appVersion?.androidCurrentVersion,
         walletNote: res?.data?.noteForWallet?.isVisible,
         noteMessage: res?.data?.noteForWallet?.message,
       }))
@@ -263,12 +278,8 @@ const Categories = carousel?.category
   const openApp = async link => {
     const url = link;
     try {
-      const supported = await Linking.canOpenURL(url);
-      if (supported) {
-        await Linking.openURL(url);
-      } else {
-        handlewhatsapplink(link);
-      }
+      // canOpenURL is unreliable for https on Android 11+; open and fall back.
+      await Linking.openURL(url);
     } catch (error) {
       handlewhatsapplink(link);
     }
@@ -365,6 +376,23 @@ const Categories = carousel?.category
       }
     },
   });
+
+  // Android: hardware back on Home closes the side menu first, otherwise exits
+  // the app instead of going back into the login/splash stack.
+  useFocusEffect(
+    useCallback(() => {
+      if (Platform.OS !== 'android') return undefined;
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (isMenuOpen) {
+          closeMenu();
+          return true;
+        }
+        BackHandler.exitApp();
+        return true;
+      });
+      return () => subscription.remove();
+    }, [isMenuOpen]),
+  );
 
   const handleLogOut = async () => {
     await AsyncStorage.setItem('mytoken', '');
@@ -748,7 +776,7 @@ const Categories = carousel?.category
     const route =
       Platform.OS === 'ios'
         ? item?.iosNavigation
-        : item?.androidNavigation;
+        : (item?.androidNavigation || item?.iosNavigation);
 
     return (
       <TouchableOpacity
@@ -812,6 +840,7 @@ const Categories = carousel?.category
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#021265' }}>
       <View style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#021265" translucent={false} />
         <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
@@ -1306,7 +1335,7 @@ const Categories = carousel?.category
             </View>
 
             <FlatList
-              data={locations}
+              data={(locations || []).filter(item => item?.isVisible)}
               horizontal
               keyExtractor={(item, index) => index.toString()}
               showsHorizontalScrollIndicator={false}
@@ -1580,13 +1609,15 @@ const Categories = carousel?.category
             <Modal
               // visible={popupData?.visibility === true && popUp && !needsProfileCompletion}
               visible={
+                isFocused &&
                 !profileLoading &&
                 popupData?.visibility === true &&
                 popUp &&
                 !needsProfileCompletion
               }
               transparent
-              animationType="fade">
+              animationType="fade"
+              onRequestClose={() => dispatch(hidePopup())}>
               <View style={styles.overlay}>
 
                 {/* Close when touching outside */}
@@ -1608,8 +1639,7 @@ const Categories = carousel?.category
 
                   <TouchableOpacity
                     onPress={() => {
-                      dispatch(hidePopup());
-                      navigation.navigate(popupData?.iosNavigationLink);
+                      openPopupLink();
                     }}>
 
                     <FastImage
@@ -1623,12 +1653,11 @@ const Categories = carousel?.category
                     {popupData?.buttonVisibility ? (<>
                       <TouchableOpacity
                         onPress={() => {
-                          dispatch(hidePopup());
-                          navigation.navigate(popupData?.iosNavigationLink);
+                          openPopupLink();
                         }}
                         style={{ position: 'absolute', bottom: 40, alignSelf: 'center' }}>
                         <LinearGradient
-                          colors={popupData?.buttonColor}
+                          colors={popupData?.buttonColor || ['#FAD059', '#FFE7A2']}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
                           style={{
@@ -1664,7 +1693,7 @@ const Categories = carousel?.category
             </Modal>
 
             <CompleteProfilePopup
-              visible={needsProfileCompletion && showProfilePopup && !profileLoading}
+              visible={isFocused && needsProfileCompletion && showProfilePopup && !profileLoading}
               // visible={!profileLoading && needsProfileCompletion}
               onComplete={() => {
                 setShowProfilePopup(false);

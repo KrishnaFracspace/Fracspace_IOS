@@ -28,8 +28,8 @@ export default function InteriorFormSec(props) {
   const [DesignRooms, setDesignRooms] = useState([]);
   const [Location, setLocation] = useState(globalState?.currentLocation?.City||'Hyderabad');
   const [Adress, setAdress] = useState('');
-  const [AdressSec, setAdressSec] = useState(globalState?.currentLocation?.Address);
-  const [Pin, setPin] = useState(globalState?.currentLocation?.Pincode);
+  const [AdressSec, setAdressSec] = useState(globalState?.currentLocation?.Address || '');
+  const [Pin, setPin] = useState(globalState?.currentLocation?.Pincode || '');
   const CityData = [
     { label: 'Agartala', value: 'Agartala' },
     { label: 'Agra', value: 'Agra' },

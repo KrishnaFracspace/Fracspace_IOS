@@ -13,10 +13,12 @@ import {
   Modal,
   TextInput,
   KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
   Animated as Ani
 } from 'react-native';
 //import { ScrollView } from 'react-native-virtualized-view';
-import { useState, useContext, useEffect, useCallback, useRef } from 'react';
+import { useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import Swiper from 'react-native-swiper';
 import openMap, { createOpenLink } from 'react-native-open-maps';
@@ -90,6 +92,13 @@ export default function Property(props) {
   // console.log(Newupdate,"newUpdates======")
   // const PropertiesArray = useSelector(state => state.property.PropertyDetailsById);
   const [PropertiesArray, setPropertiesArray] = useState([]);
+  // Computed before the effects below so the image auto-slide effect sees the
+  // real list (it used to read `images` before its declaration).
+  const images = useMemo(() => (
+    Array.isArray(PropertiesArray?.image)
+      ? PropertiesArray.image
+      : Object.values(PropertiesArray?.image || {}).filter(Boolean)
+  ), [PropertiesArray]);
   const loading = useSelector(state => state.property.loading);
   const [loadingCount, setLoadingCount] = useState(0);
   const isLoading = loadingCount > 0;
@@ -117,6 +126,7 @@ export default function Property(props) {
   const scrollY = useRef(new Ani.Value(0)).current;
   const [actionsActive, setActionsActive] = useState(true);
     const [visible, setVisible] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
   const actionsOpacity = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [1, 0],
@@ -160,7 +170,7 @@ export default function Property(props) {
     });
 
     useEffect(() => {
-  if (images?.length <= 1) {
+  if (showVideo || images?.length <= 1) {
     return;
   }
 
@@ -175,7 +185,7 @@ export default function Property(props) {
   }, 3000);
 
   return () => clearInterval(interval);
-}, [images]);
+}, [images, showVideo]);
 
     useEffect(() => {
         translateX.value = withRepeat(
@@ -222,7 +232,7 @@ useEffect(() => {
 
   useEffect(() => {
     analytics().logEvent('view_property', {
-      property_id: PropertiesArray?._id
+      property_id: proId
     });
   }, []);
 
@@ -362,24 +372,38 @@ useEffect(() => {
   useEffect(() => {
     fetchPropetyById(proId);
     handleUpdate();
-    handleAllLike();
+    // Guests have no email: the like list call would only fail for them.
+    if (globalState?.userEmail) {
+      handleAllLike();
+    }
     handleReview();
   }, []);
 
   const shareReferral = async (propertyId) => {
     try {
-      if (!referralData?.referralCode) return;
       analytics().logEvent('share_property', {
         property_id: propertyId
       });
-      const link =
-        `https://fracspace.onelink.me/OVdL` +
-        `?deep_link_value=property` +
-        `&af_sub1=${referralData.referralCode}` +
-        `&af_sub2=${propertyId}`;
-      await Share.share({
-        message: `Invest smarter with Fracspace 🚀\nJoin using my link:\n${link}`,
-      });
+      if (referralData?.referralCode) {
+        const link =
+          `https://fracspace.onelink.me/OVdL` +
+          `?deep_link_value=property` +
+          `&af_sub1=${referralData.referralCode}` +
+          `&af_sub2=${propertyId}`;
+        await Share.share({
+          message: `Invest smarter with Fracspace 🚀\nJoin using my link:\n${link}`,
+        });
+      } else {
+        // No referral code (guest, or the referral call failed): fall back to
+        // the plain property share link, which App.js also handles.
+        const link =
+          `https://fracspace.onelink.me/OVdL/oh6t4r97` +
+          `?deep_link_value=property_share` +
+          `&deep_link_sub1=${propertyId}`;
+        await Share.share({
+          message: `🏠 A property was shared with you on Fracspace.\n\nTap below to view:\n${link}`,
+        });
+      }
     } catch (err) {
       console.log('Share error:', err);
     }
@@ -455,10 +479,6 @@ useEffect(() => {
     return <PropertySkeleton />;
   }
   const reviews = PropertiesArray?.userReviews || [];
-  
-  const images = Array.isArray(PropertiesArray?.image)
-    ? PropertiesArray.image
-    : Object.values(PropertiesArray?.image || {}).filter(Boolean);
 
   const imageCount = images.length;
 
@@ -616,6 +636,7 @@ useEffect(() => {
             }}>
             {PropertiesArray?.name}
           </Text>
+          {!!globalState?.userEmail && (
           <TouchableOpacity
             onPress={() => {
               if (IsLike.includes(`${PropertiesArray?._id}`)) {
@@ -634,6 +655,7 @@ useEffect(() => {
               />
             )}
           </TouchableOpacity>
+          )}
         </View>
 
         <View style={{ paddingHorizontal: 15 }}>
@@ -674,23 +696,20 @@ useEffect(() => {
           {Newupdate[0]?.Status && Newupdate[0]?.eventName !== PropertiesArray?.name ? (
             <TouchableOpacity disabled={Event}
               onPress={() => {
-                const filtered = globalState?.ProDetails.filter(user =>
-                  user?.name.includes(Newupdate[0]?.eventName))
+                // Prefer the id the updates API returns (as Android does); fall
+                // back to matching the event name against the property list.
                 const propertyMap = Object.fromEntries(
-                  PropertyDetails.map(p => [p.name.toLowerCase(), p._id])
+                  (PropertyDetails || []).map(p => [p?.name?.toLowerCase(), p?._id])
                 );
-                const propertyId =
-                  propertyMap[Newupdate?.[0]?.eventName?.toLowerCase()]
-                const id = propertyId
-              //  dispatch(resetProfileState());
-              //   dispatch(
-              //     profileDetailsById({ id }),
-              //   );
-               // setProId(id)
-                navigation.push('Property', {
-                  status: true,
-                  Id: id
-                })
+                const id =
+                  Newupdate?.[0]?.id ||
+                  propertyMap[Newupdate?.[0]?.eventName?.toLowerCase()];
+                if (id) {
+                  navigation.push('Property', {
+                    status: true,
+                    Id: id
+                  })
+                }
               }}
               style={{ backgroundColor: 'rgba(200, 223, 200, 0.55)', paddingVertical: 8, borderRadius: 10, marginTop: 20 }} >
 
@@ -704,7 +723,7 @@ useEffect(() => {
 
                 <View style={{ flex: 2, paddingRight: 10, }}>
                   <View style={{ backgroundColor: "rgba(177, 207, 177, 1)", borderRadius: 10, padding: 4, width: 100 }}>
-                    <Text style={{ fontSize: 10, fontFamily: 'Work Sans', alignSelf: "center" }}>NEW LAUNCH</Text>
+                    <Text style={{ fontSize: 10, fontFamily: 'WorkSans-Regular', alignSelf: "center" }}>NEW LAUNCH</Text>
                   </View>
 
                   <Text
@@ -725,7 +744,7 @@ useEffect(() => {
                     ellipsizeMode="tail"
                     style={{
                       fontSize: 10,
-                      fontFamily: 'Work Sans',
+                      fontFamily: 'WorkSans-Regular',
                       color: '#1E2135',
                       lineHeight: 16,
                     }}>
@@ -733,10 +752,9 @@ useEffect(() => {
                   </Text>
                   <Text style={{
                     fontSize: 12,
-                    fontFamily: 'Work Sans',
+                    fontFamily: 'WorkSans-Medium',
                     color: 'rgba(44, 118, 44, 1)',
                     lineHeight: 14,
-                    fontWeight: 500,
                     paddingVertical: 3
                   }}>View Property {""}</Text>
                 </View>
@@ -818,7 +836,7 @@ useEffect(() => {
             <Text
               style={{
                 fontSize: 12,
-                fontFamily: 'Work Sans',
+                fontFamily: 'WorkSans-Regular',
                 color: '#1E2135',
                 letterSpacing: 0.3,
               }}
@@ -942,7 +960,7 @@ useEffect(() => {
                 style={{
                   color: "white",
                   fontSize: 17,
-                  fontFamily: "Work Sans",
+                  fontFamily: "WorkSans-Regular",
                   marginVertical: 8,
                 }}
               >
@@ -957,7 +975,7 @@ useEffect(() => {
                   padding: 5,
                 }}>
                   <Text style={{
-                    color: "#AAB3E3", fontSize: 10, fontFamily: "Work Sans"
+                    color: "#AAB3E3", fontSize: 10, fontFamily: "WorkSans-Regular"
                   }}>  {PropertiesArray?.investmentDetails?.positioning}</Text>
                 </View>
                 <View style={{
@@ -966,7 +984,7 @@ useEffect(() => {
                   padding: 5, justifyContent: "center", marginLeft: 10
                 }}>
                   <Text style={{
-                    color: "rgba(255, 215, 90, 1)", fontSize: 10, fontFamily: "Work Sans",
+                    color: "rgba(255, 215, 90, 1)", fontSize: 10, fontFamily: "WorkSans-Regular",
                   }}>PRE-LAUNCH</Text>
                 </View>
               </View>
@@ -996,7 +1014,7 @@ useEffect(() => {
                   <Text
                     style={{
                       fontSize: 12,
-                      fontFamily: "WorkSans",
+                      fontFamily: "WorkSans-Regular",
                       marginTop: 5,
                       width: "100%",
                       // borderWidth:1
@@ -1028,7 +1046,7 @@ useEffect(() => {
                   <Text
                     style={{
                       fontSize: 13,
-                      fontFamily: "WorkSans",
+                      fontFamily: "WorkSans-Regular",
                       marginTop: 5,
                       width: 124,
                       //  borderWidth:1
@@ -1195,7 +1213,7 @@ useEffect(() => {
                     <Text
                   style={{
                     fontSize: 14,
-                    fontFamily: 'Work Sans',
+                    fontFamily: 'WorkSans-Regular',
                     color: 'rgba(2, 18, 101, 1)',
                     backgroundColor: "#fff",
                     alignSelf:"center"
@@ -1268,16 +1286,15 @@ useEffect(() => {
                   style={{
                     color: "white",
                     fontSize: 15,
-                    fontFamily: "Work Sans",
-                    marginVertical: 8,
-                    fontWeight: 500
+                    fontFamily: "WorkSans-Medium",
+                    marginVertical: 8
                   }}
                 >
                   {PropertiesArray?.investmentDetails?.exitType?.type}
                 </Text>
 
                 <Text style={{
-                  color: "rgba(255, 255, 255, 0.7)", fontSize: 12, fontFamily: "Work Sans"
+                  color: "rgba(255, 255, 255, 0.7)", fontSize: 12, fontFamily: "WorkSans-Regular"
                 }}>
                   {PropertiesArray?.investmentDetails?.exitType?.duration}
                 </Text>
@@ -1301,16 +1318,15 @@ useEffect(() => {
                   style={{
                     color: "white",
                     fontSize: 15,
-                    fontFamily: "Work Sans",
-                    marginVertical: 8,
-                    fontWeight: 500
+                    fontFamily: "WorkSans-Medium",
+                    marginVertical: 8
                   }}
                 >
 
                   {PropertiesArray?.investmentDetails?.possession?.estd}
                 </Text>
                 <Text style={{
-                  color: "rgba(255, 255, 255, 0.7)", fontSize: 12, fontFamily: "Work Sans"
+                  color: "rgba(255, 255, 255, 0.7)", fontSize: 12, fontFamily: "WorkSans-Regular"
                 }}>{PropertiesArray?.investmentDetails?.possession?.description}
                 </Text>
               </View>
@@ -1510,6 +1526,7 @@ useEffect(() => {
                     pagingEnabled
                     showsHorizontalScrollIndicator={false}
                     keyExtractor={(_, index) => index.toString()}
+                    getItemLayout={(_, index) => ({ length: width, offset: width * index, index })}
                     onMomentumScrollEnd={(event) => {
                     const index = Math.round(
                         event.nativeEvent.contentOffset.x /
@@ -1694,9 +1711,9 @@ useEffect(() => {
       />
 
 
-      <Modal visible={viewEnquiry} transparent animationType='fade'>
+      <Modal visible={viewEnquiry} transparent animationType='fade' onRequestClose={() => setViewEnquiry(false)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={{ flex: 1 }}
         >
           <View style={{ flex: 1, backgroundColor: '#000000b3' }}>
@@ -1811,13 +1828,14 @@ useEffect(() => {
                 </View>
 
                 <TouchableOpacity
-                  disabled={loading}
+                  disabled={submitting}
                   onPress={async () => {
                     if (name === "" || phone === "" || email === "" || message === "") {
                       Alert.alert('Missing Information', 'Please fill in all required details.');
                       return;
                     }
 
+                    setSubmitting(true);
                     try {
                       const res = await handleEnquiryForm();
                       console.log("Data: ", res);
@@ -1828,18 +1846,18 @@ useEffect(() => {
                         setViewEnquiry(false);
                       }
                     } finally {
-                     // setLoading(false);
+                      setSubmitting(false);
                     }
                   }}
                   style={{
-                    backgroundColor: loading ? '#C6AF83aa' : '#021265',
+                    backgroundColor: submitting ? '#021265aa' : '#021265',
                     borderRadius: 10,
                     padding: 12,
                     alignItems: 'center',
                     marginTop: 30
                   }}
                 >
-                  {loading ? (
+                  {submitting ? (
                     <ActivityIndicator color="#FFF" />
                   ) : (
                     <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 16, color: '#FFF' }}>
@@ -1962,7 +1980,7 @@ const styles = StyleSheet.create({
   advantageDesc: {
     fontSize: 12,
     color: "#7B7B7B",
-    fontFamily: "Work Sans",
+    fontFamily: "WorkSans-Regular",
     marginVertical: 5,
     //lineHeight: 25
   },

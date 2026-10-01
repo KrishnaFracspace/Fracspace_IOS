@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import { CallRecordBuyAndRent, GetBuySellProp, PropertyMetaData, PropertyMetaDataApi } from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useDispatch, useSelector } from 'react-redux';
 import { fetchProperties } from '../redux/reducer/homeReducer';
 const { width, height } = Dimensions.get('window');
 
@@ -15,6 +16,7 @@ export default function PropertyListing(props) {
     const [PropertyFor, setPropertyFor] = useState('');
     const [Location, setLocation] = useState('');
     const navigation = useNavigation();
+    const dispatch = useDispatch();
     const [Configuration, setConfiguration] = useState(props?.route?.params?.Configuration);
     //console.log(Configuration,"===========con==========")
     // const {globalState, setGlobalState} = useContext(AppContext);

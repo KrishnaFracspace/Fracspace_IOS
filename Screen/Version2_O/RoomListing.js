@@ -467,7 +467,7 @@ export default function RoomListing(props) {
                         borderRadius: 4,
                       }}
                       >
-                      {item.images.map((img, imgIndex) => (
+                      {item.images?.map((img, imgIndex) => (
                         <Image
                           key={imgIndex}
                           source={{uri: img}}

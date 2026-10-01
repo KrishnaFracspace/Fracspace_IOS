@@ -24,15 +24,12 @@ export default function NotificationsScreen(props) {
     const appVersion = DeviceInfo.getVersion();
     const liveVersion = globalState?.liveVersion;
 
-    useEffect(() => {
-        FetchAllNotification();
-    }, []);
-    
-    // useFocusEffect(
-    //     useCallback(() => {
-    //         FetchAllNotification();
-    //     }, [])
-    // );
+    // Refetch whenever the screen regains focus (as Android does).
+    useFocusEffect(
+        useCallback(() => {
+            FetchAllNotification();
+        }, [])
+    );
 
     const FetchAllNotification = async () => {
         let payload = JSON.stringify(
@@ -112,7 +109,7 @@ export default function NotificationsScreen(props) {
                     navigation.navigate('WalletAmount');
                 } else if (item?.relatedTo == 'appUpdate') {
                     //handleNotification(notificationId,item);
-                    Linking.openURL(item?.sourceLink);
+                    Linking.openURL(Platform.OS === 'ios' ? item?.sourceLink : (item?.buttonLink || item?.sourceLink));
                     if(appVersion == liveVersion){
                         deleteNotification(notificationId);
                     }

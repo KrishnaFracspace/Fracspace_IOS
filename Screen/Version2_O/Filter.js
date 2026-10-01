@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, Alert, Dimensions } from 'react-native'
+import { View, Text, TouchableOpacity, ScrollView, Alert, Dimensions, Platform } from 'react-native'
 import React, { useState } from 'react';
 import IconC from 'react-native-vector-icons/Ionicons';
 import Slider from '@react-native-community/slider';
@@ -53,7 +53,7 @@ export default function Filter() {
                 elevation: 1,
                 borderBottomColor: '#DDE1E5'
             }}>
-                <TouchableOpacity style={{ flex: 1 ,paddingTop: height * 0.08, paddingBottom: 15}}
+                <TouchableOpacity style={{ flex: 1 ,paddingTop: Platform.OS === 'ios' ? height * 0.08 : 15, paddingBottom: 15}}
                     onPress={() => {
                         navigation.navigate('PropertyListing');
 
@@ -64,7 +64,7 @@ export default function Filter() {
                     fontSize: 18,
                     fontFamily: 'WorkSans-SemiBold',
                     color: '#000000',
-                    paddingTop: height * 0.08,
+                    paddingTop: Platform.OS === 'ios' ? height * 0.08 : 15,
                     paddingBottom: 15
                 }}>
                     Fiters

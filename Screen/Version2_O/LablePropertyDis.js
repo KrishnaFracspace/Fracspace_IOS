@@ -258,7 +258,7 @@ export default function LablePropertyDis(prop) {
                     <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#000' }}>Location Advantages</Text>
 
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 15 }}>
-                        {propertyDetails?.locationHighlights.map((item, index) => (
+                        {propertyDetails?.locationHighlights?.map((item, index) => (
                             <View key={index} style={{ width: 120, marginRight: 15 }}>
                                 <View>
                                     <Image source={{ uri: item.image }} style={{ width: '100%', height: 80, borderRadius: 8 }} />
@@ -284,9 +284,9 @@ export default function LablePropertyDis(prop) {
 
 
 
-                <Modal visible={viewEnquiry} transparent animationType='fade'>
+                <Modal visible={viewEnquiry} transparent animationType='fade' onRequestClose={() => setViewEnquiry(false)}>
                     <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
                         style={{
                         flex: 1,
                         width:'100%',
@@ -421,7 +421,7 @@ export default function LablePropertyDis(prop) {
                     </KeyboardAvoidingView>
                 </Modal>
 
-                <Modal visible={viewSchedule} transparent animationType='fade'>
+                <Modal visible={viewSchedule} transparent animationType='fade' onRequestClose={() => setViewSchedule(false)}>
                     <View style={{ flex: 1, backgroundColor: '#000000b3' }}>
                         <TouchableOpacity onPress={() => {
 
