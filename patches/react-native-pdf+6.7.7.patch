@@ -1,0 +1,27 @@
+diff --git a/node_modules/react-native-pdf/android/src/main/java/org/wonday/pdf/PdfView.java b/node_modules/react-native-pdf/android/src/main/java/org/wonday/pdf/PdfView.java
+index 7b7a125..60bb64b 100644
+--- a/node_modules/react-native-pdf/android/src/main/java/org/wonday/pdf/PdfView.java
++++ b/node_modules/react-native-pdf/android/src/main/java/org/wonday/pdf/PdfView.java
+@@ -36,6 +36,11 @@ import com.github.barteksc.pdfviewer.util.Constants;
+ import com.github.barteksc.pdfviewer.link.LinkHandler;
+ import com.github.barteksc.pdfviewer.model.LinkTapEvent;
+ 
++import io.legere.pdfiumandroid.util.AlreadyClosedBehavior;
++import io.legere.pdfiumandroid.util.Config;
++import io.legere.pdfiumandroid.util.ConfigKt;
++import io.legere.pdfiumandroid.DefaultLogger;
++
+ import com.facebook.react.bridge.ReactContext;
+ import com.facebook.react.bridge.Arguments;
+ import com.facebook.react.bridge.WritableMap;
+@@ -86,6 +91,10 @@ public class PdfView extends PDFView implements OnPageChangeListener,OnLoadCompl
+ 
+     public PdfView(Context context, AttributeSet set){
+         super(context, set);
++        // Backport of react-native-pdf 7.x: PDFView's constructor resets pdfium's global
++        // config to EXCEPTION, which crashes the "PDF renderer" thread with
++        // "Already closed" when the screen is left while a page is still rendering.
++        ConfigKt.setPdfiumConfig(new Config(new DefaultLogger(), AlreadyClosedBehavior.IGNORE));
+     }
+ 
+     @Override
