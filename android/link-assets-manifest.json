@@ -2,146 +2,6 @@
   "migIndex": 1,
   "data": [
     {
-      "path": "Screen/assets/fonts/Barlow-Black.ttf",
-      "sha1": "c13c608d505b88f39559e406d35753fb8e68635e"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-BlackItalic.ttf",
-      "sha1": "0b5f99d6a4cf22f5366510b7431307d0c40e9df5"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-Bold.ttf",
-      "sha1": "96c3afeacb8f95ec015157419aed8b31ccf5ed46"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-BoldItalic.ttf",
-      "sha1": "944c2c26eba65cbe5069d205345fe3654c19e309"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-ExtraBold.ttf",
-      "sha1": "31add10ca97f37f03b322d90effbf71847bd2f0d"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-ExtraBoldItalic.ttf",
-      "sha1": "6574662c76835ebea0ba9a6051d86ba564319ed6"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-ExtraLight.ttf",
-      "sha1": "1231adcbc3552bd89d78410650961cc234878869"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-ExtraLightItalic.ttf",
-      "sha1": "d90116fe8d43869b65a2d035f78cc0222515c942"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-Italic.ttf",
-      "sha1": "f2ede99aaa8c9244a6de2ae563344220c7785e9f"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-Light.ttf",
-      "sha1": "3b2340ed98714d79c2ddd7fee8120cd4198b971a"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-LightItalic.ttf",
-      "sha1": "32e0a16c46f72a8fea085e1a01c8485a34ad214e"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-Medium.ttf",
-      "sha1": "4591d390c34f173e79f71bf9eb682276b6d8bf28"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-MediumItalic.ttf",
-      "sha1": "1a5b28a5dd5301b1ea117d007a039ce5ff35722c"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-Regular.ttf",
-      "sha1": "7426e387aea19b486a47f15869a3a8328fac0058"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-SemiBold.ttf",
-      "sha1": "3ce5f54b109563e173c1eb1dccd3c6962c912b6a"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-SemiBoldItalic.ttf",
-      "sha1": "e09cbc7272b932c7ca364d451e8bcfda4569080c"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-Thin.ttf",
-      "sha1": "75677acfde0227f8b8a1a39713b3116744d5bdec"
-    },
-    {
-      "path": "Screen/assets/fonts/Barlow-ThinItalic.ttf",
-      "sha1": "c553ce70ed806a26ad348113fee3bde278c686b1"
-    },
-    {
-      "path": "Screen/assets/fonts/Futura Medium Italic font.ttf",
-      "sha1": "da281ac7dd6351045c1b814c2bc8e12347e8db3d"
-    },
-    {
-      "path": "Screen/assets/fonts/Futura XBlk BT.ttf",
-      "sha1": "5d20fef3473680f2c03937e0cd126a86c007c26f"
-    },
-    {
-      "path": "Screen/assets/fonts/Futura-CondensedLight.otf",
-      "sha1": "bfbb7d4d56453355314561345c0634b23e278b6a"
-    },
-    {
-      "path": "Screen/assets/fonts/Gilroy-Bold.ttf",
-      "sha1": "eeda33cebb0c6cb6cdbf2af87ef0cebfcb9e9f99"
-    },
-    {
-      "path": "Screen/assets/fonts/Gilroy-Heavy.ttf",
-      "sha1": "6a2631b0af0b75a60e8d887d867f95578bb6e1f6"
-    },
-    {
-      "path": "Screen/assets/fonts/Gilroy-Light.ttf",
-      "sha1": "3a3bc2fff8192fb3d99827c17eb37a6eb0f8d821"
-    },
-    {
-      "path": "Screen/assets/fonts/Gilroy-Medium.ttf",
-      "sha1": "a05d394f3550b31324c7ef6eda6bd09a6bcfb4bd"
-    },
-    {
-      "path": "Screen/assets/fonts/Gilroy-Regular.ttf",
-      "sha1": "eae0f6aa553643ae5c2b4da46a422f8d26255bb1"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamBold.ttf",
-      "sha1": "ac5ba291bf8464df67a38f6054d25be7c2e0307f"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamBoldItalic.ttf",
-      "sha1": "da6475cdce15b579ec90a27b5cafead0687c3f5a"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamBook.ttf",
-      "sha1": "ed5bc8195822fc962503b042d0f5a1f406782f24"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamBookItalic.ttf",
-      "sha1": "b156aeb90bd308fd0a717d9633d5a82e3af7c76b"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamLight.ttf",
-      "sha1": "c44d6c4bde608e1d76b27a1587da83225af4ca4f"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamLightItalic.ttf",
-      "sha1": "d605afce503bf950089829954651052dbb377c91"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamMedium.ttf",
-      "sha1": "74c87f67010f63777e33c5114c76b1fc67e4ae5b"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamMediumItalic.ttf",
-      "sha1": "c77627e4242f0edc56145897b900854a2960b3e1"
-    },
-    {
-      "path": "Screen/assets/fonts/GothamMedium_1.ttf",
-      "sha1": "74c87f67010f63777e33c5114c76b1fc67e4ae5b"
-    },
-    {
       "path": "Screen/assets/fonts/Montserrat-Black.ttf",
       "sha1": "ad9c434705a52d90ac5a770e591c2325fb48c2dc"
     },
@@ -478,6 +338,18 @@
       "sha1": "877aa7f119f372685914c9167f5f609fc90fd43f"
     },
     {
+      "path": "Screen/assets/fonts/tt0205m_.ttf",
+      "sha1": "d7083016ebae2f2126f943cf8ea004264460c1c5"
+    },
+    {
+      "path": "Screen/assets/fonts/unicode.futurab.ttf",
+      "sha1": "8e74b3822261534c00630a56abf0593e98e58b07"
+    },
+    {
+      "path": "Screen/assets/fonts/unicode.futurabb.ttf",
+      "sha1": "5a13b85dbaa05ba2be98e168930ed43ee40ab97c"
+    },
+    {
       "path": "Screen/assets/fonts/WorkSans-Black.ttf",
       "sha1": "f42fe118dfa41dd21404482733ad7397e8778ee8"
     },
@@ -508,10 +380,6 @@
     {
       "path": "Screen/assets/fonts/WorkSans-ExtraLightItalic.ttf",
       "sha1": "c1ed77ed965d82f67bdbe0c375a91ebd8c75e240"
-    },
-    {
-      "path": "Screen/assets/fonts/WorkSans-Italic-VariableFont_wght.ttf",
-      "sha1": "1f3a4253494f6698c0f9916e09cfec94c1bdba1f"
     },
     {
       "path": "Screen/assets/fonts/WorkSans-Italic.ttf",
@@ -552,30 +420,6 @@
     {
       "path": "Screen/assets/fonts/WorkSans-ThinItalic.ttf",
       "sha1": "a3f232e13320eed5b5197d754dca149e477804cb"
-    },
-    {
-      "path": "Screen/assets/fonts/WorkSans-VariableFont_wght.ttf",
-      "sha1": "5a5c31a7166d40d51d018daed7c654cb34d641a6"
-    },
-    {
-      "path": "Screen/assets/fonts/futur.ttf",
-      "sha1": "77aab0b78e5f9b3d89df070cfb763fb17606fa7e"
-    },
-    {
-      "path": "Screen/assets/fonts/futura medium condensed bt.ttf",
-      "sha1": "d4413ab5a6cb6d8f2c98242845e54f1dce6ad4cb"
-    },
-    {
-      "path": "Screen/assets/fonts/tt0205m_.ttf",
-      "sha1": "d7083016ebae2f2126f943cf8ea004264460c1c5"
-    },
-    {
-      "path": "Screen/assets/fonts/unicode.futurab.ttf",
-      "sha1": "8e74b3822261534c00630a56abf0593e98e58b07"
-    },
-    {
-      "path": "Screen/assets/fonts/unicode.futurabb.ttf",
-      "sha1": "5a13b85dbaa05ba2be98e168930ed43ee40ab97c"
     }
   ]
 }

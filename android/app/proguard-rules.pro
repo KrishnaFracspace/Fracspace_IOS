@@ -8,3 +8,26 @@
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
 # Add any project specific keep options here:
+
+# Readable Crashlytics stack traces (file names + line numbers, custom exceptions)
+-keepattributes SourceFile,LineNumberTable
+-keep public class * extends java.lang.Exception
+
+# CodePush reads these private ReactInstanceManager fields by reflection
+# (CodePushNativeModule.java). If they're renamed, OTA updates can't load/restart.
+-keepclassmembers class com.facebook.react.ReactInstanceManager {
+    private final ** mBundleLoader;
+    private final ** mAttachedRootViews;
+}
+-dontwarn com.nimbusds.jose.**
+
+# react-native-pdf: pdfium calls back into Java from native code, and PdfView
+# serialises the table of contents (PdfDocument.Bookmark) with Gson by field name.
+-keep class io.legere.pdfiumandroid.** { *; }
+-keep class com.shockwave.pdfium.** { *; }
+-keep class com.github.barteksc.pdfviewer.** { *; }
+
+# AppsFlyer SDK + Play Install Referrer
+-keep class com.appsflyer.** { *; }
+-keep public class com.android.installreferrer.** { *; }
+-dontwarn com.appsflyer.**

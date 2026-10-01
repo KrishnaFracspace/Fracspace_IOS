@@ -1,13 +1,15 @@
 buildscript {
     ext {
-        buildToolsVersion = "34.0.0"
-        minSdkVersion = 21
-        compileSdkVersion = 34
-        targetSdkVersion = 34
-        ndkVersion = "25.1.8937393"
+        buildToolsVersion = "36.0.0"
+        minSdkVersion = 23
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        // ndkVersion = "25.1.8937393"
+        ndkVersion = "26.1.10909125"
         kotlinVersion = "1.8.0"
     }
     repositories {
+        
         google()
         mavenCentral()
     }
@@ -15,6 +17,9 @@ buildscript {
         classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
+        classpath 'com.google.gms:google-services:4.4.2' 
+        classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.9'
+         //compile project(':react-native-upi-payment')
     }
 }
 

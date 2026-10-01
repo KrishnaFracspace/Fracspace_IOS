@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">Fracspace</string>
+    <string name="facebook_app_id">1717794338804577</string>
+    <string name="facebook_client_token">bc89a8853ec98f9f6664e36f62b7c377</string>
+    <string moduleConfig="true" name="CodePushDeploymentKey">DthMm0PkeJzmwW1YY11Dw4OtOcIfVJ2bkyDomg</string>
+    <string moduleConfig="true" name="CodePushServerUrl">https://api.revopush.org</string>
+    <!-- <string name="CodePushDeploymentKey">DthMm0PkeJzmwW1YY11Dw4OtOcIfVJ2bkyDomg</string> -->
 </resources>
