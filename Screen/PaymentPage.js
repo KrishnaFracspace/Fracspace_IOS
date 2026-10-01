@@ -1,12 +1,41 @@
-import { View, Text, Alert, Dimensions, Linking } from 'react-native';
-import React, { useContext, useState, useRef } from 'react';
+import { View, Text, Alert, Dimensions, Linking, BackHandler, ActivityIndicator, Platform } from 'react-native';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
-import Back from './Back';
 import { CoOwnerBookingverification, PayUPaymentVerify } from './Services/UserApi';
 import { AppContext } from './Context/AppContext';
 const {width, height} = Dimensions.get('window');
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+// PayU verification is retried (Android flow): the redirect can land before the
+// gateway has settled the transaction.
+const VERIFY_ATTEMPTS = 3;
+const VERIFY_RETRY_DELAY_MS = 2000;
+const API_TIMEOUT_MS = 20000;
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const withTimeout = (promise, label) => {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`${label} timeout after ${API_TIMEOUT_MS}ms`)),
+        API_TIMEOUT_MS,
+      );
+    }),
+  ]).finally(() => clearTimeout(timer));
+};
+
+// Converts an Android `intent://...#Intent;scheme=upi;...;end` link into the
+// plain scheme URL (`upi://...`) that Linking can hand to the UPI app.
+const intentToSchemeUrl = url => {
+  const match = /#Intent;.*?scheme=([^;]+);/i.exec(url);
+  if (!match) return url;
+  const body = url.slice('intent://'.length).split('#Intent')[0];
+  return `${match[1]}://${body}`;
+};
 
 export default function PaymentPage(props) {
   //console.log(props?.route?.params?.property);
@@ -14,6 +43,7 @@ export default function PaymentPage(props) {
   const navigation = useNavigation();
   const [pageUrl, setPageUrl] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState(false);
   const paymentHandledRef = useRef(false);
   //const [TxnID,setTxnID]=useState(props?.route?.params?.TxnID);
   //const [Property,setProperty]=useState(props?.route?.params?.property);
@@ -21,12 +51,19 @@ export default function PaymentPage(props) {
 const Property = props?.route?.params?.property;
 const Link = props?.route?.params?.Link;
 // console.log(Link,"===Link======")
-const fractions = props?.route?.params?.numberOfFractions;
 const totalAmount = props?.route?.params?.totalAmount;
 const location = props?.route?.params?.location;
  const taxAmount = props?.route?.params?.taxAmount;
- const numberParam = props?.route?.params?.Number;      
+ const numberParam = props?.route?.params?.Number;
  const baseAmount = props?.route?.params?.baseAmount;
+
+ // The PayU form is loaded with the gateway's own origin so its POST is
+ // same-origin and its cookies first-party (Android WebView blocks
+ // third-party cookies and the gateway then reports a failed payment).
+ const payuOrigin = (() => {
+   const m = /action\s*=\s*["'](https?:\/\/[^/"']+)/i.exec(String(Link || ''));
+   return m ? m[1] : undefined;
+ })();
 
  const parseNumberValue = value => {
    if (typeof value === 'number') return value;
@@ -37,11 +74,56 @@ const location = props?.route?.params?.location;
    }
    return 0;
  };
-        
+
  const getApiResult = response => {
    if (!response) return null;
    return response?.data ?? response;
  };
+
+  /* ---------------- BACK BUTTON (CANCEL PAYMENT) ---------------- */
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Once the gateway has redirected we are verifying/booking: block back.
+      if (paymentHandledRef.current) return true;
+      Alert.alert(
+        'Cancel Payment?',
+        'If you go back, payment will be cancelled.',
+        [
+          { text: 'No', style: 'cancel' },
+          { text: 'Yes', onPress: () => navigation.goBack() },
+        ],
+      );
+      return true;
+    });
+    return () => sub.remove();
+  }, [navigation]);
+
+  /* ---------------- VERIFY WITH PAYU (3 tries, 2 s apart) ---------------- */
+  const verifyWithPayU = async (redirectStatus) => {
+    let lastPayment = null;
+    for (let attempt = 0; attempt < VERIFY_ATTEMPTS; attempt++) {
+      if (attempt > 0) {
+        await delay(VERIFY_RETRY_DELAY_MS);
+      }
+      try {
+        const response = await withTimeout(
+          PayUPaymentVerify({ txnID: TxnID }),
+          'PayUPaymentVerify',
+        );
+        const payment = getApiResult(response)?.payment;
+        if (payment) lastPayment = payment;
+        const status = payment?.responseDetails?.status?.toString().toLowerCase();
+        if (status === 'success') {
+          return { payment, success: true };
+        }
+        // A failure redirect confirmed as failed by PayU is final.
+        if (redirectStatus === 'Failed' && status === 'failure') break;
+      } catch (error) {
+        console.log('PayUPaymentVerify attempt failed', attempt + 1, error?.response?.data || error?.message);
+      }
+    }
+    return { payment: lastPayment, success: false };
+  };
 
 const HandlePayUPaymentVerify = async (paymentStatus) => {
   if (paymentHandledRef.current) {
@@ -50,163 +132,136 @@ const HandlePayUPaymentVerify = async (paymentStatus) => {
   }
   paymentHandledRef.current = true;
   setLoading(false);
-  console.log('STEP 1');
+  setVerifying(true);
+  navigation.setOptions?.({ gestureEnabled: false });
 
+  const fracCount = globalThis.Number(numberParam) || 1;
   let bookingId = null;
   let time = null;
-  let paymentVerification = null;
-  let bookingResponse = null;
+  let paidAmount = null;
+
+  const summaryParams = {
+    paymentStatus,
+    txnId: TxnID,
+    property: Property,
+    taxAmount: taxAmount,
+    Number: numberParam,
+    baseAmount: baseAmount,
+    location: location,
+  };
 
   try {
-    // Step 1: Verify Payment
-    console.log('Before PayUPaymentVerify', { TxnID });
+    // Step 1: Verify payment with PayU
+    const { payment, success: verifySuccess } = await verifyWithPayU(paymentStatus);
 
-    const timeoutMs = 20000;
-    let paymentVerifyTimer;
-    paymentVerification = await Promise.race([
-      PayUPaymentVerify({ txnID: TxnID }),
-      new Promise((_, reject) => {
-        paymentVerifyTimer = setTimeout(
-          () => reject(new Error(`PayUPaymentVerify timeout after ${timeoutMs}ms`)),
-          timeoutMs,
-        );
-      }),
-    ]);
-    clearTimeout(paymentVerifyTimer);
+    bookingId = payment?._id;
+    time = payment?.responseDetails?.addedon;
+    if (payment?.amount != null) {
+      paidAmount = Math.round(parseNumberValue(payment.amount));
+    }
 
-    console.log('After PayUPaymentVerify', { paymentVerification });
-
-    const paymentResult = getApiResult(paymentVerification);
-    const verifySuccess =
-      paymentResult?.success === true ||
-      paymentResult?.success?.toString().toLowerCase() === 'success' ||
-      paymentResult?.status?.toString().toLowerCase() === 'success' ||
-      paymentResult?.payment?.status?.toString().toLowerCase() === 'success';
-
-    bookingId = paymentResult?.payment?._id;
-    time = paymentResult?.payment?.responseDetails?.addedon;
+    if (!payment) {
+      // PayU could not be reached: do not record anything we cannot confirm.
+      navigation.replace('PaymentSummary', {
+        ...summaryParams,
+        success: false,
+        verifySuccess: false,
+        bookingSuccess: false,
+        totalAmount: totalAmount,
+        bookingId,
+        time,
+        message:
+          'We could not confirm your payment. If money was deducted, please contact support with your Transaction ID.',
+      });
+      return;
+    }
 
     const missingData = [];
     if (!Property) missingData.push('Property');
     if (!globalState?.userDetails) missingData.push('globalState.userDetails');
     if (!TxnID) missingData.push('TxnID');
     if (missingData.length) {
-      console.warn('Missing required booking payload data:', missingData.join(', '), {
-        Property,
-        userDetails: globalState?.userDetails,
-        TxnID,
-      });
+      console.warn('Missing required booking payload data:', missingData.join(', '));
     }
 
     const normalizedFractionValue = parseNumberValue(Property?.FC_Price);
-    const normalizedBookingAmount = parseNumberValue(Property?.BookingAmount);
     const normalizedPrice = parseNumberValue(Property?.Price);
+    const recordedAmount = paidAmount ?? 0;
+    const bookingStatus = verifySuccess ? 'Success' : 'Failed';
 
+    // Step 2: Record the booking (verified failures are recorded as 'Failed')
     const payload = JSON.stringify({
       propertyName: Property?.name,
       propertyId: Property?._id,
       email: globalState?.userDetails?.email,
       fractionValue: normalizedFractionValue,
-      numberOfFractions: Property?.numberOfFractions || 1,
-      totalBookingAmount: normalizedBookingAmount,
+      numberOfFractions: fracCount,
+      totalBookingAmount: recordedAmount,
       Price: normalizedPrice,
       FC_Price: normalizedFractionValue,
       termsAndConditions: true,
       payUpayment: [
         {
           txnId: TxnID,
-          amount: normalizedBookingAmount,
+          amount: recordedAmount,
           username: globalState?.userDetails?.email,
-          status: paymentStatus,
-          mihpayid: 'MHP12345',
+          status: payment?.responseDetails?.status,
+          mihpayid: payment?.responseDetails?.mihpayid,
         },
       ],
-      bookingStatus: paymentStatus,
+      bookingStatus: bookingStatus,
       statusKey: 'BOOK123',
     });
 
-    // Step 3: Call Booking API
-    console.log('Before CoOwnerBookingverification', { payload });
-    let bookingVerifyTimer;
-    bookingResponse = await Promise.race([
-      CoOwnerBookingverification(payload),
-      new Promise((_, reject) => {
-        bookingVerifyTimer = setTimeout(
-          () => reject(new Error(`CoOwnerBookingverification timeout after ${timeoutMs}ms`)),
-          timeoutMs,
-        );
-      }),
-    ]);
-    clearTimeout(bookingVerifyTimer);
-    console.log('After CoOwnerBookingverification', { bookingResponse });
+    let bookingResult = null;
+    let bookingError = null;
+    try {
+      const bookingResponse = await withTimeout(
+        CoOwnerBookingverification(payload),
+        'CoOwnerBookingverification',
+      );
+      bookingResult = getApiResult(bookingResponse);
+    } catch (error) {
+      bookingError = error;
+      console.error('CoOwnerBookingverification error', error?.response?.data || error?.message);
+    }
 
-    const bookingResult = getApiResult(bookingResponse);
     const bookingSuccess =
       bookingResult?.success === true || bookingResult?.data?.success === true;
     const bookingData = bookingResult?.data ?? bookingResult;
-    const finalSuccess =
-      paymentStatus?.toString().toLowerCase() === 'success' &&
-      verifySuccess &&
-      bookingSuccess;
+    const finalSuccess = verifySuccess && bookingSuccess;
 
-    console.log('Before navigation.replace', {
-      finalSuccess,
-      paymentStatus,
-      verifySuccess,
-      bookingSuccess,
-      txnId: TxnID,
-      property: Property,
-    });
-
-    navigation.replace('PaymentSummary', {
-      success: finalSuccess,
-      paymentStatus,
-      verifySuccess,
-      bookingSuccess,
-      txnId: TxnID,
-      property: Property,
-      bookingData: bookingData,
-      totalAmount: totalAmount,
-      taxAmount: taxAmount,
-      Number: numberParam,
-      baseAmount: baseAmount,
-      location: location,
-      bookingId: bookingId,
-      time: time,
-      message: finalSuccess
-        ? 'Booking confirmed successfully.'
-        : bookingData?.message ||
-          'Booking failed. Please contact support.',
-    });
-
-    console.log('STEP 5');
-  } catch (error) {
-    console.error('HandlePayUPaymentVerify error', error);
-    console.error('HandlePayUPaymentVerify error response data', error?.response?.data);
-    console.error('HandlePayUPaymentVerify error message', error?.message);
-
-    if (error?.message?.includes('timeout')) {
-      console.warn('Payment verification timeout triggered. Navigating to PaymentSummary with failure state.');
+    let message;
+    if (finalSuccess) {
+      message = 'Booking confirmed successfully.';
+    } else if (verifySuccess) {
+      message =
+        'Payment received but the booking could not be confirmed. Please contact support with your Transaction ID.';
+    } else {
+      message =
+        bookingError?.response?.data?.message ||
+        bookingData?.message ||
+        'Payment failed. Any amount deducted will be refunded to the source account within 5-6 working days.';
     }
 
-    console.log('Before navigation.replace on error', {
-      paymentStatus,
-      txnId: TxnID,
-      property: Property,
-      bookingId,
-      time,
+    navigation.replace('PaymentSummary', {
+      ...summaryParams,
+      success: finalSuccess,
+      verifySuccess,
+      bookingSuccess,
+      bookingData: bookingData,
+      totalAmount: paidAmount ?? totalAmount,
+      bookingId: bookingData?._id || bookingId,
+      time: time,
+      message,
     });
+  } catch (error) {
+    console.error('HandlePayUPaymentVerify error', error?.response?.data || error?.message);
 
     navigation.replace('PaymentSummary', {
+      ...summaryParams,
       success: false,
-      paymentStatus,
-      txnId: TxnID,
-      property: Property,
-      totalAmount: totalAmount,
-      taxAmount: taxAmount,
-      Number: numberParam,
-      baseAmount: baseAmount,
-      location: location,
+      totalAmount: paidAmount ?? totalAmount,
       bookingId: bookingId,
       time: time,
       message:
@@ -218,59 +273,108 @@ const HandlePayUPaymentVerify = async (paymentStatus) => {
 };
 
 const handleNavigationStateChange = (state) => {
-  console.log('WEBVIEW URL =>', state.url);
+  const url = state?.url || '';
   if (paymentHandledRef.current) {
-    console.log('WebView navigation ignored because payment has already been handled.');
     return;
   }
 
-  if (state.url.includes('paymentfailure')) {
-    console.log('Detected paymentfailure URL, triggering verification and stopping loader.');
+  if (url.includes('paymentfailure')) {
     setLoading(false);
     HandlePayUPaymentVerify('Failed');
     return;
   }
 
-  if (state.url.includes('paymentsuccess')) {
-    console.log('Detected paymentsuccess URL, triggering verification and stopping loader.');
+  if (url.includes('paymentsuccess')) {
     setLoading(false);
     HandlePayUPaymentVerify('Success');
     return;
   }
 
-  setPageUrl(state.url);
+  setPageUrl(url);
 };
 
+  /* ---------------- HANDLE UPI / INTENT ---------------- */
+  const onShouldStartLoadWithRequest = (request) => {
+    const url = request?.url || '';
+
+    // Web pages stay in the WebView.
+    if (/^(https?|about|data|blob|javascript):/i.test(url)) {
+      return true;
+    }
+
+    // Anything else is a hand-off to a payment app (upi://, phonepe://,
+    // tez://, paytmmp://, intent://...). Matching on the scheme means a new
+    // wallet works without a code change.
+    const target =
+      Platform.OS === 'android' && url.startsWith('intent://')
+        ? intentToSchemeUrl(url)
+        : url;
+    Linking.openURL(target).catch(() =>
+      Alert.alert(
+        'UPI App Not Found',
+        'Please install a UPI app to continue payment.',
+      ),
+    );
+    return false;
+  };
 
   const handlePageLoad = () => {
     setLoading(false);
   };
-  
+
   return (
    <SafeAreaView style={{flex: 1,}}>
-      {/* <Back title={""}/> */}
-  <WebView 
-    source={{html:Link}} 
-    style={{ width:'100%'}} scalesPageToFit={false} 
+  <WebView
+    source={{html:Link, baseUrl: payuOrigin}}
+    style={{ width:'100%'}} scalesPageToFit={false}
     onNavigationStateChange={handleNavigationStateChange}
-    onShouldStartLoadWithRequest={(request) => {
-      const url = request.url;
-
-      if (
-        url.startsWith('upi://') ||
-        url.startsWith('intent://')
-      ) {
-        Linking.openURL(url);
-        return false;
-      }
-
-      return true;
-    }}
+    onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
     javaScriptEnabled={true}
     domStorageEnabled={true}
     originWhitelist={['*']}
+    setSupportMultipleWindows={false}
+    thirdPartyCookiesEnabled
+    sharedCookiesEnabled
+    javaScriptCanOpenWindowsAutomatically
+    mixedContentMode="compatibility"
     onLoad={handlePageLoad}
   />
+  {verifying && (
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#FFFFFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+      }}>
+      <ActivityIndicator size="large" color="#021265" />
+      <Text
+        style={{
+          fontFamily: 'WorkSans-Medium',
+          fontSize: 14,
+          color: '#000000',
+          marginTop: 15,
+          textAlign: 'center',
+        }}>
+        Confirming your payment...
+      </Text>
+      <Text
+        style={{
+          fontFamily: 'WorkSans-Regular',
+          fontSize: 12,
+          color: '#00000099',
+          marginTop: 5,
+          textAlign: 'center',
+        }}>
+        Please don't close the app or press back.
+      </Text>
+    </View>
+  )}
     </SafeAreaView>
   )
 }

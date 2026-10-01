@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,9 +7,10 @@ import {
     Image,
     TouchableOpacity,
     ScrollView,
-    SafeAreaView,
     Alert,
+    BackHandler,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Property from '../Property';
 
@@ -24,6 +25,15 @@ const location = route?.params?.location;
   const bookingId = route?.params?.bookingId;      
  const time = route?.params?.time;
     const isSuccess = success;
+
+    // Hardware back must not return to Book/PaymentPage (that would allow paying again).
+    useEffect(() => {
+        const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+            navigation.replace('BottomNavigations');
+            return true;
+        });
+        return () => sub.remove();
+    }, [navigation]);
    
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
@@ -65,7 +75,7 @@ const location = route?.params?.location;
                                             }}
                                             style={styles.propertyImage}
                                         />
-                                        <Text style={{ fontSize: 11, fontFamily: "Work Sans", paddingTop: 5 }}>{time}</Text>
+                                        <Text style={{ fontSize: 11, fontFamily: "WorkSans-Regular", paddingTop: 5 }}>{time}</Text>
                                     </View>
 
                                     <View style={styles.propertyDetails}>
@@ -185,10 +195,9 @@ const styles = StyleSheet.create({
     },
     header: {
         fontSize: 18,
-        fontWeight: '600',
         textAlign: 'center',
         marginBottom: 20,
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-SemiBold"
     },
 
     statusCard: {
@@ -211,16 +220,13 @@ const styles = StyleSheet.create({
     iconText: {
         color: '#FFF',
         fontSize: 25,
-        fontWeight: 'bold',
-        fontFamily: "Work Sans",
-        fontWeight: 'bold'
+        fontFamily: "WorkSans-Bold",
     },
 
     statusTitle: {
         textAlign: 'center',
         fontSize: 16,
-        fontWeight: '600',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-SemiBold"
     },
 
     statusSubtitle: {
@@ -228,7 +234,7 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#021265',
         marginVertical: 8,
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-Regular"
     },
 
     propertyCard: {
@@ -260,17 +266,16 @@ const styles = StyleSheet.create({
     },
 
     propertyTitle: {
-        fontWeight: '600',
         fontSize: 12,
         marginBottom: 4,
-        fontFamily: "Work Sans",
+        fontFamily: "WorkSans-SemiBold",
     },
 
     propertyText: {
         fontSize: 12,
         //color: '#6B7280',
         paddingVertical: 2,
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-Regular"
     },
 
     badge: {
@@ -283,8 +288,7 @@ const styles = StyleSheet.create({
 
     badgeText: {
         fontSize: 11,
-        fontWeight: '600',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-SemiBold"
     },
 
     priceCard: {
@@ -296,9 +300,8 @@ const styles = StyleSheet.create({
 
     priceHeader: {
         fontSize: 14,
-        fontWeight: '600',
         marginBottom: 10,
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-SemiBold"
     },
 
     priceRow: {
@@ -314,13 +317,12 @@ const styles = StyleSheet.create({
     priceLabel: {
         fontSize: 13,
         color: '#6B7280',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-Regular"
     },
 
     priceValue: {
         fontSize: 13,
-        fontWeight: '500',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-Medium"
     },
 
     totalRow: {
@@ -329,22 +331,19 @@ const styles = StyleSheet.create({
 
     totalLabel: {
         fontSize: 14,
-        fontWeight: '600',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-SemiBold"
     },
 
     totalValue: {
         fontSize: 14,
-        fontWeight: '700',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-Bold"
     },
 
     transactionText: {
         marginTop: 12,
         fontSize: 12,
-        fontWeight: 500,
         color: 'rgba(0, 0, 0, 1)',
-        fontFamily: "Work Sans",
+        fontFamily: "WorkSans-Medium",
 
     },
 
@@ -370,9 +369,8 @@ const styles = StyleSheet.create({
     },
 
     secondaryButtonText: {
-        fontWeight: '600',
         color: '#111',
-        fontFamily: "Work Sans"
+        fontFamily: "WorkSans-SemiBold"
     },
 
     shadowWrapper: {

@@ -42,6 +42,15 @@ export default function Owned() {
   ];
 
   const profile = globalState?.userDetails;
+
+  // Keep the list in sync when the profile is refreshed (exit/transfer etc.)
+  useEffect(() => {
+    setOwnedData(
+      Array.isArray(profile?.ownedProperties)
+        ? profile.ownedProperties.filter(item => item?.status === 'active')
+        : []
+    );
+  }, [profile?.ownedProperties]);
  
   const Labels = ({ x, y, data }) => (
     <G>
@@ -112,7 +121,7 @@ export default function Owned() {
       {profile?.verification ?
 
         <View style={{ flex: 1 }}>
-          {OwnedData.length != 0 ?
+          {OwnedData?.length != 0 ?
             (
               <ScrollView
               showsVerticalScrollIndicator={false}
@@ -165,7 +174,7 @@ export default function Owned() {
 
                     </View>
 
-                    {profile?.QPaymentInfo.length != 0 && profile?.addProfit.length != 0 ?
+                    {(profile?.QPaymentInfo?.length ?? 0) !== 0 && (profile?.addProfit?.length ?? 0) !== 0 ?
                       <View style={{ width: '100%', height: 320, marginTop: 20 }}>
 
                         <QuarterlyBarChart
@@ -201,14 +210,14 @@ export default function Owned() {
                             fontSize: 15,
                             color: '#000000',
                           }}>
-                          {globalState?.userDetails?.investedAmount}
+                          {globalState?.userDetails?.investedAmount || 'N/A'}
                         </Text>
                       </View>
                      
                       {profile?.currentAmount != "" ?
                         <View>
                           <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 15, color: '#000000B3' }}>Earnings Received</Text>
-                          <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 15, color: '#000000' }}>{profile?.currentAmount}</Text>
+                          <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 15, color: '#000000' }}>{profile?.currentAmount || 'N/A'}</Text>
                         </View>
                         :
                         <View>
@@ -247,7 +256,11 @@ export default function Owned() {
                         <View>
                           <Image
                             resizeMode="cover"
-                            source={{ uri: item?.propertyDetails?.image?.Image1 }}
+                            source={
+                              item?.propertyDetails?.image?.Image1
+                                ? { uri: item.propertyDetails.image.Image1 }
+                                : undefined
+                            }
                             style={{
                               width: width * 0.32,
                               height: 150,

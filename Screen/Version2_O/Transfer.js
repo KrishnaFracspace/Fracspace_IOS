@@ -1,4 +1,4 @@
-import { View, Text, Image, Dimensions,ActivityIndicator, TouchableOpacity, TextInput, ScrollView, Alert, Modal, KeyboardAvoidingView } from 'react-native'
+import { View, Text, Image, Dimensions,ActivityIndicator, TouchableOpacity, TextInput, ScrollView, Alert, Modal, KeyboardAvoidingView, Platform } from 'react-native'
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo';
 import Icon1 from 'react-native-vector-icons/AntDesign';
@@ -45,7 +45,7 @@ export default function Transfer(props) {
     useEffect(() => {
         const filteredNumbers = Properties?.filter(number => number.H_property == true);
         setRecommended(filteredNumbers);
-    }, []);
+    }, [Properties]);
 
 // console.log(OwnedPropertyDetails,'OwnedPropertyDetails=====')
 //console.log(Properties,'Properties=====')
@@ -90,8 +90,8 @@ export default function Transfer(props) {
 
     const handleTransferOtp = async () => {
         if (
-            globalState?.userDetails?.phoneNumber.startsWith('+91') &&
-            globalState?.userDetails?.phoneNumber.length === 13
+            globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
+            globalState?.userDetails?.phoneNumber?.length === 13
             )
         {
             let payload = JSON.stringify({
@@ -157,9 +157,10 @@ export default function Transfer(props) {
 
 
     const handleTransferOtpVerify = async (code) => {
+        setLoader(true);
         if (
-            globalState?.userDetails?.phoneNumber.startsWith('+91') &&
-            globalState?.userDetails?.phoneNumber.length === 13
+            globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
+            globalState?.userDetails?.phoneNumber?.length === 13
             )
         {
             let payload = JSON.stringify({
@@ -207,6 +208,8 @@ export default function Transfer(props) {
                     Alert.alert('Error:', `${error?.message}`);
                     //setLoader(false);
                 }
+            } finally {
+                setLoader(false);
             }
         }else{
             let payload = JSON.stringify({
@@ -382,7 +385,7 @@ export default function Transfer(props) {
                 {visible2 === true &&
                     <Modal visible={true} transparent animationType='fade' modalStyle={{ width: width }}>
                         <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined} // 'padding' is generally preferred for iOS
                             style={{flex: 1,width:'100%',}}
                         >
                             <View style={{flex:1,backgroundColor:'#00000065'}}>
@@ -557,7 +560,11 @@ export default function Transfer(props) {
                                         //let mssg = 'Exit';
                                         handleTransferOtpVerify(code);
                                     }} style={{ backgroundColor: '#0F1130', borderColor: '#C0D5F3', borderWidth: 1, borderRadius: 10, padding: 15, alignItems: 'center' }}>
-                                        <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 16, color: '#FFFFFF' }}>Verify</Text>
+                                        {loader ?
+                                            <ActivityIndicator size={'small'} color={'#FFF'}/>
+                                            :
+                                            <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 16, color: '#FFFFFF' }}>Verify</Text>
+                                        }
                                     </TouchableOpacity>
                                 </View>
                             </View>

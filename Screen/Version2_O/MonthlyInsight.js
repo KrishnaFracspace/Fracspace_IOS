@@ -9,7 +9,8 @@ import {
     Alert,
     ActivityIndicator,
     Linking,
-    KeyboardAvoidingView
+    KeyboardAvoidingView,
+    Platform
 } from 'react-native';
 import React, { useContext, useRef, useState } from 'react';
 import Icon from 'react-native-vector-icons/AntDesign';
@@ -67,7 +68,7 @@ export default function MonthlyInsight(props) {
     const handleResell = async () => {
         setVisible1(false);
 
-        if (globalState?.userDetails?.phoneNumber.startsWith('+91') && globalState?.userDetails?.phoneNumber.length === 13) {
+        if (globalState?.userDetails?.phoneNumber?.startsWith('+91') && globalState?.userDetails?.phoneNumber?.length === 13) {
             let payload = JSON.stringify({
                 propertyName: OwnedPropertyDetails?.propertyDetails?.name,
                 phoneNumber: globalState?.userDetails?.phoneNumber,
@@ -131,7 +132,7 @@ export default function MonthlyInsight(props) {
 
     const handleResellVerification = async (code, message) => {
         setLoader(true);
-        if (globalState?.userDetails?.phoneNumber.startsWith('+91') && globalState?.userDetails?.phoneNumber.length === 13) {
+        if (globalState?.userDetails?.phoneNumber?.startsWith('+91') && globalState?.userDetails?.phoneNumber?.length === 13) {
             let payload = JSON.stringify({
                 phoneNumber: globalState?.userDetails?.phoneNumber,
                 otp: code,
@@ -414,7 +415,7 @@ export default function MonthlyInsight(props) {
                     <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:18,color:'#FFF'}}>Exit & Transfer</Text>
                     <View style={{width:20}}></View>
                 </View>
-                <ScrollView style={{backgroundColor:'#fafafa',padding:20}}>
+                <ScrollView style={{backgroundColor:'#fafafa',padding:20}} contentContainerStyle={{paddingBottom:115}}>
                     <View style={{alignItems:'center'}}>
                         <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#00000099',textAlign:'center'}}>Manage your investment by transferring or exiting  your frac ownership.</Text>
                     </View>
@@ -491,7 +492,7 @@ export default function MonthlyInsight(props) {
 
                     <Modal visible={showFeedback} transparent animationType='fade'>
                         <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                            behavior={Platform.OS === 'ios' ? 'padding' : undefined} // 'padding' is generally preferred for iOS
                             style={{flex: 1,width:'100%',}}
                         >
                             <View style={{flex:1,backgroundColor:'#00000065'}}>
@@ -516,7 +517,7 @@ export default function MonthlyInsight(props) {
                     {visible2 === true &&
                         <Modal visible={true} transparent animationType='fade' modalStyle={{ width: width }}>
                             <KeyboardAvoidingView
-                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                                behavior={Platform.OS === 'ios' ? 'padding' : undefined} // 'padding' is generally preferred for iOS
                                 style={{flex: 1,width:'100%',}}
                             >
                                 <View style={{flex:1, backgroundColor:'#00000065'}}>
@@ -732,7 +733,7 @@ export default function MonthlyInsight(props) {
                 <View style={{position:'absolute',bottom:0,left:0,right:0,padding:20}}>
                     <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#000',alignSelf:'center'}}>For urgent support, contact our team.</Text>
                     <TouchableOpacity onPress={() => {
-                        const Phone = '+919154867608';
+                        const Phone = '+919880626111';
                         handleCallNow(Phone);
                     }} style={{backgroundColor:'#021265',padding:12,alignItems:'center',borderRadius:5,marginTop:15}}>
                         <Text style={{fontFamily:'WorkSans-Medium',fontSize:14,color:'#f5f5f5'}}>+91 9880626111</Text>

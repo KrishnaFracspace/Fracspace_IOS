@@ -87,7 +87,10 @@ export default function BookingStatus(props) {
             const index = Math.round(
               ev.nativeEvent.contentOffset.x / (ITEM_WIDTH + SPACING)
             );
-            setActiveIndex(index);
+            // Overscroll / bounce can report an offset outside the list.
+            setActiveIndex(
+              Math.max(0, Math.min(images.length - 1, index))
+            );
           }}
           renderItem={({ item, index }) => {
             const inputRange = [

@@ -190,7 +190,9 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
   if (dismissed) return null;
 
   const paused = !playing || !isFocused || !appActive;
-  const bottom = TAB_BAR_HEIGHT + insets.bottom ;
+  // Android's bottom inset is usually 0, so lift the card clear of the 70pt tab bar.
+  const bottom =
+    TAB_BAR_HEIGHT + insets.bottom + (Platform.OS === 'android' ? 40 : 0);
 
   return (
     <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">

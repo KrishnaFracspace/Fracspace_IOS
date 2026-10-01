@@ -413,8 +413,10 @@ setChooseBank(false);
     });
     try {
       let {data: res} = await RequestForWithdrawal(payload);
+      return res;
     } catch (error) {
-      console.error('Error in Requesting for Withdrawal: ', error);
+      // Re-throw so callers show the error instead of the success modal
+      throw new Error(extractError(error));
     }
   };
 
@@ -462,7 +464,13 @@ setChooseBank(false);
     try {
       let {data: res} = await SendOtpForVerification(payload);
     } catch (error) {
-      console.error('Error in Sending OTP: ', error);
+      if (error?.response) {
+        Alert.alert('Response Error', `${error?.response?.data?.message}`);
+      } else if (error?.request) {
+        Alert.alert('Request error:', 'Please Check Your Internet Connection');
+      } else {
+        Alert.alert('Error:', `${error?.message}`);
+      }
     }
   };
 
@@ -476,7 +484,13 @@ setChooseBank(false);
     try {
       let {data: res} = await SendOtpForVerificationToEmail(payload);
     } catch (error) {
-      console.error('Error in Sending OTP: ', error);
+      if (error?.response) {
+        Alert.alert('Response Error', `${error?.response?.data?.message}`);
+      } else if (error?.request) {
+        Alert.alert('Request error:', 'Please Check Your Internet Connection');
+      } else {
+        Alert.alert('Error:', `${error?.message}`);
+      }
     }
   };
 
@@ -586,7 +600,7 @@ const handleOtpVerification = async () => {
 
   try {
 
-    if (globalState?.userPhone.startsWith('+91')) {
+    if (globalState?.userPhone?.startsWith('+91')) {
       payload = JSON.stringify({
         phoneNumber: globalState.userPhone,
         otp: otpString,
@@ -661,7 +675,7 @@ const handleOtpVerification = async () => {
     
             // Find bank whose name includes bankName text
             const match = bankLogos.find(bank =>
-                bank?.name?.toLowerCase().includes(bankName?.toLowerCase())
+                (bank?.name?.toLowerCase?.() || '').includes(bankName?.toLowerCase?.() || '')
             );
     
             return match ? match.s3Url : null;
@@ -1404,7 +1418,7 @@ const handleOtpVerification = async () => {
                     transparent
                     animationType="fade">
                     <KeyboardAvoidingView
-                      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                      behavior={Platform.OS === 'ios' ? 'padding' : undefined} // 'padding' is generally preferred for iOS
                       style={{
                         flex: 1,
                         width:'100%',
@@ -1895,7 +1909,7 @@ const handleOtpVerification = async () => {
                     transparent
                     animationType="fade">
                       <KeyboardAvoidingView
-                        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+                        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
                         style={{flex: 1,width:'100%',}}
                       > 
                       <View style={{flex: 1, backgroundColor: '#000000B3'}}>
@@ -2113,7 +2127,7 @@ const handleOtpVerification = async () => {
                     transparent
                     animationType="fade">
                     <KeyboardAvoidingView
-                      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 'padding' is generally preferred for iOS
+                      behavior={Platform.OS === 'ios' ? 'padding' : undefined} // 'padding' is generally preferred for iOS
                       style={{
                         flex: 1,
                         width:'100%',
@@ -2161,7 +2175,7 @@ const handleOtpVerification = async () => {
                                 color: '#00000082',
                               }}>
                               Please verify the OTP sent to your registered {''}
-                              {globalState?.userPhone.startsWith("+91") ?' mobile number': 'email'} to proceed with the exit.
+                              {globalState?.userPhone?.startsWith("+91") ?' mobile number': 'email'} to proceed with the withdrawal.
                             </Text>
                           </View>
                           <TouchableOpacity

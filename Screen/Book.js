@@ -8,9 +8,9 @@ import {
   Image,
   Modal,
   Alert,
-  SafeAreaView,
   TouchableWithoutFeedback,
 } from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {useContext, useEffect, useState} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import MaterialDesignIcons from 'react-native-vector-icons/Feather';
@@ -57,6 +57,12 @@ const [summaryModal, setSummaryModal] = useState(false);
   const gstFromBackend = Property?.gstAmount || 0;
   const totalAmountFromBackend = baseAmount + platformFeeFromBackend + gstFromBackend || 0;
     //  console.log(totalAmount,taxAmount,Number,baseAmount)
+  // PayU amount, rounded to 2 decimals (the fee/GST formulas above are unchanged)
+  const payableAmount = globalThis.Number(
+    (Property?.offer ? totalAmountFromBackend : totalAmount).toFixed(2),
+  );
+  // Redux can still hold a previously viewed property until this one loads.
+  const propertyReady = !!Property && (!proId || Property?._id === proId);
   useEffect(() => {
     dispatch(profileDetailsById({id: proId}));
   }, []);
@@ -106,7 +112,7 @@ const [summaryModal, setSummaryModal] = useState(false);
   
       const payload = JSON.stringify({
         // amount: 1,
-        amount: Property?.offer ? totalAmountFromBackend : totalAmount,
+        amount: payableAmount,
         productinfo: 'Co-ownership Product',
         firstname: globalState?.userName || 'User',
         email: globalState?.userDetails?.email,
@@ -126,11 +132,11 @@ const [summaryModal, setSummaryModal] = useState(false);
           Link: res?.form,
           TxnID: txnid,
           property: Property,
-          totalAmount:Property?.offer ? totalAmountFromBackend : totalAmount,
+          totalAmount:payableAmount,
           taxAmount:taxAmount,
           Number:Number,
           baseAmount:baseAmount,
-          location:Property.city
+          location:Property?.city
         });
       } else {
         Alert.alert('Payment Error', res?.message || 'Unable to initiate payment');
@@ -297,7 +303,7 @@ const [summaryModal, setSummaryModal] = useState(false);
         </TouchableOpacity>
 
         <TouchableOpacity
-          disabled={!Terms}
+          disabled={!Terms || !propertyReady}
           onPress={() => {
             setSummaryModal(true);
             //setPriceModal(true)
@@ -305,7 +311,7 @@ const [summaryModal, setSummaryModal] = useState(false);
           }
           style={[
             styles.reviewBtn,
-            {backgroundColor: Terms ? '#021265' : '#C4C4C4'},
+            {backgroundColor: Terms && propertyReady ? '#021265' : '#C4C4C4'},
           ]}>
           <Text style={{color: '#fff'}}>Review</Text>
         </TouchableOpacity>
@@ -907,9 +913,8 @@ continueText: {
 },
 propertyName:{
   color:"#021265",
-  fontFamily:"Work Sans",
-  fontSize:14,
-  fontWeight:600
+  fontFamily:"WorkSans-SemiBold",
+  fontSize:14
 },
 modalOverlay: {
   flex: 1,

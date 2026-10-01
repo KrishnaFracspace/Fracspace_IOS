@@ -16,6 +16,7 @@ import Font from 'react-native-vector-icons/Fontisto';
 import Upload from 'react-native-vector-icons/FontAwesome';
 import Icon from 'react-native-vector-icons/Ionicons';
 import PinIcon from 'react-native-vector-icons/SimpleLineIcons';
+import BankIcon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import {AppContext} from './Context/AppContext';
 import DocumentPicker from 'react-native-document-picker';
@@ -34,6 +35,8 @@ export default function BookNow(props) {
   const [Email, setEmail] = useState(globalState?.userDetails?.email);
   const [Phone, setPhone] = useState(globalState?.userDetails?.phoneNumber);
   const [Pin, setPin] = useState('');
+  const [Account, setAccount] = useState('');
+  const [Bank, setBank] = useState('');
   const [Name, setName] = useState(globalState?.userDetails?.userName);
   const [PickedAadhar, setPickedAadhar] = useState(null);
   const [PickedPan, setPickedPan] = useState(null);
@@ -60,81 +63,52 @@ export default function BookNow(props) {
   };
 
 
-  const launchGalleryPan = () => {
-    const options = {
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-      mediaType: 'photo',
-      selectionLimit: 1,
-      quality: 0.2,
-    };
-    ImagePicker.launchImageLibrary(options, async response => {
-      //console.log('check response ',response);
-      if (response.didCancel != true) {
-        // setProfileDisplay(response?.assets[0]?.uri);
-        setPickedPan(response.assets);
-        //setModalVisible(false);
-        // handleProfilePic(response?.assets);
-        // navigation.push(Screens.Post, {images:response.assets})
-        //  return response.assets;
+  // PAN / cancelled cheque: PDF or image (DocumentPicker, as on Android)
+  const pickDocOrImage = async setter => {
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.pdf, DocumentPicker.types.images],
+      });
+      setter(res);
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        console.log('User cancelled the picker');
       } else {
-        Alert.alert('Error', 'Image not selected');
+        Alert.alert('Error', 'Error picking document');
       }
-    });
+    }
   };
 
-  const launchGalleryCheque = () => {
-    const options = {
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-      mediaType: 'photo',
-      selectionLimit: 1,
-      quality: 0.2,
-    };
-    ImagePicker.launchImageLibrary(options, async response => {
-      //console.log('check response ',response);
-      if (response.didCancel != true) {
-        //setProfileDisplay(response?.assets[0]?.uri);
-        // setPickedPan(res);
-        setPickedCheque(response.assets);
-        //setModalVisible(false);
-        // handleProfilePic(response?.assets);
-        // navigation.push(Screens.Post, {images:response.assets})
-        //  return response.assets;
-      } else {
-        Alert.alert('Error', 'Image not selected');
-      }
-    });
-  };
+  const launchGalleryPan = () => pickDocOrImage(setPickedPan);
+
+  const launchGalleryCheque = () => pickDocOrImage(setPickedCheque);
+
+  const fileForForm = picked =>
+    picked != null && picked[0]
+      ? {
+          uri: picked[0]?.uri,
+          type: picked[0]?.type,
+          name: picked[0]?.name || picked[0]?.fileName,
+          size: picked[0]?.size,
+        }
+      : null;
 
   const handleProfileVerify = async () => {
+    if (PickedAadhar == null || !PickedAadhar[0]) {
+      setLoader(false);
+      Alert.alert('Missing Document', 'Please upload the required ID document.');
+      return;
+    }
     var form = new FormData();
     form.append('email', Email);
     form.append('postalAddress', Address);
     form.append('pincode', Pin);
     form.append('phoneNumber', Phone);
-    form.append('aadhar', {
-      uri: PickedAadhar[0].uri,
-      type: PickedAadhar[0].type,
-      name: PickedAadhar[0].name,
-      size: PickedAadhar[0].size,
-    });
-    form.append('pan', {
-      uri: PickedPan[0].uri,
-      type: PickedPan[0].type,
-      name: PickedPan[0].fileName,
-      // size: PickedPan[0].size,
-    });
-    form.append('chequebook', {
-      uri: PickedCheque[0].uri,
-      type: PickedCheque[0].type,
-      name: PickedCheque[0].fileName,
-      // size: PickedCheque[0].size,
-    });
+    form.append('bankdetails', Bank);
+    form.append('AccountNumber', Account);
+    form.append('aadhar', fileForForm(PickedAadhar));
+    form.append('pan', fileForForm(PickedPan));
+    form.append('chequebook', fileForForm(PickedCheque));
     //  console.log(PickedCheque);
     let payload = form;
     //console.log('payload', payload);
@@ -452,7 +426,7 @@ export default function BookNow(props) {
             </View>
           </View>
 
-          {Phone.startsWith('+91') && Phone.length==13 ?
+          {Phone?.startsWith('+91') && Phone?.length==13 ?
             <>
           <View style={{marginTop: 20}}>
             <Text
@@ -547,7 +521,7 @@ export default function BookNow(props) {
                   fontFamily: 'Poppins-SemiBold',
                   color: '#000000',
                 }}>
-                Upload pan card image here
+                Upload pan card here
               </Text>
               <Text
                 style={{
@@ -555,7 +529,7 @@ export default function BookNow(props) {
                   fontFamily: 'Poppins-SemiBold',
                   color: '#A0A0A0',
                 }}>
-                Supports JPG,JPEG,PNG & GIF
+                Supports PDF, JPG, JPEG & PNG
               </Text>
             </TouchableOpacity>
             {PickedPan != null && (
@@ -602,7 +576,7 @@ export default function BookNow(props) {
                   fontFamily: 'Poppins-SemiBold',
                   color: '#000000',
                 }}>
-                Upload Cancelled Cheque image here
+                Upload Cancelled Cheque here
               </Text>
               <Text
                 style={{
@@ -610,7 +584,7 @@ export default function BookNow(props) {
                   fontFamily: 'Poppins-SemiBold',
                   color: '#A0A0A0',
                 }}>
-                Supports JPG,JPEG,PNG & GIF
+                Supports PDF, JPG, JPEG & PNG
               </Text>
             </TouchableOpacity>
             {PickedCheque != null && (
@@ -627,6 +601,94 @@ export default function BookNow(props) {
           </View>
           </>:
            <>
+           <View style={{marginTop: 20}}>
+             <View style={styles.input}>
+               <View
+                 style={{
+                   justifyContent: 'flex-start',
+                   flexDirection: 'row',
+                   alignItems: 'center',
+                   width: '100%',
+                   paddingLeft: 10,
+                 }}>
+                 <BankIcon name="account-balance" size={22} color="#1E2135" />
+                 <TextInput
+                   style={{
+                     width: '100%',
+                     paddingLeft: 10,
+                     color: '#1E2135',
+                     paddingVertical: 10,
+                   }}
+                   placeholder=""
+                   value={Account}
+                   onChangeText={txt => {
+                     setAccount(txt);
+                   }}
+                 />
+               </View>
+             </View>
+             <View
+               style={[
+                 styles.labelContainer,
+                 {
+                   top: -(height * 0.01),
+                 },
+               ]}>
+               <Text
+                 style={[
+                   styles.label,
+                   {
+                     fontSize: 16,
+                   },
+                 ]}>
+                 Account Number
+               </Text>
+             </View>
+           </View>
+           <View style={{marginTop: 20}}>
+             <View style={styles.input}>
+               <View
+                 style={{
+                   justifyContent: 'flex-start',
+                   flexDirection: 'row',
+                   alignItems: 'center',
+                   width: '100%',
+                   paddingLeft: 10,
+                 }}>
+                 <BankIcon name="account-balance" size={22} color="#1E2135" />
+                 <TextInput
+                   style={{
+                     width: '100%',
+                     paddingLeft: 10,
+                     color: '#1E2135',
+                     paddingVertical: 10,
+                   }}
+                   placeholder=""
+                   value={Bank}
+                   onChangeText={txt => {
+                     setBank(txt);
+                   }}
+                 />
+               </View>
+             </View>
+             <View
+               style={[
+                 styles.labelContainer,
+                 {
+                   top: -(height * 0.01),
+                 },
+               ]}>
+               <Text
+                 style={[
+                   styles.label,
+                   {
+                     fontSize: 16,
+                   },
+                 ]}>
+                 Bank Name & Branch
+               </Text>
+             </View>
+           </View>
            <View style={{marginTop: 20}}>
              <Text
                style={[

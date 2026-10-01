@@ -46,7 +46,7 @@ export default function SiteHistory(props) {
               height: 100,
               borderRadius: 15,
             }}
-            source={{uri: item?.propertyDetails?.image?.Image1}}
+            source={item?.propertyDetails?.image?.Image1 ? {uri: item?.propertyDetails?.image?.Image1} : require('./assets/Commingsoon.png')}
            
           />
           <View

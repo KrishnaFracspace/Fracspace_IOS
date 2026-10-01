@@ -5,15 +5,18 @@ import {
   ScrollView,
   Image,
   Dimensions,
+  Alert,
 } from 'react-native';
-import React, {useState} from 'react';
+import React, {useContext, useState} from 'react';
 const {width, height} = Dimensions.get('window');
 import Icon from 'react-native-vector-icons/Feather';
 import IconCheck from 'react-native-vector-icons/Ionicons';
 import Back from './Back';
 import {GetBookingCancleedCoOwned} from './Services/UserApi';
+import {AppContext} from './Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 export default function BookingHistory(props) {
+  const {globalState} = useContext(AppContext);
   const [Status, setStatus] = useState([]);
   const [Bookingdata, setBookingdata] = useState(
     props?.route?.params?.booking || [],
@@ -34,7 +37,7 @@ export default function BookingHistory(props) {
     } catch (error) {
       if (error.response) {
         // console.log(error?.response?.data?.message);
-        //Alert.alert('Response error:', `${error?.response?.data?.message}`);
+        Alert.alert('Response error:', `${error?.response?.data?.message}`);
       } else if (error.request) {
         Alert.alert('Request error:', 'Please Check Your Internet Connection');
         // Alert.alert('Request error:', ${JSON.stringify(error)});
