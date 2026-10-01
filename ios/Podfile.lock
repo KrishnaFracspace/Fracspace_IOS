@@ -1035,10 +1035,6 @@ PODS:
     - React
   - react-native-blob-util (0.19.8):
     - React-Core
-  - react-native-capture-protection (2.4.1):
-    - glog
-    - RCT-Folly (= 2022.05.16.00)
-    - React-Core
   - react-native-date-picker (4.4.2):
     - React-Core
   - react-native-document-picker (9.1.1):
@@ -1314,10 +1310,6 @@ PODS:
     - RCT-Folly (= 2022.05.16.00)
     - React-Core
     - React-RCTImage
-  - RNScreenshotPrevent (1.2.2):
-    - glog
-    - RCT-Folly (= 2022.05.16.00)
-    - React-Core
   - RNShare (12.0.9):
     - glog
     - RCT-Folly (= 2022.05.16.00)
@@ -1370,7 +1362,6 @@ DEPENDENCIES:
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - react-native-appsflyer (from `../node_modules/react-native-appsflyer`)
   - react-native-blob-util (from `../node_modules/react-native-blob-util`)
-  - react-native-capture-protection (from `../node_modules/react-native-capture-protection`)
   - react-native-date-picker (from `../node_modules/react-native-date-picker`)
   - react-native-document-picker (from `../node_modules/react-native-document-picker`)
   - react-native-fbsdk-next (from `../node_modules/react-native-fbsdk-next`)
@@ -1420,7 +1411,6 @@ DEPENDENCIES:
   - RNPermissions (from `../node_modules/react-native-permissions`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
-  - RNScreenshotPrevent (from `../node_modules/react-native-screenshot-prevent`)
   - RNShare (from `../node_modules/react-native-share`)
   - RNSVG (from `../node_modules/react-native-svg`)
   - RNVectorIcons (from `../node_modules/react-native-vector-icons`)
@@ -1519,8 +1509,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-appsflyer"
   react-native-blob-util:
     :path: "../node_modules/react-native-blob-util"
-  react-native-capture-protection:
-    :path: "../node_modules/react-native-capture-protection"
   react-native-date-picker:
     :path: "../node_modules/react-native-date-picker"
   react-native-document-picker:
@@ -1619,8 +1607,6 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
     :path: "../node_modules/react-native-screens"
-  RNScreenshotPrevent:
-    :path: "../node_modules/react-native-screenshot-prevent"
   RNShare:
     :path: "../node_modules/react-native-share"
   RNSVG:
@@ -1687,7 +1673,6 @@ SPEC CHECKSUMS:
   React-Mapbuffer: 15dfcfeb4428d8799cce75e7fe85b18b706029e0
   react-native-appsflyer: 7f8aeb0f26fc2444d1bf766f39f92a876002b816
   react-native-blob-util: 05c05d202a9198be97facf627d2fdd5be007774f
-  react-native-capture-protection: 665e0f053558363e496ffc8728e41ce42fda5d09
   react-native-date-picker: 5ddb34db03afc527bc07777952c2ac72fa384411
   react-native-document-picker: a2e1577d26b9758ef3092e66f5d67f6e8c7454d9
   react-native-fbsdk-next: 52f81e60eb3e8e0e06cf9728b4572d3509ca9d01
@@ -1737,7 +1722,6 @@ SPEC CHECKSUMS:
   RNPermissions: 50fb3b0d60e4010dc94237fd5ee3be7afe226e50
   RNReanimated: ad6fbfef871ca6c05a4892961ae3fb272aff0c1d
   RNScreens: 3631fdd13ed8d14c16b2d9dc717bebb3d888b348
-  RNScreenshotPrevent: 641553ae9dc0d9f01b7b62111ee7bae6799ab942
   RNShare: f5340f4e6b473a820bfe3dc3ee0249ec1f94d717
   RNSVG: 3c68fce7cb7e36a20febf5e4bcf67ac300242b00
   RNVectorIcons: 102cd20472bf0d7cd15443d43cd87f9c97228ac3

@@ -89,7 +89,6 @@ android {
         // updated from 73 and 2.2.2
         versionCode 74
         versionName "2.2.3"
-        missingDimensionStrategy "react-native-capture-protection", "base"
         buildConfigField "String", "REVOPUSH_KEY", '"DthMm0PkeJzmwW1YY11Dw4OtOcIfVJ2bkyDomg"'
     }
     signingConfigs {
