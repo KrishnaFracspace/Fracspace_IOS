@@ -10,6 +10,13 @@ Phase 1 merges on React Native 0.73.6; Phase 3 upgrades to 0.81.
 | `e4a3b2e` | Production `android/` project (com.fracspace 2.2.3/74, R8 rules, pdfium pin) replaces the iOS repo's template stub. Signing passwords moved to `~/.gradle/gradle.properties`. |
 | `0d87482` | One `package.json` for both platforms. Android-used libs added, `openai` and the unused native PayU SDK dropped, versions pinned so both platforms build on RN 0.73 (gesture-handler 2.20.2, svg 15.12, datetimepicker 7.7.0, firebase 20.3.0). Android `assembleDebug` and the iOS simulator build both pass. |
 
+## Status (2026-10-01)
+- **Phase 1 code complete** on RN 0.73.6: commits `664e223` … `e24bd90` (JS merged area by area, Android
+  light theme + default black text, POST_NOTIFICATIONS, UPI `<queries>`, all 144 fonts, Android input/OTP sizing).
+- Android: signed release build tested on a device (OPPO CPH2643) by the owner — all flows OK, UI issues fixed.
+- iOS: simulator build passes; **not yet run on a device**.
+- Next: iOS device check → Phase 2 (Android OTA CodePush → Stallion) → Phase 3 (RN 0.81).
+
 ## How the two codebases compare
 - No shared history or common ancestor, so this is a 2-way merge done file by file.
 - 119 shared code files (code tokens compared, comments ignored):
