@@ -4,28 +4,31 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
-platform :ios, '15.1'
+platform :ios, min_ios_version_supported
 prepare_react_native_project!
-
-flipper_config = ENV['NO_FLIPPER'] == "1" ? FlipperConfiguration.disabled : FlipperConfiguration.enabled
 
 # Firebase works natively with statically linked frameworks in React Native.
 $RNFirebaseAsStaticFramework = true
 
-use_modular_headers!
 
 target 'Fracspace' do
   # Just one declaration for React Native native modules configuration
   config = use_native_modules!
 
+  # Firebase's Swift pods need module maps for these ObjC deps. A global
+  # use_modular_headers! breaks RN 0.81 (duplicate 'react_runtime' module).
+  pod 'FirebaseCore', :modular_headers => true
+  pod 'FirebaseCoreExtension', :modular_headers => true
+  pod 'FirebaseCoreInternal', :modular_headers => true
+  pod 'FirebaseInstallations', :modular_headers => true
+  pod 'GoogleUtilities', :modular_headers => true
+  pod 'GoogleDataTransport', :modular_headers => true
+  pod 'nanopb', :modular_headers => true
+  pod 'FirebaseABTesting', :modular_headers => true
+
   use_react_native!(
     :path => config[:reactNativePath],
-    # Hermes is enabled by default in 0.73. 
-    # The previous Podfile had it disabled. Ensure we respect the original intent if possible, 
-    # but the simplest configuration here uses false.
-    :hermes_enabled => false,
-    # Flipper is deprecated/removed in newer RN, but for 0.73 it still existed.
-    # :flipper_configuration => flipper_config,
+    # Hermes (the default) on both platforms since 2.3.0; iOS used JavaScriptCore before.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 

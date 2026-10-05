@@ -19,7 +19,7 @@ import PinIcon from 'react-native-vector-icons/SimpleLineIcons';
 import BankIcon from 'react-native-vector-icons/MaterialIcons';
 import {useNavigation} from '@react-navigation/native';
 import {AppContext} from './Context/AppContext';
-import DocumentPicker from 'react-native-document-picker';
+import DocumentPicker from './utils/documentPicker';
 import {ProfileVerification} from './Services/UserApi';
 import {Image} from 'react-native-animatable';
 import * as ImagePicker from 'react-native-image-picker';

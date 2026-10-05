@@ -4,7 +4,7 @@ import React, { useContext, useRef, useState } from 'react'
 import LinearGradient from 'react-native-linear-gradient'
 import Icon from 'react-native-vector-icons/Feather';
 import Ico from 'react-native-vector-icons/Ionicons';
-import DocumentPicker from 'react-native-document-picker';
+import DocumentPicker from '../utils/documentPicker';
 import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../Context/AppContext';
 import { ProfileDetails, Verification } from '../Services/UserApi';

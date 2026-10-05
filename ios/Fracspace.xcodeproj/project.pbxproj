@@ -138,8 +138,6 @@
 		D47DCA0B3EAD4A4D90FA3696 /* OpenSans-ExtraBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1018FBE54CAB486FB62E6FAD /* OpenSans-ExtraBoldItalic.ttf */; };
 		D5910F04208440DD800B5DF2 /* GothamMedium_1.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A48CF59090B48C8915F0D05 /* GothamMedium_1.ttf */; };
 		D8FB1FE54366453EAC4A7EFC /* WorkSans-BoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 73507E7DC577431A8D44DAEB /* WorkSans-BoldItalic.ttf */; };
-		D905DBD42C1199F5005477C0 /* MKITPayUI.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = D905DBD22C1199B6005477C0 /* MKITPayUI.xcframework */; };
-		D905DBD52C1199F5005477C0 /* MKITPayUI.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = D905DBD22C1199B6005477C0 /* MKITPayUI.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		D913C71A2C69FCBC00980F8E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = D913C7192C69FCBC00980F8E /* GoogleService-Info.plist */; };
 		D92FB09D2BD12B0C007F3159 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D92FB09C2BD10DAA007F3159 /* PrivacyInfo.xcprivacy */; };
 		D92FB09E2BD12B0F007F3159 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D92FB09C2BD10DAA007F3159 /* PrivacyInfo.xcprivacy */; };
@@ -186,7 +184,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				D905DBD52C1199F5005477C0 /* MKITPayUI.xcframework in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -327,7 +324,6 @@
 		D11C569EC21F4EE7BD9CEE52 /* OpenSans_SemiCondensed-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "OpenSans_SemiCondensed-MediumItalic.ttf"; path = "../Screen/assets/fonts/OpenSans_SemiCondensed-MediumItalic.ttf"; sourceTree = "<group>"; };
 		D468EB43CC4249E6970FFA9B /* Montserrat-MediumItalic.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-MediumItalic.ttf"; path = "../Screen/assets/fonts/Montserrat-MediumItalic.ttf"; sourceTree = "<group>"; };
 		D5B120EFD9C1497F99CBBCA9 /* Montserrat-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Montserrat-Light.ttf"; path = "../Screen/assets/fonts/Montserrat-Light.ttf"; sourceTree = "<group>"; };
-		D905DBD22C1199B6005477C0 /* MKITPayUI.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; path = MKITPayUI.xcframework; sourceTree = "<group>"; };
 		D913C7192C69FCBC00980F8E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D92FB09C2BD10DAA007F3159 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		D94019AA2DDB0DF4001C5DA3 /* File.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = File.txt; sourceTree = "<group>"; };
@@ -379,7 +375,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D905DBD42C1199F5005477C0 /* MKITPayUI.xcframework in Frameworks */,
 				E997CA5316C32D7BEFC474DD /* libPods-Fracspace.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -443,7 +438,6 @@
 			children = (
 				D9C765BF2FAC4C57005A270F /* test.jsbundle */,
 				D94019AA2DDB0DF4001C5DA3 /* File.txt */,
-				D905DBD22C1199B6005477C0 /* MKITPayUI.xcframework */,
 				D98761072BA5997C001D731D /* Fonts */,
 				D9CEFC5B2BA5962000CBAE52 /* react-native-vector-icons */,
 				13B07FAE1A68108700A75B9A /* Fracspace */,
@@ -1090,7 +1084,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = FracspaceTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1116,7 +1110,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEVELOPMENT_TEAM = 5S96NFCQ7T;
 				INFOPLIST_FILE = FracspaceTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1149,7 +1143,7 @@
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = Fracspace/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Fracspace;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1184,7 +1178,7 @@
 				DEVELOPMENT_TEAM = 5S96NFCQ7T;
 				INFOPLIST_FILE = Fracspace/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Fracspace;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.6;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -1265,7 +1259,7 @@
 					"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers",
 					"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers/react/renderer/graphics/platform/ios",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 13.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
 					"$(inherited)",
@@ -1291,7 +1285,8 @@
 				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				USE_HERMES = false;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
+				USE_HERMES = true;
 			};
 			name = Debug;
 		};
@@ -1348,7 +1343,7 @@
 					"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers",
 					"${PODS_CONFIGURATION_BUILD_DIR}/React-graphics/React_graphics.framework/Headers/react/renderer/graphics/platform/ios",
 				);
-				IPHONEOS_DEPLOYMENT_TARGET = 13.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					/usr/lib/swift,
 					"$(inherited)",
@@ -1373,7 +1368,7 @@
 				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
-				USE_HERMES = false;
+				USE_HERMES = true;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;

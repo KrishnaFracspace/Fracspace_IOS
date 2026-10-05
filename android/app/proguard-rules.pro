@@ -13,6 +13,11 @@
 -keepattributes SourceFile,LineNumberTable
 -keep public class * extends java.lang.Exception
 
+# React Native 0.81: native code looks these up by name (JNI), which R8 can't see.
+# e.g. InspectorFlags -> libreact_devsupportjni loads CxxInspectorPackagerConnection.
+-keep class com.facebook.react.devsupport.** { *; }
+-keep class com.facebook.jni.** { *; }
+
 # Stallion OTA: keep the SDK (bundle switching, JSON config/meta) intact under R8.
 -keep class com.stallion.** { *; }
 

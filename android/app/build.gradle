@@ -10,6 +10,8 @@ apply plugin: 'com.google.firebase.crashlytics'
  */
 
 react {
+    /* Autolinking */
+    autolinkLibrariesWithApp()
     /* Folders */
     //   The root of your project, i.e. where "package.json" lives. Default is '..'
     // root = file("../")
@@ -70,7 +72,7 @@ def enableProguardInReleaseBuilds = true
  * give correct results when using with locales other than en-US. Note that
  * this variant is about 6MiB larger per architecture than default.
  */
-def jscFlavor = 'org.webkit:android-jsc:+'
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 project.ext.react = [
     enableHermes: true
@@ -143,16 +145,12 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation("com.facebook.react:flipper-integration")
     implementation("com.google.android.gms:play-services-wallet:19.3.0")
     implementation platform('com.google.firebase:firebase-bom:33.1.2')
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.facebook.android:facebook-android-sdk:latest.release'
     implementation 'com.google.firebase:firebase-inappmessaging-display'
     implementation 'com.google.firebase:firebase-crashlytics'
-    // react-native-pdf 6.7.7 ships pdfiumandroid 1.0.24, whose libpdfiumandroid.so is
-    // 4 KB-aligned; 1.0.32 (what react-native-pdf 7.x uses) is 16 KB-aligned.
-    implementation 'io.legere:pdfiumandroid:1.0.32'
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -161,6 +159,13 @@ dependencies {
     }
 }
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle");
-apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project);
+// Gradle 8.14 validates task inputs: the lint tasks read the icon fonts that
+// vector-icons copies, so make that ordering explicit.
+tasks.configureEach { task ->
+    if (task.name.toLowerCase().contains("lint")) {
+        task.dependsOn("copyReactNativeVectorIconFonts")
+    }
+}
+
 
 // 
