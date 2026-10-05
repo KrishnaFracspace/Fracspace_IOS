@@ -232,10 +232,9 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
         BackHandler.exitApp();
         return true;
       };
-      BackHandler.addEventListener('hardwareBackPress', onBackPress);
-      return () => {
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
-      };
+      // RN 0.77+ removed BackHandler.removeEventListener; remove via the subscription.
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+      return () => subscription.remove();
     }, [])
   );
   return (
