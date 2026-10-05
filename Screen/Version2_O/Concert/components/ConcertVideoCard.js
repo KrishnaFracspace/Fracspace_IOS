@@ -224,6 +224,8 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
           style={styles.card}
           activeOpacity={0.92}
           onPress={openDetails}>
+          {/* pointerEvents none: on the New Architecture the native video view swallows taps, so the parent Touchable's onPress never fired */}
+          <View style={StyleSheet.absoluteFill} pointerEvents="none">
           <Video
             ref={videoRef}
             source={{ uri: concert?.video?.url }}
@@ -243,6 +245,7 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
             progressUpdateInterval={250}
             onError={e => console.log('ConcertVideoCard video error:', e)}
           />
+          </View>
 
           {/* top scrim + live pill */}
           <LinearGradient

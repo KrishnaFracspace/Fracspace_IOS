@@ -1487,6 +1487,8 @@ const Categories = carousel?.category
                           <TouchableOpacity
                             activeOpacity={1}
                             onPress={() => togglePlay(index)}>
+                            {/* pointerEvents none: on the New Architecture the native video view swallows taps, so the parent Touchable's onPress never fired */}
+                            <View pointerEvents="none">
                             <Video
                               ref={ref => (videoRefs.current[index] = ref)}
                               source={{ uri: item?.video }}
@@ -1528,6 +1530,7 @@ const Categories = carousel?.category
                                 setDurations(updatedDurations);
                               }}
                             />
+                            </View>
 
                             {showThumbnails[index] && (
                               <Image

@@ -65,6 +65,8 @@ export default function VideoTour(props) {
          onPress={() => {
             togglePlayPause();
         }} style={{width:width,top:0,left:0,right:0,bottom:0,position:'absolute'}} >
+            {/* pointerEvents none: on the New Architecture the native video view swallows taps, so the parent Touchable's onPress never fired */}
+            <View style={{flex:1}} pointerEvents="none">
             <Video
                 ref={videoRef}
                 resizeMode='cover'
@@ -81,6 +83,7 @@ export default function VideoTour(props) {
                 paused={paused} 
                 repeat 
                 onError={(e) => console.log('Error loading video:', e)} />
+            </View>
         </TouchableOpacity>
 
         <View style={{flex:1,flexDirection:'column'}}>
