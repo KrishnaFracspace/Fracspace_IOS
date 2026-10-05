@@ -17,7 +17,13 @@ Phase 1 merges on React Native 0.73.6; Phase 3 upgrades to 0.81.
 - iOS: tested on a device (iPad Pro 11", Debug via Metro) by the owner on 2026-10-05 — all flows OK after
   three fixes: PayU cancel handled in-app (`3ecaa3c`), notifications 45-day window (`9d64058`), profile
   loaded after login + session cleared on logout (`8c6558e`).
-- **Phase 1 complete on both platforms.** Next: Phase 2 (Android OTA CodePush → Stallion) → Phase 3 (RN 0.81).
+- **Phase 1 complete on both platforms.**
+- **Phase 2 complete (2026-10-05, `acbbb6c`):** Android OTA moved from CodePush/RevoPush to Stallion (same project + app
+  token as iOS). Verified on device with a test bundle in the `fracspace1` bucket (Android, never released).
+  **Keep the RevoPush deployment live** for Android 2.2.2/2.2.3 users until they update from the Play Store.
+  To test OTA on a device, Stallion's in-app test menu needs a trigger (`useStallionModal().showModal()`) and the
+  project's SDK access PIN (Stallion Console → Project Settings → Access Tokens).
+- Next: Phase 3 (React Native 0.81).
 
 ## How the two codebases compare
 - No shared history or common ancestor, so this is a 2-way merge done file by file.
