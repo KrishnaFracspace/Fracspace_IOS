@@ -20,16 +20,14 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import NetInfo from '@react-native-community/netinfo';
 import NoInternet from './Screen/components/NoInternet';
 
-// OTA is split per platform: Stallion on iOS, CodePush on Android.
-// Lazy requires so neither library's JS is evaluated on the other platform.
-const Stallion = Platform.OS === 'ios' ? require('react-native-stallion') : null;
-const codePush = Platform.OS === 'android' ? require('react-native-code-push') : null;
+// OTA updates: Stallion on both platforms.
+import * as Stallion from 'react-native-stallion';
 
 const { width, height } = Dimensions.get('window');
 const navigationRef = createNavigationContainerRef();
 
-// iOS only: must render inside withStallion (useStallionUpdate needs its provider).
-const IOSStallionUpdater = () => {
+// Must render inside withStallion (useStallionUpdate needs its provider).
+const StallionUpdater = () => {
   const { isRestartRequired, currentlyRunningBundle } = Stallion.useStallionUpdate();
 
   useEffect(() => {
@@ -383,7 +381,7 @@ const App = () => {
 
   return (
     <>
-      {Platform.OS === 'ios' && <IOSStallionUpdater />}
+      <StallionUpdater />
       {showSplash ? (
         <Video
           source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_.mp4"}}
@@ -456,15 +454,4 @@ const styles = StyleSheet.create({
   },
 });
 
-// iOS: Stallion. Android: CodePush HOC (checks on app start, installs immediately).
-let RootApp = App;
-if (Platform.OS === 'ios') {
-  RootApp = Stallion.withStallion(App);
-} else if (!__DEV__) {
-  RootApp = codePush({
-    checkFrequency: codePush.CheckFrequency.ON_APP_START,
-    installMode: codePush.InstallMode.IMMEDIATE,
-  })(App);
-}
-
-export default RootApp;
+export default Stallion.withStallion(App);

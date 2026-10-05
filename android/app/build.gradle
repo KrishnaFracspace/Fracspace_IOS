@@ -89,7 +89,6 @@ android {
         // updated from 73 and 2.2.2
         versionCode 74
         versionName "2.2.3"
-        buildConfigField "String", "REVOPUSH_KEY", '"DthMm0PkeJzmwW1YY11Dw4OtOcIfVJ2bkyDomg"'
     }
     signingConfigs {
         debug {
@@ -154,7 +153,6 @@ dependencies {
     // react-native-pdf 6.7.7 ships pdfiumandroid 1.0.24, whose libpdfiumandroid.so is
     // 4 KB-aligned; 1.0.32 (what react-native-pdf 7.x uses) is 16 KB-aligned.
     implementation 'io.legere:pdfiumandroid:1.0.32'
-    // implementation project(':react-native-code-push')
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
@@ -164,8 +162,5 @@ dependencies {
 }
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle");
 apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project);
-// apply from: "../../node_modules/react-native-code-push/android/codepush.gradle"
-apply from: "../../node_modules/react-native-code-push/android/codepush.gradle"
-// apply from: "../../node_modules/@revopush/react-native-code-push/android/codepush.gradle"
 
 // 

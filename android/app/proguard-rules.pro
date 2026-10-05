@@ -13,13 +13,8 @@
 -keepattributes SourceFile,LineNumberTable
 -keep public class * extends java.lang.Exception
 
-# CodePush reads these private ReactInstanceManager fields by reflection
-# (CodePushNativeModule.java). If they're renamed, OTA updates can't load/restart.
--keepclassmembers class com.facebook.react.ReactInstanceManager {
-    private final ** mBundleLoader;
-    private final ** mAttachedRootViews;
-}
--dontwarn com.nimbusds.jose.**
+# Stallion OTA: keep the SDK (bundle switching, JSON config/meta) intact under R8.
+-keep class com.stallion.** { *; }
 
 # react-native-pdf: pdfium calls back into Java from native code, and PdfView
 # serialises the table of contents (PdfDocument.Bookmark) with Gson by field name.

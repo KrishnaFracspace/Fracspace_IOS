@@ -13,15 +13,16 @@ import com.facebook.react.defaults.DefaultReactNativeHost
 import com.facebook.react.flipper.ReactNativeFlipper
 import com.facebook.soloader.SoLoader
 
-import com.microsoft.codepush.react.CodePush
+import com.stallion.Stallion
 
 class MainApplication : Application(), ReactApplication {
 
   override val reactNativeHost: ReactNativeHost =
       object : DefaultReactNativeHost(this) {
 
-        override fun getJSBundleFile(): String {
-            return CodePush.getJSBundleFile()
+        // OTA bundles from Stallion (same as iOS); falls back to the bundled JS.
+        override fun getJSBundleFile(): String? {
+            return Stallion.getJSBundleFile(applicationContext, "assets://index.android.bundle")
         }
 
         override fun getPackages(): List<ReactPackage> =
