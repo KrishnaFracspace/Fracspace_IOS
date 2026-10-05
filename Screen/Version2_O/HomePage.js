@@ -16,14 +16,14 @@ import { AppContext } from '../Context/AppContext';
 const { width, height } = Dimensions.get('window');
 import Swiper from 'react-native-swiper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchAllNotifications, fetchProperties, hidePopup, showPopup, } from '../redux/reducer/homeReducer';
+import { fetchAllNotifications, fetchProperties, hidePopup, showPopup, logout as resetHomeState } from '../redux/reducer/homeReducer';
 import HomeSkeleton from '../components/HomeSkeleton';
 import FastImage from 'react-native-fast-image';
 import EdgeFab from './altaira/FloatingButton';
 import CustomSwiper from '../components/CustomSwiper';
 import ConcertVideoCard from './Concert/components/ConcertVideoCard';
 import { normalizeSection } from './Concert/utils/concertAdapter';
-import { profileDetails } from '../redux/reducer/profileReducer';
+import { profileDetails, logout as resetProfileState } from '../redux/reducer/profileReducer';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
 import CompleteProfilePopup from '../../components/CompleteProfilePopup';
@@ -74,7 +74,8 @@ export default function HomePage() {
 
   useEffect(() => {
     dispatch(fetchProperties());
-    dispatch(profileDetails({ email: globalState?.userDetails?.email }))
+    // userDetails isn't loaded yet right after login; fall back to the login email
+    dispatch(profileDetails({ email: globalState?.userDetails?.email || globalState?.userEmail }))
     handleListedHotels()
     getDeviceToken();
   }, []);
@@ -398,9 +399,26 @@ const Categories = carousel?.category
     }, [isMenuOpen]),
   );
 
-  const handleLogOut = async () => {
+  // Clears the signed-in user from memory as well as storage, so the next login
+  // (possibly another account) never sees the previous user's profile.
+  const clearSession = async () => {
     await AsyncStorage.setItem('mytoken', '');
     await AsyncStorage.setItem('Email', '');
+    setGlobalState(prev => ({
+      ...prev,
+      token: '',
+      userEmail: '',
+      userName: '',
+      userPhone: '',
+      userDetails: undefined,
+      userProfile: undefined,
+    }));
+    dispatch(resetProfileState());
+    dispatch(resetHomeState());
+  };
+
+  const handleLogOut = async () => {
+    await clearSession();
     //   catch (error) {
     //   console.error('Profile fetch failed:', error);
     //   setToken('');
@@ -419,8 +437,7 @@ const Categories = carousel?.category
     try {
       let { data: res } = await DeleteAccount(payload);
       if (res?.success) {
-        await AsyncStorage.setItem('mytoken', '');
-        await AsyncStorage.setItem('Email', '');
+        await clearSession();
         Toast.show({
           type: 'success',
           text1: `${res?.message}`,
