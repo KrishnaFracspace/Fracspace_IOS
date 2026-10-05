@@ -133,16 +133,18 @@ export default function NotificationsScreen(props) {
         }
     }
 
-    const unreadCount = notification.filter(item =>
-        !item.buttonClicks.some(click => click.email === globalState?.userEmail)
-    )?.length;
-
+    // Only the last 45 days are shown; the empty state and the unread count must
+    // use the same list, or the screen is blank while the badge still counts.
     const filteredNotifications = notification.filter(item => {
         const createdDate = moment(item.date || item.createdAt);
         const daysDiff = moment().diff(createdDate, 'days');
 
         return daysDiff <= 45;
     });
+
+    const unreadCount = filteredNotifications.filter(item =>
+        !item?.buttonClicks?.some(click => click.email === globalState?.userEmail)
+    )?.length;
 
     const groupedNotifications = {};
 
@@ -246,7 +248,7 @@ export default function NotificationsScreen(props) {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#021265' }}>
             <View style={{ backgroundColor: '#FFFFFF', flex: 1 }}>
-                {notification?.length === 0 ?
+                {filteredNotifications.length === 0 ?
                     <View style={{flex:1,backgroundColor:'#FFF',alignItems:'center'}}>
                         <LinearGradient colors={['#C7E5FD', '#FFF']} style={{width: width, height: height*0.3,padding:20,}}>
                             <View style={{alignItems:'center',flexDirection:'row',justifyContent:'space-between',paddingVertical:20}}>

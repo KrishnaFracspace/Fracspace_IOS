@@ -319,9 +319,13 @@ const Categories = carousel?.category
     }
   };
 
-  const unreadNotifications = notification.some(
+  // Same 45-day window as NotificationsScreen, so the bell dot never points at
+  // notifications that screen hides.
+  const NOTIFICATION_WINDOW_MS = 45 * 24 * 60 * 60 * 1000;
+  const unreadNotifications = (notification || []).some(
     item =>
-      !item.buttonClicks.some(click => click.email === globalState?.userEmail),
+      Date.now() - new Date(item?.date || item?.createdAt).getTime() <= NOTIFICATION_WINDOW_MS &&
+      !item?.buttonClicks?.some(click => click.email === globalState?.userEmail),
   );
 
   useEffect(() => {
