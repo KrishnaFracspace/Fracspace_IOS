@@ -14,8 +14,10 @@ Phase 1 merges on React Native 0.73.6; Phase 3 upgrades to 0.81.
 - **Phase 1 code complete** on RN 0.73.6: commits `664e223` … `e24bd90` (JS merged area by area, Android
   light theme + default black text, POST_NOTIFICATIONS, UPI `<queries>`, all 144 fonts, Android input/OTP sizing).
 - Android: signed release build tested on a device (OPPO CPH2643) by the owner — all flows OK, UI issues fixed.
-- iOS: simulator build passes; **not yet run on a device**.
-- Next: iOS device check → Phase 2 (Android OTA CodePush → Stallion) → Phase 3 (RN 0.81).
+- iOS: tested on a device (iPad Pro 11", Debug via Metro) by the owner on 2026-10-05 — all flows OK after
+  three fixes: PayU cancel handled in-app (`3ecaa3c`), notifications 45-day window (`9d64058`), profile
+  loaded after login + session cleared on logout (`8c6558e`).
+- **Phase 1 complete on both platforms.** Next: Phase 2 (Android OTA CodePush → Stallion) → Phase 3 (RN 0.81).
 
 ## How the two codebases compare
 - No shared history or common ancestor, so this is a 2-way merge done file by file.
