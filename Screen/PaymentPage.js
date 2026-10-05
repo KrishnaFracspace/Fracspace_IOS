@@ -1,4 +1,4 @@
-import { View, Text, Alert, Dimensions, Linking, BackHandler, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Alert, Dimensions, Linking, BackHandler, ActivityIndicator, Platform, TouchableOpacity } from 'react-native';
 import React, { useContext, useEffect, useState, useRef } from 'react';
 import { WebView } from 'react-native-webview';
 import { useNavigation } from '@react-navigation/native';
@@ -27,6 +27,12 @@ const withTimeout = (promise, label) => {
     }),
   ]).finally(() => clearTimeout(timer));
 };
+
+// PayU's own "cancel" navigation (e.g. https://secure.payu.in/cancel?status=cancel...).
+// It is handled in-app instead of loading another gateway page, so a failed
+// load there can't strand the user on an error page.
+const isPayUCancel = url =>
+  /payu\.in\/cancel/i.test(url) || (/payu/i.test(url) && /[?&](amp;)?status=cancel/i.test(url));
 
 // Converts an Android `intent://...#Intent;scheme=upi;...;end` link into the
 // plain scheme URL (`upi://...`) that Linking can hand to the UPI app.
@@ -125,7 +131,7 @@ const location = props?.route?.params?.location;
     return { payment: lastPayment, success: false };
   };
 
-const HandlePayUPaymentVerify = async (paymentStatus) => {
+const HandlePayUPaymentVerify = async (paymentStatus, { cancelled = false } = {}) => {
   if (paymentHandledRef.current) {
     console.log('Payment verification already handled for this transaction. Ignoring duplicate event.');
     return;
@@ -170,8 +176,9 @@ const HandlePayUPaymentVerify = async (paymentStatus) => {
         totalAmount: totalAmount,
         bookingId,
         time,
-        message:
-          'We could not confirm your payment. If money was deducted, please contact support with your Transaction ID.',
+        message: cancelled
+          ? 'Payment was cancelled.'
+          : 'We could not confirm your payment. If money was deducted, please contact support with your Transaction ID.',
       });
       return;
     }
@@ -284,6 +291,12 @@ const handleNavigationStateChange = (state) => {
     return;
   }
 
+  if (isPayUCancel(url)) {
+    setLoading(false);
+    HandlePayUPaymentVerify('Failed', { cancelled: true });
+    return;
+  }
+
   if (url.includes('paymentsuccess')) {
     setLoading(false);
     HandlePayUPaymentVerify('Success');
@@ -296,6 +309,15 @@ const handleNavigationStateChange = (state) => {
   /* ---------------- HANDLE UPI / INTENT ---------------- */
   const onShouldStartLoadWithRequest = (request) => {
     const url = request?.url || '';
+
+    // User cancelled on the gateway: settle it here rather than loading PayU's
+    // cancel page.
+    if (isPayUCancel(url)) {
+      if (!paymentHandledRef.current) {
+        HandlePayUPaymentVerify('Failed', { cancelled: true });
+      }
+      return false;
+    }
 
     // Web pages stay in the WebView.
     if (/^(https?|about|data|blob|javascript):/i.test(url)) {
@@ -338,6 +360,21 @@ const handleNavigationStateChange = (state) => {
     javaScriptCanOpenWindowsAutomatically
     mixedContentMode="compatibility"
     onLoad={handlePageLoad}
+    renderError={(domain, code, description) => (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#FFFFFF' }}>
+        <Text style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 16, color: '#000000', textAlign: 'center' }}>
+          Couldn't load the payment page
+        </Text>
+        <Text style={{ fontFamily: 'WorkSans-Regular', fontSize: 13, color: '#00000099', marginTop: 8, textAlign: 'center' }}>
+          Please check your internet connection and try again.
+        </Text>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: 20, backgroundColor: '#021265', paddingVertical: 12, paddingHorizontal: 28, borderRadius: 8 }}>
+          <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 14, color: '#FFFFFF' }}>Go back</Text>
+        </TouchableOpacity>
+      </View>
+    )}
   />
   {verifying && (
     <View
