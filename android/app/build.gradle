@@ -88,9 +88,9 @@ android {
         applicationId "com.fracspace"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // updated from 73 and 2.2.2
-        versionCode 74
-        versionName "2.2.3"
+        // 2.3.0: merged iOS + Android app on React Native 0.81 (was 74 / 2.2.3)
+        versionCode 75
+        versionName "2.3.0"
     }
     signingConfigs {
         debug {
