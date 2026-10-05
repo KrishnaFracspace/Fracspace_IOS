@@ -21,29 +21,30 @@ const SNAP_INTERVAL = width * 0.49;     // ← This is key
 export default function LocationHighlights({ highlights }) {
   const scrollX = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef(null);
+  const count = highlights?.length || 0;
 
-  if (!highlights || highlights.length === 0) return null;
+  // Start at the middle set (hooks must run before any early return)
+  useEffect(() => {
+    if (!count) return;
+    const t = setTimeout(() => {
+      scrollRef.current?.scrollTo({ x: count * SNAP_INTERVAL, animated: false });
+    }, 100);
+    return () => clearTimeout(t);
+  }, [count]);
+
+  if (!count) return null;
 
   // Triple data for infinite smooth loop
   const loopData = [...highlights, ...highlights, ...highlights];
-  const middleIndex = highlights.length;
 
-  useEffect(() => {
-    // Start at the middle set
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({
-        x: middleIndex * SNAP_INTERVAL,
-        animated: false,
-      });
-    }, 100);
-  }, []);
-
-  const handleScroll = (event) => {
+  // Infinite loop: once scrolling settles, jump back into the middle copy.
+  // Done on scroll *end* with strict bounds. Re-centring inside onScroll with
+  // <= / >= ping-ponged forever on iOS (each scrollTo emits a scroll event),
+  // which kept the list scrolling and blocked every tap on the Property screen.
+  const recentre = (event) => {
     const x = event.nativeEvent.contentOffset.x;
-    const total = SNAP_INTERVAL * highlights.length;
-
-    // Infinite loop reset
-    if (x <= total) {
+    const total = SNAP_INTERVAL * count;
+    if (x < total) {
       scrollRef.current?.scrollTo({ x: x + total, animated: false });
     } else if (x >= total * 2) {
       scrollRef.current?.scrollTo({ x: x - total, animated: false });
@@ -64,8 +65,9 @@ export default function LocationHighlights({ highlights }) {
         }}
         onScroll={Animated.event(
           [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-          { useNativeDriver: true, listener: handleScroll }
+          { useNativeDriver: true }
         )}
+        onMomentumScrollEnd={recentre}
         scrollEventThrottle={16}
       >
         {loopData.map((item, index) => {
