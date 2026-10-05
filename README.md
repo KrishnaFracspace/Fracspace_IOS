@@ -1,3 +1,10 @@
+# Fracspace app (iOS + Android)
+
+**Start with the [Developer guide](docs/DEVELOPER-GUIDE.md)** — setup, signing, conventions for code that works on
+both platforms, OTA updates (Stallion), and what changed in the 2.3.0 Android + iOS merge.
+
+---
+
 This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
 
 # Getting Started
