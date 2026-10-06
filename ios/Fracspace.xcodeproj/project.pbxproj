@@ -32,9 +32,6 @@
 		D92FB09D2BD12B0C007F3159 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D92FB09C2BD10DAA007F3159 /* PrivacyInfo.xcprivacy */; };
 		D92FB09E2BD12B0F007F3159 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D92FB09C2BD10DAA007F3159 /* PrivacyInfo.xcprivacy */; };
 		D94019AB2DDB0DF4001C5DA3 /* File.txt in Resources */ = {isa = PBXBuildFile; fileRef = D94019AA2DDB0DF4001C5DA3 /* File.txt */; };
-		D98761082BA5997C001D731D /* Fonts in Resources */ = {isa = PBXBuildFile; fileRef = D98761072BA5997C001D731D /* Fonts */; };
-		D9C765C02FAC4C57005A270F /* test.jsbundle in Resources */ = {isa = PBXBuildFile; fileRef = D9C765BF2FAC4C57005A270F /* test.jsbundle */; };
-		D9CEFC5C2BA5962000CBAE52 /* react-native-vector-icons in Resources */ = {isa = PBXBuildFile; fileRef = D9CEFC5B2BA5962000CBAE52 /* react-native-vector-icons */; };
 		E997CA5316C32D7BEFC474DD /* libPods-Fracspace.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 38D8431E0ECBF3D06C42429D /* libPods-Fracspace.a */; };
 		F5B7F7CB22A84658ACD627BF /* Montserrat-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 44C501B7320A4E8AB998F41A /* Montserrat-SemiBold.ttf */; };
 		FB1BBA7555B24538BA6696E4 /* Poppins-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F2C79F0034F4EC186431867 /* Poppins-SemiBold.ttf */; };
@@ -95,11 +92,8 @@
 		D913C7192C69FCBC00980F8E /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		D92FB09C2BD10DAA007F3159 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		D94019AA2DDB0DF4001C5DA3 /* File.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = File.txt; sourceTree = "<group>"; };
-		D98761072BA5997C001D731D /* Fonts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Fonts; path = "../node_modules/react-native-vector-icons/Fonts"; sourceTree = "<group>"; };
 		D98A03502F32005900C22C14 /* FracspaceDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = FracspaceDebug.entitlements; path = Fracspace/FracspaceDebug.entitlements; sourceTree = "<group>"; };
 		D993A8122C69D75500C012F7 /* Fracspace.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; name = Fracspace.entitlements; path = Fracspace/Fracspace.entitlements; sourceTree = "<group>"; };
-		D9C765BF2FAC4C57005A270F /* test.jsbundle */ = {isa = PBXFileReference; lastKnownFileType = text; path = test.jsbundle; sourceTree = "<group>"; };
-		D9CEFC5B2BA5962000CBAE52 /* react-native-vector-icons */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "react-native-vector-icons"; path = "../node_modules/react-native-vector-icons"; sourceTree = "<group>"; };
 		DCB90C8F1346AAAF1D4398DD /* libPods-Fracspace-FracspaceTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Fracspace-FracspaceTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E34F859DB973FD397F854B5F /* Pods-Fracspace-FracspaceTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Fracspace-FracspaceTests.release.xcconfig"; path = "Target Support Files/Pods-Fracspace-FracspaceTests/Pods-Fracspace-FracspaceTests.release.xcconfig"; sourceTree = "<group>"; };
 		E392584CC0EE9B4E8272D3FB /* Pods-Fracspace.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Fracspace.debug.xcconfig"; path = "Target Support Files/Pods-Fracspace/Pods-Fracspace.debug.xcconfig"; sourceTree = "<group>"; };
@@ -182,10 +176,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				D9C765BF2FAC4C57005A270F /* test.jsbundle */,
 				D94019AA2DDB0DF4001C5DA3 /* File.txt */,
-				D98761072BA5997C001D731D /* Fonts */,
-				D9CEFC5B2BA5962000CBAE52 /* react-native-vector-icons */,
 				13B07FAE1A68108700A75B9A /* Fracspace */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* FracspaceTests */,
@@ -343,8 +334,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D98761082BA5997C001D731D /* Fonts in Resources */,
-				D9CEFC5C2BA5962000CBAE52 /* react-native-vector-icons in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				D92FB09D2BD12B0C007F3159 /* PrivacyInfo.xcprivacy in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
@@ -356,7 +345,6 @@
 				AEB5BB9F5F5649ABA17054EA /* Barlow-Medium.ttf in Resources */,
 				0C94D0E63302434FBA7523A0 /* OpenSans-Bold.ttf in Resources */,
 				7CCEDE3F84E34B6FABBC612D /* OpenSans-ExtraBold.ttf in Resources */,
-				D9C765C02FAC4C57005A270F /* test.jsbundle in Resources */,
 				D0E4F439D35A4FB5AF43BE9C /* OpenSans-SemiBold.ttf in Resources */,
 				D913C71A2C69FCBC00980F8E /* GoogleService-Info.plist in Resources */,
 				B313326B1390453F82F2D59F /* Poppins-Bold.ttf in Resources */,
