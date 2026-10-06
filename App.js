@@ -391,7 +391,7 @@ const App = () => {
           {/* cover: fills the whole screen and crops the sides (no stretching);
               the logo is centred so nothing important is cut. */}
           <Video
-            source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_.mp4"}}
+            source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_splash.mp4"}}
             style={StyleSheet.absoluteFill}
             resizeMode="cover"
             hideShutterView
