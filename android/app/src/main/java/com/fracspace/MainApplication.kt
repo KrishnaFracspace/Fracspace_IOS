@@ -28,6 +28,8 @@ class MainApplication : Application(), ReactApplication {
               // Packages that cannot be autolinked yet can be added manually here, for example:
               // add(MyReactNativePackage())
                //  new UpiPaymentPackage()
+              // OTP autofill on the login/signup screens (SMS User Consent API).
+              add(SmsConsentPackage())
             }
 
         override fun getJSMainModuleName(): String = "index"

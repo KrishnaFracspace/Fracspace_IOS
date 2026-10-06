@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,7 @@ import {
 } from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
 import analytics from '@react-native-firebase/analytics';
+import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
 
 export default function NewSigin() {
   const navigation = useNavigation();
@@ -36,24 +37,13 @@ export default function NewSigin() {
   const [email, setEmail] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India' });
-  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-  const inputRefs = useRef([]);
   const route = useRoute();
-
-  const handleChange = (text, index) => {
-    const updated = [...otpDigits];
-    updated[index] = text.replace(/[^0-9]/g, '');
-    setOtpDigits(updated);
-    if (text && index < 5) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && !otpDigits[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
+  // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
+  // submits as soon as all 6 digits are in.
+  const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp } = useOtpAutofill({
+    listenForSms: visible2 && selectedCode.code === '+91',
+    onComplete: () => handleOTPLogin(),
+  });
 
   const handleRegister = async () => {
     if (!phone || !name || !email) {
@@ -386,7 +376,7 @@ const handleOTPLogin = async () => {
                        autoComplete="sms-otp"
                         importantForAutofill="yes"
                         keyboardType="numeric"
-                        maxLength={1}
+                        maxLength={OTP_LENGTH}
                         value={otpDigits[i]}
                         onChangeText={(text) => handleChange(text, i)}
                         onKeyPress={(e) => handleKeyPress(e, i)}
@@ -405,6 +395,7 @@ const handleOTPLogin = async () => {
 
                   <TouchableOpacity
                     onPress={() => {
+                      resetOtp();
                       if (selectedCode.code === '+91') {
                         handleLogin();
                       } else {

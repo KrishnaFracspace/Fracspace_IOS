@@ -3,7 +3,7 @@ import { View, Text, TextInput, Image, TouchableOpacity, Alert, BackHandler, Pla
 // Android TextInput adds its own vertical/font padding on top of ours; strip it
 // so inputs match the iOS size.
 const androidInputReset = Platform.OS === 'android' ? { includeFontPadding: false, textAlignVertical: 'center' } : null;
-import React, { useContext, useRef, useState } from 'react'
+import React, { useContext, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo'
 import Ico from 'react-native-vector-icons/Ionicons'
 import Ic from 'react-native-vector-icons/AntDesign'
@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../Context/AppContext'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import analytics from '@react-native-firebase/analytics';
+import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
 
 export default function NewLogin() {
   const navigation = useNavigation();
@@ -24,26 +25,22 @@ export default function NewLogin() {
   const [email, setEmail] = useState('');
   const [showPicker, setShowPicker] = useState(false);
   const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India' });
-  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-  const inputRefs = useRef([]);
   const route = useRoute();
 
-  const handleChange = (text, index) => {
-    const updatedOtp = [...otpDigits];
-    updatedOtp[index] = text;
-    setOtpDigits(updatedOtp);
-    if (text && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+  // Indian numbers get the OTP by SMS; other countries by email.
+  const submitOtp = () => {
+    if (selectedCode.code === '+91') {
+      handleOTPLogin();
+    } else {
+      handleOtpLoginWithEmail();
     }
   };
-
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key == 'Backspace' && otpDigits[index] == '') {
-      if (index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    }
-  };
+  // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
+  // submits as soon as all 6 digits are in.
+  const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp } = useOtpAutofill({
+    listenForSms: visible2 && selectedCode.code === '+91',
+    onComplete: submitOtp,
+  });
 
 const handleLoginSuccess = async (resData, fallbackPhone) => {
   // console.log("Res dTA: ", resData);
@@ -411,7 +408,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                             androidInputReset,
                           ]}
                           keyboardType="number-pad"
-                          maxLength={1}
+                          maxLength={OTP_LENGTH}
                           value={otpDigits[index]}
                           textContentType="oneTimeCode"
                           autoComplete="sms-otp"
@@ -423,17 +420,12 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                     ))}
                   </View>
 
-                  <TouchableOpacity onPress={() => {
-                    if (selectedCode.code === '+91') {
-                      handleOTPLogin();
-                    } else {
-                      handleOtpLoginWithEmail();
-                    }
-                  }} style={{ backgroundColor: '#0F1130', padding: 12, alignItems: 'center', borderRadius: 10, marginTop: 40 }}>
+                  <TouchableOpacity onPress={submitOtp} style={{ backgroundColor: '#0F1130', padding: 12, alignItems: 'center', borderRadius: 10, marginTop: 40 }}>
                     <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 20, color: '#FFFFFF' }}>Continue</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity onPress={() => {
+                    resetOtp();
                     if (selectedCode.code === '+91') {
                       handleLogin();
                     } else {
