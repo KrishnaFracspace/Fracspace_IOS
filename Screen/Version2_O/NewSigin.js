@@ -40,7 +40,7 @@ export default function NewSigin() {
   const route = useRoute();
   // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
   // submits as soon as all 6 digits are in.
-  const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp } = useOtpAutofill({
+  const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp, submitOtp, submitting } = useOtpAutofill({
     listenForSms: visible2 && selectedCode.code === '+91',
     onComplete: () => handleOTPLogin(),
   });
@@ -348,6 +348,7 @@ const handleOTPLogin = async () => {
                   <View style={{ paddingTop: 20 }}>
                     <TouchableOpacity
                       onPress={() => {
+                        resetOtp();
                         setVisible2(false);
                         setVisible1(true);
                       }}
@@ -385,8 +386,9 @@ const handleOTPLogin = async () => {
                   </View>
 
                   <TouchableOpacity
-                    style={styles.button}
-                    onPress={handleOTPLogin}
+                    style={[styles.button, submitting && { opacity: 0.6 }]}
+                    onPress={submitOtp}
+                    disabled={submitting}
                   >
                     <Text style={{ color: '#fff', fontWeight: '600' }}>
                       Continue

@@ -199,7 +199,10 @@ const interestButton = async () => {
           <Text style={[styles.experienceTitle1, { textAlign: "center" }]}>{block4?.subHeading}</Text>
           <Text style={{ fontSize: 12, color: "rgba(0, 0, 0, 1)", textAlign: "center", lineHeight: 20, fontFamily: "WorkSans-Regular" }}>Experience the private unveiling of Altaira - a curated livestream revealing the master vision, architecture, and philosophy behind the destination.</Text>
           <TouchableOpacity onPress={() => {
-            navigation.navigate(block4?.screen, {liveStreamUrl: block4?.liveStreamUrl})
+            // Screen name comes from the backend; skip if it's missing.
+            if (block4?.screen) {
+              navigation.navigate(block4.screen, {liveStreamUrl: block4?.liveStreamUrl})
+            }
           }} style={styles.ctaButton}>
             <Text style={styles.ctaText}>{block4?.button} →</Text>
           </TouchableOpacity>

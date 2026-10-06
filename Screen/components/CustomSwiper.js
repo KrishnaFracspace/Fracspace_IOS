@@ -109,9 +109,9 @@ export default function CustomSwiper({
           onPress={() =>
             item?.screen &&
             navigation.navigate(
-              item?.screen === 'IntroAnim'
-                ? item?.iosScreen
-                : item.screen,
+              // Prefer iosScreen for IntroAnim banners; IntroAnim itself is a
+              // registered alias, so fall back to it rather than to undefined.
+              (item.screen === 'IntroAnim' && item.iosScreen) || item.screen,
               item.params
             )
           }
@@ -143,7 +143,7 @@ export default function CustomSwiper({
       <TouchableOpacity
         activeOpacity={0.95}
         onPress={() => {
-          if (isExpired && item?.nav) {
+          if (isExpired && item?.nav && item?.screen) {
             navigation.navigate(item.screen, {
               liveStreamUrl: item.liveStreamUrl,
             });

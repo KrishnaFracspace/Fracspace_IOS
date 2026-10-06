@@ -809,6 +809,9 @@ const Categories = carousel?.category
     return (
       <TouchableOpacity
         onPress={() => {
+          // The route comes from the backend; a tile without one does nothing
+          // (navigate(undefined) throws and closes the app).
+          if (!route) return;
           if (item?.heading === 'Co-Own') {
             navigation.navigate(route, { details: Properties });
           } else if(item?.heading === 'Stays') {

@@ -74,17 +74,13 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>App required camera access to take photo for profile pic</string>
+	<string>Fracspace uses the camera so you can take a profile photo or a photo of your verification documents.</string>
 	<key>NSHumanReadableCopyright</key>
 	<string></string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>app Required Location Access for show Property Location</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>App required current location via map</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>app Required Location Access for show property Location</string>
+	<string>Fracspace uses your location to show properties and places near you on the map.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>App required Photo Library access to upload photo for profile pic</string>
+	<string>Fracspace needs access to your photos so you can choose a profile picture or upload verification documents.</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>StallionAppToken</key>

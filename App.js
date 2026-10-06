@@ -28,23 +28,15 @@ const SPLASH_MAX_MS = 6000;
 const navigationRef = createNavigationContainerRef();
 
 // Must render inside withStallion (useStallionUpdate needs its provider).
+// A downloaded update is applied on the next cold start. Don't call
+// Stallion.restart() here: restarting the moment the download finishes kills
+// whatever the user is doing (a PayU payment, an OTP, a UPI app handoff).
 const StallionUpdater = () => {
-  const { isRestartRequired, currentlyRunningBundle } = Stallion.useStallionUpdate();
-
   useEffect(() => {
     if (!__DEV__) {
       Stallion.sync();
     }
   }, []);
-
-  useEffect(() => {
-    console.log('=== Stallion Debug ===');
-    console.log('isRestartRequired:', isRestartRequired);
-    if (!__DEV__ && isRestartRequired) {
-      console.log('currentlyRunningBundle:', currentlyRunningBundle);
-      Stallion.restart();
-    }
-  }, [isRestartRequired]);
 
   return null;
 };

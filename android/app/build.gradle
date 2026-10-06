@@ -88,8 +88,9 @@ android {
         applicationId "com.fracspace"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // 2.3.0: merged iOS + Android app on React Native 0.81 (was 74 / 2.2.3)
-        versionCode 75
+        // 2.3.0: merged iOS + Android app on React Native 0.81 (was 74 / 2.2.3).
+        // 75 is already on Play internal testing; every upload needs a new code.
+        versionCode 76
         versionName "2.3.0"
     }
     signingConfigs {
@@ -100,7 +101,11 @@ android {
             keyPassword 'android'
         }
         release {
-            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+            // The file name and alias are in android/gradle.properties, but the
+            // passwords live only in ~/.gradle/gradle.properties on machines that
+            // ship releases. Without them, debug builds still work and release
+            // builds come out unsigned instead of failing at configuration time.
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_PASSWORD') && project.hasProperty('MYAPP_UPLOAD_KEY_PASSWORD')) {
                 storeFile file(MYAPP_UPLOAD_STORE_FILE)
                 storePassword MYAPP_UPLOAD_STORE_PASSWORD
                 keyAlias MYAPP_UPLOAD_KEY_ALIAS

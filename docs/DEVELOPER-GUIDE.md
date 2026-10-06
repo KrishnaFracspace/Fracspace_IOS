@@ -28,8 +28,8 @@ Android app, and will be archived once 2.3.0 ships on both stores.
 Test it on an Android phone and an iPad, then fast-forward merge it into `release/2.3.0`.
 
 App identifiers stay different per platform: Android `com.fracspace`, iOS `com.fracspace.fracspace`.
-Version **2.3.0**: Android versionCode 75 (75 is already on Play internal testing, so the next upload must
-be 76 or higher), iOS build 46.
+Version **2.3.0**: Android versionCode **76** (75 is already on Play internal testing; every Play upload
+needs a new code), iOS build 46 (check App Store Connect before uploading; bump it if 46 was used).
 
 ---
 
@@ -53,6 +53,7 @@ cd ios && LANG=en_US.UTF-8 pod install && cd ..
   MYAPP_UPLOAD_KEY_PASSWORD=...
   ```
   The store file name and key alias are still in `android/gradle.properties`.
+  Without the passwords (a fresh clone, CI), debug builds work and release builds come out unsigned.
 - Upload key SHA-1 must match Play Console: `A0:F8:96:E1:96:5A:73:5B:85:47:AF:53:95:5A:E8:22:EE:62:FA:76`.
 
 ### Builds
@@ -67,6 +68,10 @@ cd android && ./gradlew bundleRelease        # AAB for Play
 - After pulling native changes (Podfile, fonts, Xcode project, patches), do **Product → Clean Build Folder** in Xcode.
 
 ### Reading logs and JS errors
+**Release builds contain no `console.*` from app code.** `babel.config.js` strips them when `BABEL_ENV=production`
+(Gradle/Xcode release builds and Stallion bundles), because the app logs tokens and personal data. Debug builds
+keep them. Don't rely on `console` for anything you need from production; use Crashlytics.
+
 React Native 0.77+ no longer prints the app's `console.*` in the Metro terminal.
 - **Android:** `adb logcat` (`ReactNativeJS` for JS, `AndroidRuntime` for crashes).
 - **iOS:** press `j` in Metro to open React Native DevTools (console, errors). Native logs: Xcode's console, or
@@ -180,6 +185,9 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
 - **Both:** a complete code (autofill, paste or the sixth typed digit) **submits automatically**, once per code.
   "Send me a new OTP" clears the boxes and listens for the new SMS.
 - Each box needs `maxLength={OTP_LENGTH}`. With `maxLength={1}` the autofill is cut to its first digit.
+- The Continue button must call the hook's `submitOtp` (and use `submitting` to disable itself), not the API
+  function directly; `submitOtp` sends one request at a time. `onComplete` must return the request's promise.
+- Going back to change the number calls `resetOtp()`, so an old code can't be submitted.
 - To use it on another OTP screen (Wallet, Transfer…): call the hook and use what it returns, as in `NewLogin.js`.
 
 ### Video and audio
@@ -210,6 +218,7 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
 
 - **Backend-driven screen names:** the Home carousel, popup and category tiles (`getCarouselUi`) and push
   notifications (`item.screen`) navigate by name. Don't remove or rename a route without checking the backend.
+  Always guard these calls: `navigate(undefined)` throws and closes the app, while an unknown name is ignored.
   On 2026-10-06 the carousel used `Home`, `Packages`, `InteriorForm`, `DreamscapeHome`, `LiveStream`, `IntroAnim`
   and `LableProperty`.
 
@@ -249,6 +258,11 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
 - **Native setup:**
   - Android: `MainApplication.kt` returns `Stallion.getJSBundleFile(...)`; `strings.xml` has `StallionProjectId` and `StallionAppToken`.
   - iOS: `AppDelegate.mm` `bundleURL` returns `StallionModule getBundleURL` in release (Metro in debug); `Info.plist` has the same two keys.
+- **Updates apply on the next cold start.** The app downloads in the background and never restarts itself
+  (an immediate restart used to kill payments, OTPs and UPI handoffs in progress).
+- **Never release a 2.3.0+ bundle to 2.2.x app versions.** Old iOS apps run JavaScriptCore and old native
+  modules; a Hermes bundle crashes them on launch. Stallion matches the exact app version, so always release to
+  `2.3.0` (or later) only. Nothing else in the app guards against this.
 - **Publish a bundle.** The CLI must be logged in to the **Fracspace** Stallion account; another account fails with "org access denied".
   ```bash
   npx stallion login
@@ -301,7 +315,6 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
 - **Security**
   - A Google Gemini API key was hard-coded in the (now deleted) chatbot and shipped in the live iOS app. It's still
     in git history: **rotate it in Google Cloud**, and call Gemini through the backend if it's used again.
-  - Release builds print the JWT and FCM tokens to the device log. Strip `console.*` from release builds.
   - Restrict the Google Maps API key (in `AndroidManifest.xml`) to the app in Google Cloud.
 - **Backend**
   - Confirm `totalBookingAmount` should be the amount paid including fees.

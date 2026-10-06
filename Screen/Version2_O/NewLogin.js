@@ -28,18 +28,13 @@ export default function NewLogin() {
   const route = useRoute();
 
   // Indian numbers get the OTP by SMS; other countries by email.
-  const submitOtp = () => {
-    if (selectedCode.code === '+91') {
-      handleOTPLogin();
-    } else {
-      handleOtpLoginWithEmail();
-    }
-  };
+  const verifyOtp = () =>
+    selectedCode.code === '+91' ? handleOTPLogin() : handleOtpLoginWithEmail();
   // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
-  // submits as soon as all 6 digits are in.
-  const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp } = useOtpAutofill({
+  // submits as soon as all 6 digits are in; submitOtp sends one request at a time.
+  const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp, submitOtp, submitting } = useOtpAutofill({
     listenForSms: visible2 && selectedCode.code === '+91',
-    onComplete: submitOtp,
+    onComplete: verifyOtp,
   });
 
 const handleLoginSuccess = async (resData, fallbackPhone) => {
@@ -354,6 +349,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
               <>
                 <View style={{ alignSelf: 'flex-start' }}>
                   <TouchableOpacity onPress={() => {
+                    resetOtp();
                     setVisible1(true);
                     setVisible2(false);
                   }} style={{ backgroundColor: '#EFF3F9', padding: 7, borderRadius: 5 }}>
@@ -420,7 +416,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
                     ))}
                   </View>
 
-                  <TouchableOpacity onPress={submitOtp} style={{ backgroundColor: '#0F1130', padding: 12, alignItems: 'center', borderRadius: 10, marginTop: 40 }}>
+                  <TouchableOpacity onPress={submitOtp} disabled={submitting} style={{ backgroundColor: '#0F1130', padding: 12, alignItems: 'center', borderRadius: 10, marginTop: 40, opacity: submitting ? 0.6 : 1 }}>
                     <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 20, color: '#FFFFFF' }}>Continue</Text>
                   </TouchableOpacity>
 

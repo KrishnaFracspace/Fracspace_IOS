@@ -5,7 +5,6 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import Ico from 'react-native-vector-icons/SimpleLineIcons';
 import LinearGradient from "react-native-linear-gradient";
 import { useNavigation } from "@react-navigation/native";
-import { SearchListedHotels } from "./DreamscapeApi";
 import { DreamscapeHotels } from "../Services/UserApi";
 import { AppContext } from "../Context/AppContext";
 import { SafeAreaView } from 'react-native-safe-area-context';
