@@ -4,7 +4,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from '../Home';
 import Property from '../Property';
 import Enquire from '../Enquire';
-import Contact from '../Contact';
 import Profile from '../Profile';
 import Like from '../Like';
 import Owned from '../Owned';
@@ -19,22 +18,18 @@ import BookNow from '../BookNow';
 import Enquirenew from '../Enquirenew';
 import Book from '../Book';
 import Review from '../Review';
-import Documents from '../Documents';
 import MyProfile from '../MyProfile';
 import TermsAndCondition from '../TermsAndCondition';
 import SiteHistory from '../SiteHistory';
 import BookingHistory from '../BookingHistory';
 import DisplayDoc from '../DisplayDoc';
-import GuestBookingDetails from '../GuestBookingDetails';
 import BookingStatus from '../BookingStatus';
 import Payment from '../Payment';
-import ForgotPassword from '../ForgotPassword';
 import VideoDisplay from '../VideoDisplay';
 import PaymentPage from '../PaymentPage';
 import NewLogin from '../Version2_O/NewLogin';
 import NewSigin from '../Version2_O/NewSigin';
 import HomePage from '../Version2_O/HomePage';
-import PopularDestination from '../Version2_O/PopularDestination';
 import InteriorForm from '../Version2_O/InteriorForm';
 import InteriorFormSec from '../Version2_O/InteriorFormSec';
 import InteriorFSec from '../Version2_O/InteriorFSec';
@@ -43,9 +38,7 @@ import PropertyListing from '../Version2_O/PropertyListing';
 import Filter from '../Version2_O/Filter';
 import PropertyDetailsNew from '../Version2_O/PropertyDetailsNew';
 import Locationview from '../Version2_O/Locationview';
-import PayUPaymentgateway from '../Version2_O/PayUPaymentgateway';
 import SelectRoom from '../Version2_O/SelectRoom';
-import CustomersReview from '../Version2_O/CustomersReview';
 import DreamscapeHome from '../Version2_O/DreamscapeHome';
 import RoomListing from '../Version2_O/RoomListing';
 import VideoTour from '../Version2_O/VideoTour';
@@ -53,7 +46,6 @@ import RoomDescription from '../Version2_O/RoomDescription';
 import Ourstay from '../Version2_O/Ourstay';
 import FeedbackForm from '../Version2_O/FeedbackForm';
 import MonthlyInsight from '../Version2_O/MonthlyInsight';
-import CumulativeEarning from '../Version2_O/CumulativeEarning';
 import Transfer from '../Version2_O/Transfer';
 import NotificationsScreen from '../Version2_O/NotificationsScreen';
 import Blogs from '../Version2_O/Blogs';
@@ -61,7 +53,6 @@ import Label from '../Version2_O/Label';
 import Wallet from '../Version2_O/Wallet';
 import LableProperty from '../Version2_O/LableProperty';
 import LablePropertyDis from '../Version2_O/LablePropertyDis'
-import Policy from '../Policy';
 import WalletAmount from '../Version2_O/WalletAmount';
 import PaidSuccessfully from '../Version2_O/PaidSuccessfully';
 import Packages from '../Version2_O/Packages';
@@ -79,7 +70,6 @@ import PaymentSuccessEscape from '../Version2_O/escapeMembership/PaymentSuccessE
 import PaymentFailedEscape from '../Version2_O/escapeMembership/PaymentFailedEscape';
 import EscapePaymentPage from '../Version2_O/escapeMembership/EscapePaymentPage';
 import TranHisForEscape from '../Version2_O/escapeMembership/TranHisForEscape';
-import ViewAgreement from '../Version2_O/escapeMembership/ViewAgreement';
 import MembershipHome from '../Version2_O/escapeMembership/MembershipHome';
 import PackageDescription from '../Version2_O/PackageDescription';
 import AddressSearchScreen from '../Version2_O/AddressSearchScreen';
@@ -244,7 +234,6 @@ useEffect(() => {
         <Stack.Screen name="PaymentFailedEscape" component={PaymentFailedEscape} options={{headerShown:false}}/>
         <Stack.Screen name="EscapePaymentPage" component={EscapePaymentPage} options={{headerShown:false}}/>
         <Stack.Screen name="TranHisForEscape" component={TranHisForEscape} options={{headerShown:false}}/>
-        <Stack.Screen name="ViewAgreement" component={ViewAgreement} options={{headerShown:false}}/>
         <Stack.Screen name="PackageDescription" component={PackageDescription} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertDetails" component={ConcertDetails} options={{headerShown:false}}/>
         <Stack.Screen name="ConcertBookings" component={ConcertBookings} options={{headerShown:false}}/>
@@ -288,16 +277,6 @@ useEffect(() => {
         <Stack.Screen
           name="Enquire"
           component={Enquire}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="Contact"
-          component={Contact}
-          options={{ headerShown: false }}
-        /> 
-        <Stack.Screen
-          name="ForgotPassword"
-          component={ForgotPassword}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -357,11 +336,6 @@ useEffect(() => {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="Documents"
-          component={Documents}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
           name="MyProfile"
           component={MyProfile}
           options={{ headerShown: false }}
@@ -384,11 +358,6 @@ useEffect(() => {
         <Stack.Screen
           name="DisplayDoc"
           component={DisplayDoc}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="GuestBookingDetails"
-          component={GuestBookingDetails}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -434,11 +403,6 @@ useEffect(() => {
           options={{ headerShown: false }}
         />
      
-        <Stack.Screen
-          name="PopularDestination"
-          component={PopularDestination}
-          options={{ headerShown: false }}
-        />
 
         <Stack.Screen
           name="InteriorForm"
@@ -482,21 +446,11 @@ useEffect(() => {
           component={Locationview}
           options={{ headerShown: false }}
         />    
-    <Stack.Screen
-          name="PayUPaymentgateway"
-          component={PayUPaymentgateway}
-          options={{ headerShown: false }}
-        /> 
         <Stack.Screen
           name="EnquirtyFS"
           component={EnquirtyFS}
           options={{ headerShown: false }}
         />
- <Stack.Screen
-          name="CustomersReview"
-          component={CustomersReview}
-          options={{ headerShown: false }}
-        />   
         <Stack.Screen
           name="DreamscapeHome"
           component={DreamscapeHome}
@@ -535,11 +489,6 @@ useEffect(() => {
         <Stack.Screen
           name="MonthlyInsight"
           component={MonthlyInsight}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name="CumulativeEarning"
-          component={CumulativeEarning}
           options={{ headerShown: false }}
         />
         <Stack.Screen

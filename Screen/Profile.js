@@ -15,7 +15,6 @@ import {
   Platform,
 } from 'react-native';
 import {useState, useEffect, useContext, useRef} from 'react';
-import Footer from './Footer';
 import {useNavigation} from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import IconA from 'react-native-vector-icons/AntDesign';
@@ -36,7 +35,6 @@ import {
   ProfilePic,
   SiteVisitHistory,
 } from './Services/UserApi';
-import Contact from './Contact';
 import Back from './Back';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DeviceInfo from 'react-native-device-info';

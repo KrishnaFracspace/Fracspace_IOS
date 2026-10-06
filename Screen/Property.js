@@ -60,9 +60,6 @@ import Back from './Back';
 import LinearGradient from 'react-native-linear-gradient';
 import { ApartmentLogo, AreaLogo } from './Version2_O/assets';
 import HighlightCarousel from './components/propertyDEtails.js/LocationHighlight';
-import Stepper from './components/Stipper';
-import InvestmentCards from './components/propertyDEtails.js/InvestMentcards';
-import PaymentPlan from './components/propertyDEtails.js/PaymentPlan';
 import analytics from '@react-native-firebase/analytics';
 import CardConverter from './components/CardConverter';
 import Animated, {

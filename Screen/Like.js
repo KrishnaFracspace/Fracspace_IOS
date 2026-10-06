@@ -10,7 +10,6 @@ import {
   StyleSheet,
 } from 'react-native';
 import React, {useContext, useEffect, useState} from 'react';
-import Footer from './Footer';
 import {useNavigation} from '@react-navigation/native';
 const {width, height} = Dimensions.get('window');
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -19,7 +18,6 @@ import {DisLike, LikeData} from './Services/UserApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {AppContext} from './Context/AppContext';
 import Back from './Back';
-import Contact from './Contact';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WishListLogo } from './Version2_O/assets';
 import LinearGradient from 'react-native-linear-gradient';

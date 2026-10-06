@@ -18,7 +18,6 @@ import LinearGradient from 'react-native-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import CustomModal from '../CustomModal';
 import Svg, { Text as SvgText } from 'react-native-svg';
-import { LineChart } from 'react-native-chart-kit';
 import { GetFeedbackFormForExit, SendConfirmationOTP, SendConfirmationOTPEmail, SubmitFeedbackForm, TransferProperty, VerifyOtpAndStoreMessage, VerifyOtpAndStoreMessageEmail } from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';

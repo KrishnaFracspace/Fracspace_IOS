@@ -17,7 +17,6 @@ import { LinearGradient } from 'react-native-linear-gradient';
 import { Dropdown } from 'react-native-element-dropdown';
 import { AppContext } from './Context/AppContext';
 import { GetAllCustomer } from './Services/UserApi';
-import Footer from './Footer';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QuarterlyBarChart from './components/QuarterlyBarChart ';
 import { profileDetails } from './redux/reducer/profileReducer';

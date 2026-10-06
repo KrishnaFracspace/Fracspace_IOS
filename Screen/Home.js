@@ -14,7 +14,6 @@ import { AppContext } from './Context/AppContext';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import LinearGradient from 'react-native-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Footer from './Footer';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProperties } from './redux/reducer/homeReducer';
 import { refrerLink } from './redux/reducer/propertyReducer';

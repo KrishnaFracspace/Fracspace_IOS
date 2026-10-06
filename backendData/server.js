@@ -1,1 +1,0 @@
-export  const data = require('./ai_data.json');
