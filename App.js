@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Dimensions, Linking, Alert, Platform, PermissionsAndroid, View } from 'react-native';
+import { StyleSheet, Linking, Alert, Platform, PermissionsAndroid, View, StatusBar } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { Provider } from 'react-redux';
 import messaging from '@react-native-firebase/messaging';
@@ -23,7 +23,8 @@ import NoInternet from './Screen/components/NoInternet';
 // OTA updates: Stallion on both platforms.
 import * as Stallion from 'react-native-stallion';
 
-const { width, height } = Dimensions.get('window');
+// Longest the splash may stay up (its video is ~4.6 s).
+const SPLASH_MAX_MS = 6000;
 const navigationRef = createNavigationContainerRef();
 
 // Must render inside withStallion (useStallionUpdate needs its provider).
@@ -269,7 +270,9 @@ const App = () => {
       }
     };
     requestPermission();
-    const timer = setTimeout(() => setShowSplash(false), 4000);
+    // The splash ends when its video does (onEnd); this is only a fallback
+    // for a slow network or a video that never starts.
+    const timer = setTimeout(() => setShowSplash(false), SPLASH_MAX_MS);
     return () => clearTimeout(timer);
   }, []);
 
@@ -383,14 +386,23 @@ const App = () => {
     <>
       <StallionUpdater />
       {showSplash ? (
-        <Video
-          source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_.mp4"}}
-          style={styles.video}
-          // resizeMode="cover"
-          hideShutterView
-          muted
-          onError={(e) => console.log('Video error:', e)}
-        />
+        <View style={styles.splash}>
+          <StatusBar hidden />
+          {/* cover: fills the whole screen and crops the sides (no stretching);
+              the logo is centred so nothing important is cut. */}
+          <Video
+            source={{uri: "https://duixj37yn5405.cloudfront.net/videos/fracspace_.mp4"}}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+            hideShutterView
+            muted
+            onEnd={() => setShowSplash(false)}
+            onError={(e) => {
+              console.log('Video error:', e);
+              setShowSplash(false);
+            }}
+          />
+        </View>
       ) : (
         <GestureHandlerRootView style={{ flex: 1 }}>
           <Provider store={store}>
@@ -442,10 +454,10 @@ const App = () => {
 };
 
 const styles = StyleSheet.create({
-  video: {
-    position: 'absolute',
-    width,
-    height,
+  splash: {
+    flex: 1,
+    // Matches the video's dark background, so no white shows while it loads.
+    backgroundColor: '#000',
   },
   offlineOverlay: {
     ...StyleSheet.absoluteFillObject,

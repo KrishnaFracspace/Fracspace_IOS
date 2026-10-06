@@ -2,18 +2,25 @@
 let introPlayed = false;
 
 import { View, Text,  Image, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native'
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo';
 import Ico from 'react-native-vector-icons/Ionicons';
 import { useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Video from 'react-native-video';
+import { videoSource } from '../utils/videoSource';
 import { GetLabelsProp } from '../Services/UserApi';
 import { useDispatch, useSelector } from 'react-redux';
 import { labelProperty } from '../redux/reducer/propertyReducer';
 import { altairaImgIcon } from '../assets';
 import { AltairaLogo, fracspaceLogo, fracspaceLogos } from './assets';
 
+
+// Master playlist, so the player can drop to 720p/360p on a slow network
+// (the fixed 1080p rendition is one 3.5 MB segment and froze on mobile data).
+const INTRO_VIDEO = 'https://duixj37yn5405.cloudfront.net/hls-videos/31bee48c-8919-401f-b41c-3cb701c421ed/master.m3u8';
+// Skip the intro if it stalls this long, instead of leaving a frozen frame.
+const INTRO_STALL_MS = 6000;
 
 export default function LableProperty() {
 
@@ -25,6 +32,20 @@ export default function LableProperty() {
     const [loading, setLoading] = useState(false);
    // const userEmail = "kg983825@gmail.com";
     const [videoDone, setVideoDone] = useState(false);
+    const [introBuffering, setIntroBuffering] = useState(true);
+    const stallTimer = useRef(null);
+    const endIntro = useCallback(() => {
+        clearTimeout(stallTimer.current);
+        setVideoDone(false);
+    }, []);
+    const onIntroBuffer = useCallback(({ isBuffering }) => {
+        setIntroBuffering(isBuffering);
+        clearTimeout(stallTimer.current);
+        if (isBuffering) {
+            stallTimer.current = setTimeout(endIntro, INTRO_STALL_MS);
+        }
+    }, [endIntro]);
+    useEffect(() => () => clearTimeout(stallTimer.current), []);
       const dispatch = useDispatch();
   const property = useSelector(state => state.property.labelProperties);
 
@@ -77,14 +98,29 @@ export default function LableProperty() {
     <SafeAreaView style={{flex:1,backgroundColor:"#E9E8E5"}}>
 
         {videoDone && isFocused ? 
-            <Video
-                source={{uri: 'https://duixj37yn5405.cloudfront.net/hls-videos/31bee48c-8919-401f-b41c-3cb701c421ed/1080p/index.m3u8'}}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-                paused={false}         
-                onEnd={() => setVideoDone(false)}  
-               // onError={(e) => console.log(e,"=========errooovideo")}
-            />
+            <View style={{ flex: 1, backgroundColor: '#000' }}>
+                <View style={{ flex: 1 }} pointerEvents="none">
+                    <Video
+                        source={videoSource(INTRO_VIDEO)}
+                        style={{ width: '100%', height: '100%' }}
+                        resizeMode="cover"
+                        paused={false}
+                        onReadyForDisplay={() => setIntroBuffering(false)}
+                        onBuffer={onIntroBuffer}
+                        onEnd={endIntro}
+                        onError={endIntro}
+                    />
+                </View>
+                {introBuffering && (
+                    <ActivityIndicator size="large" color="#fff" style={{ position: 'absolute', alignSelf: 'center', top: '48%' }} />
+                )}
+                <TouchableOpacity
+                    onPress={endIntro}
+                    style={{ position: 'absolute', top: 50, right: 20, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.5)' }}
+                >
+                    <Text style={{ color: '#fff', fontFamily: 'Montserrat-SemiBold', fontSize: 14 }}>Skip</Text>
+                </TouchableOpacity>
+            </View>
             :
             <View style={{flex:1}}>
                 {loading && (

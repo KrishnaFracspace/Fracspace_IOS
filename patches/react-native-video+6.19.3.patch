@@ -1,0 +1,99 @@
+diff --git a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java
+index 623d90c..fe905b8 100644
+--- a/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java
++++ b/node_modules/react-native-video/android/src/main/java/com/brentvatne/exoplayer/ReactExoplayerView.java
+@@ -1406,18 +1406,34 @@ public class ReactExoplayerView extends FrameLayout implements
+         if (disableFocus || source.getUri() == null || this.hasAudioFocus) {
+             return true;
+         }
++        // Fracspace patch: transient focus, so the user's music app pauses
++        // while the video is audible and resumes when we hand focus back.
+         int result = audioManager.requestAudioFocus(audioFocusChangeListener,
+                 AudioManager.STREAM_MUSIC,
+-                AudioManager.AUDIOFOCUS_GAIN);
++                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+         return result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED;
+     }
+ 
++    // Fracspace patch: give audio focus back (other apps may resume).
++    private void abandonAudioFocus() {
++        if (hasAudioFocus) {
++            audioManager.abandonAudioFocus(audioFocusChangeListener);
++            hasAudioFocus = false;
++        }
++    }
++
+     private void setPlayWhenReady(boolean playWhenReady) {
+         if (player == null) {
+             return;
+         }
+ 
+         if (playWhenReady) {
++            // Fracspace patch: a muted video never takes audio focus, so it
++            // doesn't stop the user's music. Focus is taken on unmute.
++            if (muted) {
++                player.setPlayWhenReady(true);
++                return;
++            }
+             this.hasAudioFocus = requestAudioFocus();
+             if (this.hasAudioFocus) {
+                 player.setPlayWhenReady(true);
+@@ -1442,6 +1458,7 @@ public class ReactExoplayerView extends FrameLayout implements
+                 setPlayWhenReady(false);
+             }
+         }
++        abandonAudioFocus(); // Fracspace patch: paused, so not audible
+         setKeepScreenOn(false);
+     }
+ 
+@@ -1452,6 +1469,7 @@ public class ReactExoplayerView extends FrameLayout implements
+ 
+     private void onStopPlayback() {
+         audioManager.abandonAudioFocus(audioFocusChangeListener);
++        hasAudioFocus = false; // Fracspace patch: so a replay asks again
+     }
+ 
+     private void updateResumePosition() {
+@@ -2637,6 +2655,12 @@ public class ReactExoplayerView extends FrameLayout implements
+         this.muted = muted;
+         if (player != null) {
+             player.setVolume(muted ? 0.f : audioVolume);
++            // Fracspace patch: hold audio focus only while audible.
++            if (muted) {
++                abandonAudioFocus();
++            } else if (player.getPlayWhenReady() && !hasAudioFocus) {
++                hasAudioFocus = requestAudioFocus();
++            }
+         }
+     }
+ 
+diff --git a/node_modules/react-native-video/ios/Video/AudioSessionManager.swift b/node_modules/react-native-video/ios/Video/AudioSessionManager.swift
+index 93a8a9f..45b19df 100644
+--- a/node_modules/react-native-video/ios/Video/AudioSessionManager.swift
++++ b/node_modules/react-native-video/ios/Video/AudioSessionManager.swift
+@@ -84,6 +84,12 @@ class AudioSessionManager {
+         }
+ 
+         configureAudioSession()
++
++        // Fracspace patch: nothing audible any more (paused, muted or ended),
++        // so hand audio back; notifyOthersOnDeactivation lets music resume.
++        if !isAnyPlayerPlaying && !remoteControlEventsActive && !isAudioSessionManagementDisabled {
++            deactivateAudioSession()
++        }
+     }
+ 
+     /// Handle remote control events from NowPlayingInfoCenterManager
+diff --git a/node_modules/react-native-video/ios/Video/RCTVideo.swift b/node_modules/react-native-video/ios/Video/RCTVideo.swift
+index 5f2f5f6..22c96a2 100644
+--- a/node_modules/react-native-video/ios/Video/RCTVideo.swift
++++ b/node_modules/react-native-video/ios/Video/RCTVideo.swift
+@@ -1791,6 +1791,8 @@ class RCTVideo: UIView, RCTVideoPlayerViewControllerDelegate, RCTPlayerObserverH
+         } else {
+             _player?.pause()
+             _player?.rate = 0.0
++            // Fracspace patch: the video ended, release audio to other apps.
++            AudioSessionManager.shared.playerPropertiesChanged(view: self)
+         }
+     }
+ 

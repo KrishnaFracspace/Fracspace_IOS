@@ -5,6 +5,7 @@
 #import <RNAppsFlyer.h>
 #import "StallionModule.h"
 #import <ReactAppDependencyProvider/RCTAppDependencyProvider.h>
+#import <AVFoundation/AVFoundation.h>
 
 @implementation AppDelegate
 
@@ -14,6 +15,10 @@
   // New Architecture: registers third-party Fabric components / TurboModules (RN 0.77+)
   self.dependencyProvider = [RCTAppDependencyProvider new];
   [FIRApp configure];
+  // Start in a mixable audio mode so muted videos (splash, autoplay cards)
+  // don't stop the user's music. react-native-video switches to playback
+  // (which does pause other audio) only when a video actually plays with sound.
+  [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryAmbient error:nil];
   self.initialProps = @{};
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
