@@ -51,7 +51,7 @@ export default function Wallet() {
                             navigation.navigate('Home');
                         }}
                         style={{ backgroundColor: '#021265', borderRadius: 50, paddingHorizontal: 15, paddingVertical: 7, marginTop: 20, borderColor: '#FFFFFF', borderWidth: 1, flexDirection: 'row', alignItems: 'center' }}>
-                        <Text style={{ fontFamily: 'Poppins-Meidum', fontSize: 14, color: '#FFFFFF' }}>Invest Now</Text>
+                        <Text style={{ fontFamily: 'Poppins-Medium', fontSize: 14, color: '#FFFFFF' }}>Invest Now</Text>
                         <View style={{ backgroundColor: '#FFFFFF', borderRadius: 20, padding: 5, marginLeft: 5 }}>
                             <Icon name={'arrow-up-right'} size={15} color={'#000000'} />
                         </View>

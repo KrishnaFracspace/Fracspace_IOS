@@ -1075,7 +1075,7 @@ export default function RoomListing(props) {
               <View>
                 <Text
                   style={{
-                    fontFamily: 'Poppins-Meidum',
+                    fontFamily: 'Poppins-Medium',
                     fontSize: 16,
                     color: '#000000',
                   }}>
