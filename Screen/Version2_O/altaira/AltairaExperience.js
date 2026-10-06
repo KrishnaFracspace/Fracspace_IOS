@@ -1,4 +1,5 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { videoSource } from '../../utils/videoSource';
 import React, { useContext, useEffect, useState } from 'react';
 import {
   View,
@@ -23,6 +24,8 @@ import HomeSkeleton from '../../components/HomeSkeleton';
 
 const AltairaExperience = () => {
   const navigation = useNavigation();
+  // Release video players when this screen isn't the visible one.
+  const isFocused = useIsFocused();
   const dispatch = useDispatch();
     const { globalState } = useContext(AppContext);
   const Properties = useSelector(state => state.property.altairaPromoData);
@@ -76,9 +79,9 @@ const interestButton = async () => {
     <SafeAreaView style={{ flex: 1, backgroundColor: '#000' }}>
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.heroContainer}>
-        {block1?.video ? (
+        {block1?.video && isFocused ? (
           <Video
-            source={{ uri: block1?.video }}
+            source={videoSource(block1?.video)}
             style={styles.heroMedia}
             resizeMode="cover"
             repeat
@@ -123,8 +126,8 @@ const interestButton = async () => {
             renderItem={({ item }) => (
               <View style={styles.highlightImageBg}>
                 {item?.fileType === "video" ? (
-                  <Video
-                    source={{ uri: item?.file }}
+                  isFocused && <Video
+                    source={videoSource(item?.file)}
                     style={StyleSheet.absoluteFill}
                     resizeMode="cover"
                     repeat

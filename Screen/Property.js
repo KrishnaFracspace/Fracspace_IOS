@@ -19,7 +19,8 @@ import {
 } from 'react-native';
 //import { ScrollView } from 'react-native-virtualized-view';
 import { useState, useContext, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
+import { videoSource } from './utils/videoSource';
 import Swiper from 'react-native-swiper';
 import openMap, { createOpenLink } from 'react-native-open-maps';
 import { AppContext } from './Context/AppContext';
@@ -81,6 +82,8 @@ export default function Property(props) {
   const [Status1, setStatus1] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const navigation = useNavigation();
+  // Release video players when this screen isn't the visible one.
+  const isFocused = useIsFocused();
   const [showFullText, setShowFullText] = useState(false);
   const [date, setDate] = useState(new Date());
   const [IsLike, setIsLike] = useState([]);
@@ -531,7 +534,7 @@ useEffect(() => {
               onPress={() => setShowVideo(true)}
               style={{ alignItems: 'center' }}
             >
-              <Image
+              <Image resizeMethod="resize"
                 source={{
                   uri: 'https://duixj37yn5405.cloudfront.net/appImages/VideoIcon.png',
                 }}
@@ -568,7 +571,7 @@ useEffect(() => {
             onPress={() => setShowVideo(false)}
             style={{ alignItems: 'center' }}
           >
-            <Image
+            <Image resizeMethod="resize"
               source={{
                 uri: 'https://duixj37yn5405.cloudfront.net/appImages/CameraIcon.png',
               }}
@@ -682,7 +685,7 @@ useEffect(() => {
                   style={{}}>
 
                 </View>
-                <Image resizeMode='cover'
+                <Image resizeMethod="resize" resizeMode='cover'
                   style={{ width: 150, height: 90, borderRadius: 10 }}
                   source={{ uri: PropertiesArray?.LocationImage }}
                 />
@@ -765,7 +768,7 @@ useEffect(() => {
                     alignItems: 'center',
                   }}
                 >
-                  <Image
+                  <Image resizeMethod="resize"
                     source={{ uri: Newupdate[0]?.Image }}
                     resizeMode="cover"
                     style={{
@@ -1007,7 +1010,7 @@ useEffect(() => {
                 }}
               >
                 <View style={{ backgroundColor: "rgba(225, 230, 240, 0.75)", padding: 10, borderRadius: 20, alignItems: "center", marginRight: 5 }}>
-                  <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Squaree.png' }} style={{ height: 20, width: 20, alignSelf: "center" }} />
+                  <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Squaree.png' }} style={{ height: 20, width: 20, alignSelf: "center" }} />
                 </View>
                 <View>
                   <Text style={{ fontSize: 12, color: "#7B7B7B" }}>AREA</Text>
@@ -1039,7 +1042,7 @@ useEffect(() => {
                 }}
               >
                 <View style={{ backgroundColor: "rgba(225, 230, 240, 0.75)", padding: 10, borderRadius: 20, alignItems: "center", marginRight: 5, }}>
-                  <Image source={{ uri: "https://duixj37yn5405.cloudfront.net/appImages/PprtyType.png" }} style={{ height: 20, width: 20, alignSelf: "center" }} />
+                  <Image resizeMethod="resize" source={{ uri: "https://duixj37yn5405.cloudfront.net/appImages/PprtyType.png" }} style={{ height: 20, width: 20, alignSelf: "center" }} />
                 </View>
                 <View>
                   <Text style={{ fontSize: 12, color: "#7B7B7B" }}>TYPE</Text>
@@ -1181,7 +1184,7 @@ useEffect(() => {
 
                 {/* <View style={styles.leftBorder} /> */}
 
-                <Image source={{ uri: item?.image }} style={styles.advantageIcon} />
+                <Image resizeMethod="resize" source={{ uri: item?.image }} style={styles.advantageIcon} />
 
                 <View style={{ flex: 1 }}>
                   <Text style={styles.advantageTitle}>{item?.name}</Text>
@@ -1246,7 +1249,7 @@ useEffect(() => {
                   <View style={styles.amenityCard}>
 
                     <View style={styles.amenityIconCircle}>
-                      <Image source={{ uri: item?.image }} style={styles.amenityIcon} />
+                      <Image resizeMethod="resize" source={{ uri: item?.image }} style={styles.amenityIcon} />
                     </View>
 
                     <Text style={styles.amenityText}>{item.name}</Text>
@@ -1258,7 +1261,7 @@ useEffect(() => {
               {PropertiesArray?.DistinctiveAmenities?.map((item, index) => (
                 <View key={index} style={{backgroundColor:'#9db2ce1a',width:width*0.3,padding:15,alignItems:'center',borderRadius:7,marginRight:13}}>
                   <View style={{backgroundColor:'#FFF',padding:6,borderRadius:20}}>
-                    <Image source={{uri: item?.image}} style={{width:28,height:28}}/>
+                    <Image resizeMethod="resize" source={{uri: item?.image}} style={{width:28,height:28}}/>
                   </View>
                   <Text style={{fontFamily:'WorkSans-Regular',fontSize:12,color:'#0f1130',textAlign:'center',marginTop:5}}>{item?.name}</Text>
                 </View>
@@ -1373,7 +1376,7 @@ useEffect(() => {
 
                     {/* User */}
                     <View style={styles.userRow}>
-                      <Image
+                      <Image resizeMethod="resize"
                         source={{
                           uri: item?.userImage || `https://ui-avatars.com/api/?name=${item.userName}&background=043862&color=fff`,
                         }}
@@ -1504,9 +1507,9 @@ useEffect(() => {
         <View
           style={{zIndex:0}}>
 
-          {showVideo && PropertiesArray?.video ? (
+          {showVideo && PropertiesArray?.video && isFocused ? (
             <Video
-              source={{ uri: PropertiesArray.video?.Video1 }}
+              source={videoSource(PropertiesArray.video?.Video1)}
               style={{ width: '100%', height: 360 }}
               resizeMode="cover"
               paused={false}
@@ -1514,7 +1517,7 @@ useEffect(() => {
               repeat={true}
             />
           ) : (
-            // <Image
+            // <Image resizeMethod="resize"
             //   source={{ uri: images[0] }}
             //   style={{ width: '100%',height: 360}}
             //   resizeMode="cover"
@@ -1535,7 +1538,7 @@ useEffect(() => {
                     currentImageIndex.current = index;
                     }}
                     renderItem={({item}) => (
-                        <Image
+                        <Image resizeMethod="resize"
                         source={{uri: item}}
                         style={{
                             width,
@@ -1582,7 +1585,7 @@ useEffect(() => {
       <Icon name="chevron-back-outline" size={28} color="#fff" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => shareReferral(Proid)}>
-              <Image
+              <Image resizeMethod="resize"
                 source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/ShareButton.png' }}
                 style={{ height: 25, width: 100 }}
                 resizeMode="contain"
@@ -1608,7 +1611,7 @@ useEffect(() => {
                       })
                     }
                   >
-                    <Image
+                    <Image resizeMethod="resize"
                       source={{ uri: img }}
                       style={{ width: 60, height: 60, borderRadius: 8, borderWidth: 2, borderColor: '#fff' }}
                     />
@@ -1659,7 +1662,7 @@ useEffect(() => {
           <View style={styles.helpCard}>
             {/* Property Image */}
             <View style={styles.imageContainer}>
-              <Image
+              <Image resizeMethod="resize"
                 source={{ uri: PropertiesArray?.image?.Image1 }}
                 style={styles.propertyImage}
               />

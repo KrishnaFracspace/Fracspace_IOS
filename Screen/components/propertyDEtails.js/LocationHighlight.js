@@ -114,7 +114,7 @@ export default function LocationHighlights({ highlights }) {
               ]}
             >
               <View style={styles.card}>
-                <Image
+                <Image resizeMethod="resize"
                   source={{ uri: item.image }}
                   style={StyleSheet.absoluteFillObject}
                   resizeMode="cover"

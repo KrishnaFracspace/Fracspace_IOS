@@ -9,6 +9,7 @@ import {
   StatusBar,
 } from 'react-native';
 import Video from 'react-native-video';
+import { useIsFocused } from '@react-navigation/native';
 import Orientation from 'react-native-orientation-locker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +23,8 @@ console.log(liveStreamUrl,"====live======")
   const videoRef = useRef(null);
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  // Release video players when this screen isn't the visible one.
+  const isFocused = useIsFocused();
   const isLandscape = width > height;
 
   const [paused, setPaused] = useState(false);
@@ -58,7 +61,7 @@ console.log(liveStreamUrl,"====live======")
 
       {/* 🎥 VIDEO LAYER */}
       <View style={styles.videoWrapper}>
-        <Video
+        {isFocused && <Video
           ref={videoRef}
           key={streamUrl}
           source={{ uri: streamUrl }}
@@ -67,7 +70,7 @@ console.log(liveStreamUrl,"====live======")
           controls
           paused={paused}
           onError={(e) => console.log('Video error:', e)}
-        />
+        />}
       </View>
 
       {/* 🎛 OVERLAY CONTROLS */}

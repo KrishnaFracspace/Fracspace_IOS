@@ -652,7 +652,7 @@ const formatIndianAmount = (amount) => {
             onIndexChanged={index => setCurrentIndex(index)}
             autoplayTimeout={3}>
             {images.map((uri, index) => (
-              <Image
+              <Image resizeMethod="resize"
                 key={index}
                 source={{ uri }}
                 style={styles.mainImage}
@@ -683,7 +683,7 @@ const formatIndianAmount = (amount) => {
                     activeOpacity={0.8}
                     onPress={() => handleSmallImagePress(index)}
                     style={{ marginRight: expanded ? 10 : -40 }}>
-                    <Image
+                    <Image resizeMethod="resize"
                       source={{ uri: item }}
                       style={[styles.smallImage, currentIndex === index]}
                     />
@@ -697,7 +697,7 @@ const formatIndianAmount = (amount) => {
                   activeOpacity={0.8}
                   style={{ marginRight: 10 }}>
                   <View style={styles.smallImage}>
-                    <Image
+                    <Image resizeMethod="resize"
                       source={{ uri: images[4] }}
                       style={StyleSheet.absoluteFillObject}
                       resizeMode="contain"
@@ -2430,7 +2430,7 @@ const formatIndianAmount = (amount) => {
                       alignItems: 'center',
                     }}
                   >
-                    <Image
+                    <Image resizeMethod="resize"
                       source={{ uri: item?.image }}
                       style={{
                         width: '100%',
@@ -2476,7 +2476,7 @@ const formatIndianAmount = (amount) => {
                   Property Location
                 </Text>
               </View>
-              <Image
+              <Image resizeMethod="resize"
                 style={{
                   width: '100%',
                   height: 200,

@@ -16,6 +16,7 @@ import {
   View,
 } from 'react-native';
 import Video from 'react-native-video';
+import { videoSource } from '../../../utils/videoSource';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
@@ -190,6 +191,10 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
   if (dismissed) return null;
 
   const paused = !playing || !isFocused || !appActive;
+  // Only keep a player (decoder + GPU buffers) while Home is on screen and the
+  // app is active. Pausing alone left decoders allocated in the navigation
+  // stack, and they piled up as the user moved between screens.
+  const mountPlayer = isFocused && appActive;
   // Android's bottom inset is usually 0, so lift the card clear of the 70pt tab bar.
   const bottom =
     TAB_BAR_HEIGHT + insets.bottom + (Platform.OS === 'android' ? 40 : 0);
@@ -226,9 +231,10 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
           onPress={openDetails}>
           {/* pointerEvents none: on the New Architecture the native video view swallows taps, so the parent Touchable's onPress never fired */}
           <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {mountPlayer ? (
           <Video
             ref={videoRef}
-            source={{ uri: concert?.video?.url }}
+            source={videoSource(concert?.video?.url)}
             poster={concert?.video?.poster}
             posterResizeMode="cover"
             style={StyleSheet.absoluteFill}
@@ -244,7 +250,18 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
             }}
             progressUpdateInterval={250}
             onError={e => console.log('ConcertVideoCard video error:', e)}
+            onLoad={() => {
+              // Remounted after a blur: continue where the card left off.
+              if (positionRef.current > 0) videoRef.current?.seek(positionRef.current);
+            }}
           />
+          ) : concert?.video?.poster ? (
+            <Image
+              source={{ uri: concert.video.poster }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          ) : null}
           </View>
 
           {/* top scrim + live pill */}

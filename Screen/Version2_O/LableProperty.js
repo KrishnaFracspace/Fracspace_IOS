@@ -5,7 +5,7 @@ import { View, Text,  Image, Dimensions, TouchableOpacity, ActivityIndicator } f
 import React, { useCallback, useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo';
 import Ico from 'react-native-vector-icons/Ionicons';
-import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useIsFocused, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Video from 'react-native-video';
 import { GetLabelsProp } from '../Services/UserApi';
@@ -19,6 +19,8 @@ export default function LableProperty() {
 
     const { width, height } = Dimensions.get('window');
     const navigation = useNavigation();
+  // Release video players when this screen isn't the visible one.
+  const isFocused = useIsFocused();
     //const [property, setProperty] = useState([]);
     const [loading, setLoading] = useState(false);
    // const userEmail = "kg983825@gmail.com";
@@ -74,7 +76,7 @@ export default function LableProperty() {
   return (
     <SafeAreaView style={{flex:1,backgroundColor:"#E9E8E5"}}>
 
-        {videoDone ? 
+        {videoDone && isFocused ? 
             <Video
                 source={{uri: 'https://duixj37yn5405.cloudfront.net/hls-videos/31bee48c-8919-401f-b41c-3cb701c421ed/1080p/index.m3u8'}}
                 style={{ width: '100%', height: '100%' }}

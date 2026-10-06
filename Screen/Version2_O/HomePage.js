@@ -8,6 +8,7 @@ import Iconn from 'react-native-vector-icons/Feather';
 import {findFocusedRoute,useFocusEffect,useIsFocused,useNavigation,} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Video, { VideoRef } from 'react-native-video';
+import { videoSource } from '../utils/videoSource';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
@@ -594,6 +595,9 @@ const Categories = carousel?.category
   const [durations, setDurations] = useState(testimonials.map(() => 0));
   const transcriptScrollRefs = useRef([]);
   const videoRefs = useRef([]);
+  // Only the testimonial being watched gets a player; the others show their
+  // thumbnail. Three always-mounted players each held a decoder + buffers.
+  const [activeVideoIndex, setActiveVideoIndex] = useState(null);
   const [videoEnded, setVideoEnded] = useState(testimonials.map(() => false));
   const [showControls, setShowControls] = useState(
     testimonials.map(() => true)
@@ -609,6 +613,7 @@ const Categories = carousel?.category
     );
 
     setPlayStates(updatedPlayStates);
+    if (isNowPlaying) setActiveVideoIndex(index);
 
     const updatedControls = showControls.map((_, i) =>
       i === index ? true : true
@@ -649,6 +654,8 @@ const Categories = carousel?.category
       fetchLikedProperty();
       return () => {
         setPlayStates(prev => prev.map(() => false));
+        // Leaving Home: release the testimonial player entirely.
+        setActiveVideoIndex(null);
         videoRefs.current.forEach(ref => {
           if (ref) {
             ref.pause && ref.pause();
@@ -843,7 +850,7 @@ const Categories = carousel?.category
         </View>
 
         <View style={{ position: 'absolute', bottom: 0, right: 5 }}>
-          <Image
+          <Image resizeMethod="resize"
             resizeMode="cover"
             source={{ uri: item?.image }}
             style={{ width: 60, height: 60 }}
@@ -920,7 +927,7 @@ const Categories = carousel?.category
                     onPress={() => {
                         navigation.navigate('NotificationsScreen');
                     }}>
-                    <Image source={{ uri: "https://duixj37yn5405.cloudfront.net/appImages/notification-01.png" }} style={{ height: 23, width: 23 }} />
+                    <Image resizeMethod="resize" source={{ uri: "https://duixj37yn5405.cloudfront.net/appImages/notification-01.png" }} style={{ height: 23, width: 23 }} />
                     {unreadNotifications && (
                       <View
                         style={{
@@ -940,7 +947,7 @@ const Categories = carousel?.category
                       navigation.navigate('Like');
                     }}
                     style={{ alignItems: 'flex-end', width: '100%', flex: 1 }}>
-                    <Image source={{ uri: "https://duixj37yn5405.cloudfront.net/appImages/favourite.png" }} style={{ height: 23, width: 23 }} />
+                    <Image resizeMethod="resize" source={{ uri: "https://duixj37yn5405.cloudfront.net/appImages/favourite.png" }} style={{ height: 23, width: 23 }} />
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -987,7 +994,7 @@ const Categories = carousel?.category
                       <Text style={{ fontFamily: 'WorkSans-Regular', fontSize: 11, color: '#000' }}>{item?.data}</Text>
                     </View>
                     <View style={{ position: 'absolute', bottom: 0, right: 5 }}>
-                      <Image resizeMode='cover' source={{ uri: item?.img }} style={{ width: 60, height: 60 }} />
+                      <Image resizeMethod="resize" resizeMode='cover' source={{ uri: item?.img }} style={{ width: 60, height: 60 }} />
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -997,7 +1004,7 @@ const Categories = carousel?.category
             <TouchableOpacity onPress={() => {
               navigation.navigate('ConcertDetails');
             }} style={{ paddingTop: 20, paddingHorizontal: 20 }}>
-              <Image resizeMode='contain' source={{ uri: "https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/bgc+(1).png" }} style={{ width: '100%', height: 110, borderRadius: 10}} />
+              <Image resizeMethod="resize" resizeMode='contain' source={{ uri: "https://fracspace-updates.s3.ap-south-1.amazonaws.com/appImages/bgc+(1).png" }} style={{ width: '100%', height: 110, borderRadius: 10}} />
             </TouchableOpacity>
 
             <View
@@ -1057,7 +1064,7 @@ const Categories = carousel?.category
                         width: width * 0.65,
                         marginRight: 20,
                       }}>
-                      <Image
+                      <Image resizeMethod="resize"
                         resizeMode="cover"
                         source={{ uri: item?.image?.Image1 }}
                         style={{ width: '100%', height: 150 }}
@@ -1219,7 +1226,7 @@ const Categories = carousel?.category
                               alignItems: 'center',
                               flex: 1,
                             }}>
-                            <Image
+                            <Image resizeMethod="resize"
                               source={{
                                 uri: 'https://duixj37yn5405.cloudfront.net/appImages/square.png',
                               }}
@@ -1241,7 +1248,7 @@ const Categories = carousel?.category
                               alignItems: 'center',
                               flex: 1,
                             }}>
-                            <Image
+                            <Image resizeMethod="resize"
                               source={{
                                 uri: 'https://duixj37yn5405.cloudfront.net/appImages/building.png',
                               }}
@@ -1284,7 +1291,7 @@ const Categories = carousel?.category
                     navigation.navigate('Blogs', { Blogfor: 'SouthIndia' });
                   }}
                   style={{ marginRight: 20 }}>
-                  <Image
+                  <Image resizeMethod="resize"
                     resizeMode="stretch"
                     source={{
                       uri: 'https://duixj37yn5405.cloudfront.net/Postcard+Images/PostCard3.png',
@@ -1302,7 +1309,7 @@ const Categories = carousel?.category
                     navigation.navigate('Blogs', { Blogfor: 'VaranasiBlog' });
                   }}
                   style={{ marginRight: 20 }}>
-                  <Image
+                  <Image resizeMethod="resize"
                     resizeMode="stretch"
                     source={{
                       uri: 'https://duixj37yn5405.cloudfront.net/appImages/varanashiPosterImage.jpeg',
@@ -1320,7 +1327,7 @@ const Categories = carousel?.category
                     navigation.navigate('Blogs', { Blogfor: 'SrilankaBlog' });
                   }}
                   style={{ marginRight: 20 }}>
-                  <Image
+                  <Image resizeMethod="resize"
                     resizeMode='stretch'
                     source={{
                       uri: 'https://duixj37yn5405.cloudfront.net/appImages/srilankaPosterImage.jpeg',
@@ -1366,7 +1373,7 @@ const Categories = carousel?.category
                     navigation.navigate('Ourstay', { location: item?.city });
                   }}
                   style={{ alignItems: 'center', paddingLeft: 15 }}>
-                  <Image
+                  <Image resizeMethod="resize"
                     resizeMode='stretch'
                     source={{
                       uri: item?.locationImage
@@ -1420,7 +1427,7 @@ const Categories = carousel?.category
                           videoLayouts.current[index] = { y, height };
                         }}>
                   
-                        <Image
+                        <Image resizeMethod="resize"
                           source={{
                             uri: 'https://duixj37yn5405.cloudfront.net/appImages/clip.png',
                           }}
@@ -1488,10 +1495,11 @@ const Categories = carousel?.category
                             activeOpacity={1}
                             onPress={() => togglePlay(index)}>
                             {/* pointerEvents none: on the New Architecture the native video view swallows taps, so the parent Touchable's onPress never fired */}
+                            {activeVideoIndex === index ? (
                             <View pointerEvents="none">
                             <Video
                               ref={ref => (videoRefs.current[index] = ref)}
-                              source={{ uri: item?.video }}
+                              source={videoSource(item?.video)}
                               style={{ width: '100%', height: 150, marginBottom: 8 }}
                               resizeMode="cover"
                               paused={!playStates[index]}
@@ -1503,6 +1511,8 @@ const Categories = carousel?.category
                                 const updatedEnded = [...videoEnded];
                                 updatedEnded[index] = true;
                                 setVideoEnded(updatedEnded);
+                                setActiveVideoIndex(null);
+                                setShowThumbnails(prev => prev.map((v, i) => (i === index ? true : v)));
                               }}
                               onProgress={({ currentTime }) => {
                                 const updatedTimes = [...currentTimes];
@@ -1531,9 +1541,12 @@ const Categories = carousel?.category
                               }}
                             />
                             </View>
+                            ) : (
+                              <View style={{ width: '100%', height: 150, marginBottom: 8 }} />
+                            )}
 
-                            {showThumbnails[index] && (
-                              <Image
+                            {(showThumbnails[index] || activeVideoIndex !== index) && (
+                              <Image resizeMethod="resize"
                                 source={{ uri: item.image }}
                                 style={{
                                   position: 'absolute',
@@ -1596,7 +1609,7 @@ const Categories = carousel?.category
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', gap: 10, paddingLeft: 20, paddingBottom: 65 }}>
-                <Image
+                <Image resizeMethod="resize"
                   style={{ width: 120, height: 100 }}
                   resizeMode="contain"
                   source={{
@@ -1604,7 +1617,7 @@ const Categories = carousel?.category
                   }}
          
                 />
-                <Image
+                <Image resizeMethod="resize"
                   style={{ width: 120, height: 80 }}
                   resizeMode="contain"
                   source={{
@@ -1612,7 +1625,7 @@ const Categories = carousel?.category
                   }}
       
                 />
-                <Image
+                <Image resizeMethod="resize"
                   style={{ width: 120, height: 80 }}
                   resizeMode="contain"
                   source={{
@@ -1620,7 +1633,7 @@ const Categories = carousel?.category
                   }}
           
                 />
-                <Image
+                <Image resizeMethod="resize"
                   style={{ width: 120, height: 80 }}
                   resizeMode="contain"
                   source={{
@@ -1788,7 +1801,7 @@ const Categories = carousel?.category
               <View style={styles.profileContainer}>
                 <View style={styles.profileRow}>
                   <View>
-                    <Image
+                    <Image resizeMethod="resize"
                       resizeMode='cover'
                       source={globalState?.userProfile ? { uri: globalState?.userProfile } : require('../assets/NewProfileimage.jpg')}
                       style={styles.profileImage}
@@ -1812,17 +1825,17 @@ const Categories = carousel?.category
 
               {/* <View style={styles.quickActionsBox}>
       <TouchableOpacity onPress={() => { handleCallRecord(); }} style={styles.quickActionItem}>
-        <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico3.png' }} style={styles.quickIcon} />
+        <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico3.png' }} style={styles.quickIcon} />
         <Text style={styles.quickText}>Support</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => { handleRating(); }} style={styles.quickActionItem}>
-        <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico2.png' }} style={styles.quickIcon} />
+        <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico2.png' }} style={styles.quickIcon} />
         <Text style={styles.quickText}>Rate App</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => { navigation.navigate('FeedbackForm'); }} style={styles.quickActionItem}>
-        <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico1.png' }} style={styles.quickIcon} />
+        <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Ico1.png' }} style={styles.quickIcon} />
         <Text style={styles.quickText}>Feedback</Text>
       </TouchableOpacity>
     </View> */}
@@ -1837,7 +1850,7 @@ const Categories = carousel?.category
                   style={styles.listItem}
                 >
                   <View style={styles.listRow}>
-                    <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image4.jpeg' }} style={styles.smallIcon} />
+                    <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image4.jpeg' }} style={styles.smallIcon} />
                     <Text style={styles.listText}>Co-own</Text>
                   </View>
                   <IconI name={'right'} size={15} color={'#081F62'} />
@@ -1851,7 +1864,7 @@ const Categories = carousel?.category
                   style={styles.listItem}
                 >
                   <View style={styles.listRow}>
-                    <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image8.jpeg' }} style={styles.smallIcon} />
+                    <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image8.jpeg' }} style={styles.smallIcon} />
                     <Text style={styles.listText}>Interiors</Text>
                   </View>
                   <IconI name={'right'} size={15} color={'#081F62'} />
@@ -1862,7 +1875,7 @@ const Categories = carousel?.category
                   style={styles.listItemNoBorder}
                 >
                   <View style={styles.listRow}>
-                    <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image10.jpeg' }} style={styles.smallIcon} />
+                    <Image resizeMethod="resize" source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/image10.jpeg' }} style={styles.smallIcon} />
                     <Text style={styles.listText}>Stays</Text>
                   </View>
                   <IconI name={'right'} size={15} color={'#081F62'} />

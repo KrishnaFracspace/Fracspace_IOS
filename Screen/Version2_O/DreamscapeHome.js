@@ -243,7 +243,7 @@ const filterHotelsByLocation = (city) => {
               }}>
               <AntDesign name={'left'} size={20} color={'#FFFFFF'} />
             </TouchableOpacity>
-            <Image
+            <Image resizeMethod="resize"
               resizeMode="cover"
               //source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/DreamscapeLogo.png' }}
               source={require('./assets/Dreamscapelogo.png')}
@@ -262,7 +262,7 @@ const filterHotelsByLocation = (city) => {
                 }}>
                 Hello, {globalState?.userName}{' '}
               </Text>
-              <Image
+              <Image resizeMethod="resize"
                 resizeMode="cover"
                 source={{
                   uri: 'https://duixj37yn5405.cloudfront.net/appImages/Hand.png',
@@ -531,7 +531,7 @@ const filterHotelsByLocation = (city) => {
           marginRight: 25,
         }}>
         <View>
-          <Image
+          <Image resizeMethod="resize"
             resizeMode="cover"
             source={{uri: item?.images[0]}}
             style={{
@@ -676,7 +676,7 @@ const filterHotelsByLocation = (city) => {
                 navigation.navigate('Ourstay', {location: 'Hyderabad'});
               }}
               style={{paddingRight: 18, alignItems: 'center'}}>
-              <Image
+              <Image resizeMethod="resize"
                 resizeMode="cover"
                 source={{
                   uri: 'https://duixj37yn5405.cloudfront.net/appImages/Hyderabad.png',
@@ -698,7 +698,7 @@ const filterHotelsByLocation = (city) => {
                 navigation.navigate('Ourstay', {location: 'Munnar'});
               }}
               style={{alignItems: 'center'}}>
-              <Image
+              <Image resizeMethod="resize"
                 resizeMode="contain"
                 source={{
                   uri: 'https://duixj37yn5405.cloudfront.net/appImages/Munnar2.png',
@@ -720,7 +720,7 @@ const filterHotelsByLocation = (city) => {
                 navigation.navigate('Ourstay', {location: 'Varanasi'});
               }}
               style={{alignItems: 'center', paddingHorizontal: 18}}>
-              <Image
+              <Image resizeMethod="resize"
                 resizeMode="cover"
                 source={{
                   uri: 'https://duixj37yn5405.cloudfront.net/appImages/Varanasi.png',
@@ -753,7 +753,7 @@ const filterHotelsByLocation = (city) => {
                 navigation.navigate('Ourstay', {location: item.city});
               }}
               style={{alignItems: 'center', paddingRight: 18}}>
-              <Image
+              <Image resizeMethod="resize"
                 resizeMode="stretch"
                 source={{
                   uri:item.locationImage,
@@ -801,7 +801,7 @@ const filterHotelsByLocation = (city) => {
                     borderRadius: 25,
                   }}>
                   <View>
-                    <Image
+                    <Image resizeMethod="resize"
                       source={{uri: item?.images[0]}}
                       style={{
                         width: width * 0.5,
@@ -891,7 +891,7 @@ const filterHotelsByLocation = (city) => {
                   marginRight: 10,
                   paddingBottom: 10,
                 }}>
-                <Image
+                <Image resizeMethod="resize"
                   style={{width: 120, height: 120, borderRadius: 10}}
                   source={{
                     uri: 'https://duixj37yn5405.cloudfront.net/appImages/Dreamscape.jpeg',
@@ -972,7 +972,7 @@ const filterHotelsByLocation = (city) => {
                   margin: 10,
                   paddingBottom: 10,
                 }}>
-                <Image
+                <Image resizeMethod="resize"
                   style={{width: 120, height: 120, borderRadius: 10}}
                   source={{
                     uri: 'https://duixj37yn5405.cloudfront.net/images/unnathsir%40munnar.jpeg',
@@ -1052,7 +1052,7 @@ const filterHotelsByLocation = (city) => {
                   margin: 10,
                   paddingBottom: 10,
                 }}>
-                <Image
+                <Image resizeMethod="resize"
                   style={{width: 120, height: 120, borderRadius: 10}}
                   source={{
                     uri: 'https://duixj37yn5405.cloudfront.net/images/elevenviews.jpeg',
@@ -1132,7 +1132,7 @@ const filterHotelsByLocation = (city) => {
                   margin: 10,
                   paddingBottom: 10,
                 }}>
-                <Image
+                <Image resizeMethod="resize"
                   style={{width: 120, height: 120, borderRadius: 10}}
                   source={{
                     uri: 'https://duixj37yn5405.cloudfront.net/images/hotelImage1.jpeg',

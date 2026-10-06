@@ -3,7 +3,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import Video from 'react-native-video'
 import Icon from 'react-native-vector-icons/AntDesign';
 import Slider from '@react-native-community/slider';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
+import { videoSource } from '../utils/videoSource';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { DreamscapeHotels } from '../Services/UserApi';
@@ -21,6 +22,8 @@ export default function VideoTour(props) {
     const [hotelDetails, setHotelDetails] = useState([]);
     const [expanded, setExpanded] = useState(false);
     const navigation = useNavigation();
+  // Release video players when this screen isn't the visible one.
+  const isFocused = useIsFocused();
 
     const handleListedHotels = async () => { 
         try {
@@ -67,10 +70,11 @@ export default function VideoTour(props) {
         }} style={{width:width,top:0,left:0,right:0,bottom:0,position:'absolute'}} >
             {/* pointerEvents none: on the New Architecture the native video view swallows taps, so the parent Touchable's onPress never fired */}
             <View style={{flex:1}} pointerEvents="none">
+            {isFocused && (
             <Video
                 ref={videoRef}
                 resizeMode='cover'
-                source={{ uri:videoUrl }}
+                source={videoSource(videoUrl)}
                 onProgress={onProgress}
                 onLoad={onLoad}
                 style={{ top: 0,
@@ -83,6 +87,7 @@ export default function VideoTour(props) {
                 paused={paused} 
                 repeat 
                 onError={(e) => console.log('Error loading video:', e)} />
+            )}
             </View>
         </TouchableOpacity>
 
