@@ -89,12 +89,12 @@ const interestButton = async () => {
             paused={false}
             ignoreSilentSwitch="obey"
           />
+        ) : block1?.image ? (
+          <Image source={{ uri: block1.image }} style={styles.heroMedia} resizeMode="cover" />
         ) : (
-          <><Text>Enter Image from Backend</Text></>
-          // <Image
-          //   source={{ uri: block1.image || "https://images.unsplash.com/photo-1501785888041-af3ef285b470" }}
-          //   style={styles.heroMedia}
-          // />
+          // No video playing (screen not focused, e.g. mid-transition) and no
+          // image from the backend: a plain dark hero, not placeholder text.
+          <View style={[styles.heroMedia, { backgroundColor: '#000' }]} />
         )}
 
         {/* Overlay content */}

@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/FontAwesome6';
+// iOS / Android 15+: App.js sets status bar icons per screen (Screen/utils/statusBar.js).
+import { EDGE_TO_EDGE } from '../../utils/statusBar';
 
 const PaymentFailedEscape = (props) => {
     const [paymentData, setPaymentData] = useState(props?.route?.params?.paymentData?.investment || props?.route?.params?.paymentData);
@@ -55,7 +57,7 @@ const PaymentFailedEscape = (props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F4EE" />
+      <StatusBar barStyle={EDGE_TO_EDGE ? undefined : "dark-content"} backgroundColor="#F8F4EE" />
       <ImageBackground source={{uri:'https://duixj37yn5405.cloudfront.net/appImages/BGHome.png'}} style={{flex:1}}>
         <ScrollView
             contentContainerStyle={{paddingBottom: 30}}

@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
 
 const useCountdown = (targetDate) => {
   const [time, setTime] = useState({});
+  // The banner's screen stays mounted under others; only tick while visible.
+  const isFocused = useIsFocused();
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    if (!isFocused) return;
+    let interval;
+    const tick = () => {
       const now = Date.now();
       const diff = targetDate - now;
 
@@ -19,10 +24,12 @@ const useCountdown = (targetDate) => {
         minutes: Math.floor((diff / (1000 * 60)) % 60),
         seconds: Math.floor((diff / 1000) % 60),
       });
-    }, 1000);
+    };
+    tick(); // show the time now, not after the first second
+    interval = setInterval(tick, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDate]);
+  }, [targetDate, isFocused]);
 
   return time;
 };

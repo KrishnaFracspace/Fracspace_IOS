@@ -76,15 +76,12 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
   const wantsHideOnScroll = cardCfg.hideOnScroll !== false;
   const [playing, setPlaying] = useState(concert?.video?.autoPlay !== false);
   const [muted, setMuted] = useState(concert?.video?.muted !== false);
-  const [appActive, setAppActive] = useState(
-    AppState.currentState === 'active',
-  );
+  const [appState, setAppState] = useState(AppState.currentState);
+  const appActive = appState === 'active';
 
   /* ---------------- pause on blur / background ---------------- */
   useEffect(() => {
-    const sub = AppState.addEventListener('change', next =>
-      setAppActive(next === 'active'),
-    );
+    const sub = AppState.addEventListener('change', setAppState);
     return () => sub.remove();
   }, []);
 
@@ -194,7 +191,10 @@ export default function ConcertVideoCard({ scrollY, concert: concertProp }) {
   // Only keep a player (decoder + GPU buffers) while Home is on screen and the
   // app is active. Pausing alone left decoders allocated in the navigation
   // stack, and they piled up as the user moved between screens.
-  const mountPlayer = isFocused && appActive;
+  // iOS reports 'inactive' for Control Center, Notification Center, the app
+  // switcher and system alerts: pause there, but keep the player so it doesn't
+  // reload from the network. Release it only when the app really backgrounds.
+  const mountPlayer = isFocused && appState !== 'background';
   // Android's bottom inset is usually 0, so lift the card clear of the 70pt tab bar.
   const bottom =
     TAB_BAR_HEIGHT + insets.bottom + (Platform.OS === 'android' ? 40 : 0);

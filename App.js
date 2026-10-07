@@ -19,6 +19,7 @@ import { AppProvider } from './Screen/Context/AppContext';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import NetInfo from '@react-native-community/netinfo';
 import NoInternet from './Screen/components/NoInternet';
+import { applyStatusBarForRoute } from './Screen/utils/statusBar';
 
 // OTA updates: Stallion on both platforms.
 import * as Stallion from 'react-native-stallion';
@@ -404,10 +405,13 @@ const App = () => {
                 linking={linking}
                 onReady={() => {
                   routeNameRef.current = navigationRef.getCurrentRoute()?.name;
+                  applyStatusBarForRoute(routeNameRef.current);
                 }}
                 onStateChange={async () => {
                   const previousRouteName = routeNameRef.current;
                   const currentRouteName = navigationRef.getCurrentRoute()?.name;
+                  // Status bar icons follow the screen's top colour (iOS, Android 15+).
+                  applyStatusBarForRoute(currentRouteName);
                   if (currentRouteName && previousRouteName !== currentRouteName) {
                     try {
                       await analytics().logScreenView({

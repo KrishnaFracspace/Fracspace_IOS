@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Image, View } from "react-native";
+import { useIsFocused } from "@react-navigation/native";
 import { wallet1, wallet2, wallet3, wallet4, wallet5, wallet6, wallet7 } from "../assets";
 
 const frames = [
@@ -12,14 +13,17 @@ const frames = [
 
 export default function WalletAnimation() {
   const [index, setIndex] = useState(0);
+  // Wallet stays mounted under other screens; only animate while visible.
+  const isFocused = useIsFocused();
 
   useEffect(() => {
+    if (!isFocused) return;
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % frames.length);
     }, 300);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isFocused]);
 
   return (
     <View>

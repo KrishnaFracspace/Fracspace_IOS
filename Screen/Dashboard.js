@@ -21,7 +21,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import IconDown from 'react-native-vector-icons/MaterialIcons';
 const { width, height } = Dimensions.get('window');
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import Icon1 from 'react-native-vector-icons/Feather';
 import IconD from 'react-native-vector-icons/Octicons';
 import * as Progress from 'react-native-progress';
@@ -77,6 +77,8 @@ export default function Dashboard(props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [PropertiesArray, setPropertiesArray] = useState([]);
   const navigation = useNavigation();
+  // Dashboard stays mounted under other screens; pause the swiper autoplay there.
+  const isFocused = useIsFocused();
   const [showFullText, setShowFullText] = useState(false);
   const [sort, setSort] = useState(false);
   const [sortBy, setSortBy] = useState('');
@@ -643,7 +645,7 @@ const formatIndianAmount = (amount) => {
         <View style={styles.mainImageContainer}>
 
           <Swiper
-            autoplay={!expanded}
+            autoplay={!expanded && isFocused}
             loop
             showsPagination={false}
             //scrollEnabled={false}

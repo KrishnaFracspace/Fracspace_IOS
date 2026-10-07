@@ -28,6 +28,8 @@ import { EnquiryForCreditUsage } from '../../Services/UserApi';
 import { Calendar } from 'react-native-calendars';
 import moment from "moment";
 import { useNavigation } from '@react-navigation/native';
+// iOS / Android 15+: App.js sets status bar icons per screen (Screen/utils/statusBar.js).
+import { EDGE_TO_EDGE } from '../../utils/statusBar';
 
 const { width, height } = Dimensions.get('window');
 
@@ -166,7 +168,7 @@ const MembershipProprtyDesc = (props) => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F7F3EE' }}>
             <View style={styles.mainContainer}>
-                <StatusBar barStyle={'dark-content'} backgroundColor={'#000'} />
+                <StatusBar barStyle={EDGE_TO_EDGE ? undefined : 'dark-content'} backgroundColor={'#000'} />
                 <ImageBackground source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/Escape+Stay+BG.png' }} style={{ flex: 1 }}>
                     <ScrollView
                         showsVerticalScrollIndicator={false}

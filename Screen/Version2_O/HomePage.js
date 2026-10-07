@@ -1,5 +1,5 @@
 let hasShownHomePopup = false;
-import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ToastAndroid,FlatList,Platform,BackHandler} from 'react-native';
+import {View,Text,ScrollView,Image,StyleSheet,TouchableOpacity,Linking,Dimensions,Animated,Alert,ImageBackground,Modal,StatusBar,Easing,PanResponder,Pressable,ActivityIndicator,FlatList,Platform,BackHandler} from 'react-native';
 import React, {useCallback,useContext,useEffect,useMemo,useRef,useState,} from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import IconF from 'react-native-vector-icons/FontAwesome6';
@@ -9,6 +9,7 @@ import {findFocusedRoute,useFocusEffect,useIsFocused,useNavigation,} from '@reac
 import LinearGradient from 'react-native-linear-gradient';
 import Video, { VideoRef } from 'react-native-video';
 import { videoSource } from '../utils/videoSource';
+import { EDGE_TO_EDGE } from '../utils/statusBar';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
@@ -598,6 +599,9 @@ const Categories = carousel?.category
   // Only the testimonial being watched gets a player; the others show their
   // thumbnail. Three always-mounted players each held a decoder + buffers.
   const [activeVideoIndex, setActiveVideoIndex] = useState(null);
+  // Index whose player has drawn its first frame. Until then the thumbnail
+  // stays up (with a spinner) instead of a black box.
+  const [readyVideoIndex, setReadyVideoIndex] = useState(null);
   const [videoEnded, setVideoEnded] = useState(testimonials.map(() => false));
   const [showControls, setShowControls] = useState(
     testimonials.map(() => true)
@@ -613,7 +617,12 @@ const Categories = carousel?.category
     );
 
     setPlayStates(updatedPlayStates);
-    if (isNowPlaying) setActiveVideoIndex(index);
+    if (isNowPlaying && activeVideoIndex !== index) {
+      // A new player mounts for this testimonial (the previous one unmounts,
+      // keeping its position in currentTimes to resume from later).
+      setReadyVideoIndex(null);
+      setActiveVideoIndex(index);
+    }
 
     const updatedControls = showControls.map((_, i) =>
       i === index ? true : true
@@ -642,6 +651,8 @@ const Categories = carousel?.category
       const updatedEnded = [...videoEnded];
       updatedEnded[index] = false;
       setVideoEnded(updatedEnded);
+      // Replay from the start, not from the end position kept in currentTimes.
+      setCurrentTimes(prev => prev.map((t, i) => (i === index ? 0 : t)));
     }
   };
 
@@ -656,6 +667,7 @@ const Categories = carousel?.category
         setPlayStates(prev => prev.map(() => false));
         // Leaving Home: release the testimonial player entirely.
         setActiveVideoIndex(null);
+        setReadyVideoIndex(null);
         videoRefs.current.forEach(ref => {
           if (ref) {
             ref.pause && ref.pause();
@@ -871,7 +883,11 @@ const Categories = carousel?.category
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#021265' }}>
       <View style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#021265" translucent={false} />
+        {/* Android 14 and older: the navy status bar for the whole app. iOS and
+            Android 15+ have no bar background; App.js sets icon colours per screen. */}
+        {!EDGE_TO_EDGE && (
+          <StatusBar barStyle="light-content" backgroundColor="#021265" translucent={false} />
+        )}
         <Animated.ScrollView
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
@@ -1515,8 +1531,10 @@ const Categories = carousel?.category
                                 updatedEnded[index] = true;
                                 setVideoEnded(updatedEnded);
                                 setActiveVideoIndex(null);
+                                setReadyVideoIndex(null);
                                 setShowThumbnails(prev => prev.map((v, i) => (i === index ? true : v)));
                               }}
+                              onReadyForDisplay={() => setReadyVideoIndex(index)}
                               onProgress={({ currentTime }) => {
                                 const updatedTimes = [...currentTimes];
                                 updatedTimes[index] = currentTime;
@@ -1541,6 +1559,10 @@ const Categories = carousel?.category
                                 const updatedDurations = [...durations];
                                 updatedDurations[index] = duration;
                                 setDurations(updatedDurations);
+                                // Came back to a testimonial watched part-way: resume it.
+                                if (currentTimes[index] > 0 && !videoEnded[index]) {
+                                  videoRefs.current[index]?.seek(currentTimes[index]);
+                                }
                               }}
                             />
                             </View>
@@ -1548,7 +1570,7 @@ const Categories = carousel?.category
                               <View style={{ width: '100%', height: 150, marginBottom: 8 }} />
                             )}
 
-                            {(showThumbnails[index] || activeVideoIndex !== index) && (
+                            {(showThumbnails[index] || activeVideoIndex !== index || readyVideoIndex !== index) && (
                               <Image resizeMethod="resize"
                                 source={{ uri: item.image }}
                                 style={{
@@ -1561,6 +1583,13 @@ const Categories = carousel?.category
                                   zIndex: 1,
                                 }}
                               />
+                            )}
+                            {activeVideoIndex === index && readyVideoIndex !== index && playStates[index] && (
+                              <View
+                                pointerEvents="none"
+                                style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 150, zIndex: 2, alignItems: 'center', justifyContent: 'center' }}>
+                                <ActivityIndicator size="large" color="#FFFFFF" />
+                              </View>
                             )}
                           </TouchableOpacity>
 

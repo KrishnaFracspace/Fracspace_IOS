@@ -13,6 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import Ionicons from 'react-native-vector-icons/Ionicons';
+// iOS / Android 15+: App.js sets status bar icons per screen (Screen/utils/statusBar.js).
+import { EDGE_TO_EDGE } from '../../utils/statusBar';
 
 const { width } = Dimensions.get('window');
 
@@ -48,7 +50,7 @@ const TranHisForEscape = (props) => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar
-                barStyle="dark-content"
+                barStyle={EDGE_TO_EDGE ? undefined : "dark-content"}
                 backgroundColor="#FAF6F0"
             />
             <ImageBackground 

@@ -133,6 +133,14 @@ Most screens came from the iOS app. Android-specific behaviour is behind `Platfo
     in both apps.
   - Remote images: add `resizeMethod="resize"` on Android, so they're decoded at the size shown instead of full
     resolution (big memory saving on image-heavy screens).
+- **Status bar:** on iOS and Android 15+ the status bar has no background; the screen's top shows through.
+  `Screen/utils/statusBar.js` picks dark or white icons per route (from `App.js` on every navigation). **A new
+  screen with a dark top (navy/black) must be added to `LIGHT_CONTENT_ROUTES`**, or its icons will be dark.
+  Don't put `barStyle` on a `<StatusBar>` element; use `EDGE_TO_EDGE ? undefined : '…'` if old Android needs it.
+  Android 14 and older keep the navy bar with white icons (HomePage's `<StatusBar>`).
+- **Timers and autoplay:** stack screens stay mounted when another screen opens on top. Gate every
+  `setInterval`, carousel autoplay and animation loop on `useIsFocused()`, or it keeps running (CPU, battery)
+  for the whole session.
 - **Text colour:** the Android theme is forced to **Light** and its default text colour is **black**
   (`android/app/src/main/res/values/styles.xml`), to match iOS. Still give important text an explicit colour.
 - **TextInputs and OTP boxes:** Android adds its own padding and sizes inputs from their content, so iOS-designed

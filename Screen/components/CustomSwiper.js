@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
@@ -26,6 +26,9 @@ export default function CustomSwiper({
   autoplayInterval = 3000,
 }) {
   const navigation = useNavigation();
+  // Home stays mounted under other screens; only run timers while it's visible.
+  const isFocused = useIsFocused();
+  const hasCountdown = data.some(item => item?.type === 'COUNTDOWN');
   const flatListRef = useRef(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const currentIndexRef = useRef(0);
@@ -36,11 +39,11 @@ export default function CustomSwiper({
 
 
   useEffect(() => {
-    if (autoplay && canLoop) {
+    if (autoplay && canLoop && isFocused) {
       startAutoSlide();
     }
     return stopAutoSlide;
-  }, [autoplay, data.length]);
+  }, [autoplay, data.length, isFocused]);
 
   // const startAutoSlide = () => {
   //   stopAutoSlide();
@@ -85,18 +88,21 @@ export default function CustomSwiper({
     currentIndexRef.current = index;
     setCurrentIndex(index);
 
-    if (autoplay && canLoop) {
+    if (autoplay && canLoop && isFocused) {
       startAutoSlide();
     }
   };
 
+  // Re-render every second only to flip countdown banners to "live".
   useEffect(() => {
+    if (!hasCountdown || !isFocused) return;
+    setNow(Date.now());
     const timer = setInterval(() => {
       setNow(Date.now());
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [hasCountdown, isFocused]);
   if (!data.length) return null;
 
   const renderItem = ({ item }) => {

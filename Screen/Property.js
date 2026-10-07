@@ -170,7 +170,8 @@ export default function Property(props) {
     });
 
     useEffect(() => {
-  if (showVideo || images?.length <= 1) {
+  // Not while another screen covers this one (it stays mounted in the stack).
+  if (showVideo || images?.length <= 1 || !isFocused) {
     return;
   }
 
@@ -185,7 +186,7 @@ export default function Property(props) {
   }, 3000);
 
   return () => clearInterval(interval);
-}, [images, showVideo]);
+}, [images, showVideo, isFocused]);
 
     useEffect(() => {
         translateX.value = withRepeat(
