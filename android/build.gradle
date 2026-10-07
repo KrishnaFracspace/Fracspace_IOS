@@ -6,6 +6,9 @@ buildscript {
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.1.20"
+        // Facebook SDK for the app and react-native-fbsdk-next (which reads this name).
+        // Pinned: "latest.release" / "18.+" changed silently between builds.
+        facebookSdkVersion = "18.3.0"
     }
     repositories {
         

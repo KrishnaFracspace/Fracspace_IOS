@@ -336,6 +336,11 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
     browsing 5 properties 488 (608). The remaining growth is the bounded image cache. Smaller images from the
     backend/CDN would cut it further. Play's memory vitals only update from real users after release.
   - Several views log "shadow but no background colour" advice warnings.
+- **Store privacy:** `ios/PrivacyInfo.xcprivacy` declares 12 collected data types (name, email, phone, contact info,
+  precise location, photos/documents, bank details, purchase history, user ID, device ID, in-app activity, crash
+  data) and **no tracking** (the app shows no ATT prompt). The App Store privacy labels and Play Data safety form
+  must match. If ad campaigns need the IDFA, add the ATT prompt and set tracking to true. Keep this file updated
+  when the app starts sending new data.
 - **Android deep links:** only `https://fracspace.onelink.me` opens the app. `fracspace://`, `fsapp://` and
   `https://fracspace.com` need intent filters if they are used.
 
