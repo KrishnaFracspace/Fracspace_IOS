@@ -38,11 +38,16 @@ import {
 import Back from './Back';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DeviceInfo from 'react-native-device-info';
+import useAccountActions from './utils/useAccountActions';
+import DeleteAccountModal from './components/DeleteAccountModal';
 
 const {width, height} = Dimensions.get('window');
 
 export default function Profile() {
   const navigation = useNavigation();
+  // Same Logout / Delete Account as the Home side menu.
+  const { logOut, deleteAccount, deleting } = useAccountActions();
+  const [deleteVisible, setDeleteVisible] = useState(false);
   const {globalState, setGlobalState} = useContext(AppContext);
   const [ProfileDisplay, setProfileDisplay] = useState(undefined);
   const [modalVisible, setModalVisible] = useState(false);
@@ -891,7 +896,27 @@ const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith(
             <Icon name="chevron-right" size={25} color="#555252" />
           </TouchableOpacity>
 
-          <View style={{borderColor:'#0000004D',borderWidth:0.5,borderRadius:10,padding:15}}>
+          <TouchableOpacity
+            onPress={logOut}
+            style={{flexDirection: 'row', alignItems: 'center', paddingTop: 5}}>
+            <Icons name={'log-out-outline'} size={22} color={'#F01212'} style={{transform: [{rotate: '180deg'}]}} />
+            <Text style={{color: '#181D27', fontSize: 14, fontFamily: 'OpenSans-SemiBold', paddingLeft: 25}}>
+              Logout
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => setDeleteVisible(true)}
+            style={{flexDirection: 'row', alignItems: 'center', marginTop: 20, padding: 15, borderRadius: 10, backgroundColor: '#FBE4D0'}}>
+            <View style={{width: 30, height: 30, borderRadius: 15, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center'}}>
+              <IconA name={'delete'} size={15} color={'#D40D0D'} />
+            </View>
+            <Text style={{color: '#1A1A1A', fontSize: 14, fontFamily: 'OpenSans-SemiBold', marginLeft: 12}}>
+              Delete Account
+            </Text>
+          </TouchableOpacity>
+
+          <View style={{borderColor:'#0000004D',borderWidth:0.5,borderRadius:10,padding:15,marginTop:20}}>
             <View style={{alignItems:'center'}}>
               <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:15,color:'#181D27'}}>Help and Support</Text>
               <Text style={{fontFamily:'WorkSans-Regular',fontSize:10,color:'#00000080',marginTop:10}}>We’re here to help. Choose how you’d like to connect with us.</Text>
@@ -1081,6 +1106,14 @@ const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith(
           </View>
         </View>
       </Modal>
+      <DeleteAccountModal
+        visible={deleteVisible}
+        deleting={deleting}
+        onCancel={() => setDeleteVisible(false)}
+        onConfirm={async () => {
+          if (await deleteAccount()) setDeleteVisible(false);
+        }}
+      />
     </SafeAreaView>
   );
 }

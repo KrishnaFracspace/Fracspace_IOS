@@ -13,19 +13,21 @@ import { EDGE_TO_EDGE } from '../utils/statusBar';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useDispatch, useSelector } from 'react-redux';
-import {CallRecord,DeleteAccount,DisLike,DreamscapeHotels,GetAllNotification,GetCarousel,GetConcertSection,Like,LikeData,PaymentUPI,PopularDestination,PropertyDetails,updateFCMToken,} from '../Services/UserApi';
+import {CallRecord,DisLike,DreamscapeHotels,GetAllNotification,GetCarousel,GetConcertSection,Like,LikeData,PaymentUPI,PopularDestination,PropertyDetails,updateFCMToken,} from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
 const { width, height } = Dimensions.get('window');
 import Swiper from 'react-native-swiper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchAllNotifications, fetchProperties, hidePopup, showPopup, logout as resetHomeState } from '../redux/reducer/homeReducer';
+import { fetchAllNotifications, fetchProperties, hidePopup, showPopup } from '../redux/reducer/homeReducer';
 import HomeSkeleton from '../components/HomeSkeleton';
 import FastImage from 'react-native-fast-image';
 import EdgeFab from './altaira/FloatingButton';
 import CustomSwiper from '../components/CustomSwiper';
 import ConcertVideoCard from './Concert/components/ConcertVideoCard';
 import { normalizeSection } from './Concert/utils/concertAdapter';
-import { profileDetails, logout as resetProfileState } from '../redux/reducer/profileReducer';
+import { profileDetails } from '../redux/reducer/profileReducer';
+import useAccountActions from '../utils/useAccountActions';
+import DeleteAccountModal from '../components/DeleteAccountModal';
 import Toast from 'react-native-toast-message';
 import messaging from '@react-native-firebase/messaging';
 import CompleteProfilePopup from '../../components/CompleteProfilePopup';
@@ -401,62 +403,10 @@ const Categories = carousel?.category
     }, [isMenuOpen]),
   );
 
-  // Clears the signed-in user from memory as well as storage, so the next login
-  // (possibly another account) never sees the previous user's profile.
-  const clearSession = async () => {
-    await AsyncStorage.setItem('mytoken', '');
-    await AsyncStorage.setItem('Email', '');
-    setGlobalState(prev => ({
-      ...prev,
-      token: '',
-      userEmail: '',
-      userName: '',
-      userPhone: '',
-      userDetails: undefined,
-      userProfile: undefined,
-    }));
-    dispatch(resetProfileState());
-    dispatch(resetHomeState());
-  };
-
-  const handleLogOut = async () => {
-    await clearSession();
-    //   catch (error) {
-    //   console.error('Profile fetch failed:', error);
-    //   setToken('');
-    //   AsyncStorage.multiRemove(['mytoken', 'Email']);
-    //   Alert.alert('Session Expired', 'Please log in again.');
-    // }
-    navigation.navigate('NewLogin');
-    //navigation.push('LoginPage', {country: '+91', phone: '', email: ''});
-  };
-
+  // Logout / Delete Account are shared with the Profile tab.
+  const { logOut: handleLogOut, deleteAccount, deleting } = useAccountActions();
   const handleDeleteAccount = async () => {
-    const emailId = await AsyncStorage.getItem('Email');
-    let payload = JSON.stringify({
-      email: emailId,
-    });
-    try {
-      let { data: res } = await DeleteAccount(payload);
-      if (res?.success) {
-        await clearSession();
-        Toast.show({
-          type: 'success',
-          text1: `${res?.message}`,
-          position: 'top',
-        });
-        setModalVisibleRS(false);
-        navigation.navigate('NewSigin');
-      }
-    } catch (error) {
-      if (error?.response) {
-        Alert.alert('Response Error', `${error?.response?.data?.message}`);
-      } else if (error?.request) {
-        //Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
-      } else {
-        Alert.alert('Error:', `${error}`);
-      }
-    }
+    if (await deleteAccount()) setModalVisibleRS(false);
   };
 
   const scaleAnimation = useRef({}).current;
@@ -1981,58 +1931,12 @@ const Categories = carousel?.category
 
           </ScrollView>
         </Animated.View>
-        <Modal
-          animationType="fade"
-          transparent={true}
+        <DeleteAccountModal
           visible={modalVisibleRS}
-          onRequestClose={() => {
-            setModalVisibleRS(false);
-          }}>
-          <View style={styles.modalBackground}>
-            <View style={styles.modalContainer1}>
-              <Text style={styles.modalTitle}>Delete Account</Text>
-              <Text style={styles.modalSubtitle}>
-                Are you sure you want to delete this account?
-              </Text>
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  width: '100%',
-                }}>
-                <TouchableOpacity
-                  style={{
-                    marginTop: 20,
-
-                    paddingVertical: 12,
-                    borderColor: '#0E2038',
-                    borderWidth: 1,
-                    // paddingHorizontal: 0,
-                    borderRadius: 15,
-                    width: '40%',
-                    marginHorizontal: 3,
-                    alignItems: 'center',
-                  }}
-                  onPress={() => {
-                    setModalVisibleRS(false);
-                  }}>
-                  <Text style={[styles.okayButtonText, { color: '#0E2038' }]}>
-                    Cancel
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.okayButton}
-                  onPress={() => {
-                    handleDeleteAccount();
-                  }}>
-                  <Text style={styles.okayButtonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+          deleting={deleting}
+          onCancel={() => setModalVisibleRS(false)}
+          onConfirm={handleDeleteAccount}
+        />
 
       </View>
     </SafeAreaView>
