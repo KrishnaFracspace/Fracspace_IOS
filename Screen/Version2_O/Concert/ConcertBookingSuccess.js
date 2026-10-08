@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CONCERT_THEME as T } from './utils/concertData';
 import useBookingStatusBar from './utils/useBookingStatusBar';
@@ -70,11 +71,11 @@ export default function ConcertBookingSuccess({ route, navigation }) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <View style={styles.tickWrap}>
-          <LinearGradient
+          <GradientView
             colors={[T.goldLight, T.gold, T.goldDark]}
             style={styles.tick}>
             <Icon name="checkmark" size={34} color="#1A1206" />
-          </LinearGradient>
+          </GradientView>
         </View>
 
         <Text style={styles.title}>You're going!</Text>
@@ -137,13 +138,13 @@ export default function ConcertBookingSuccess({ route, navigation }) {
 
       <View style={styles.footer}>
         <TouchableOpacity activeOpacity={0.9} onPress={goHome}>
-          <LinearGradient
+          <GradientView
             colors={[T.goldLight, T.gold, T.goldDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.cta}>
             <Text style={styles.ctaText}>Done</Text>
-          </LinearGradient>
+          </GradientView>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

@@ -23,6 +23,7 @@ import {Calendar} from 'react-native-calendars';
 import moment from 'moment';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import {AppContext} from '../Context/AppContext';
 import {DreamscapeHotels, UpComingHotels} from '../Services/UserApi';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -544,7 +545,7 @@ const filterHotelsByLocation = (city) => {
           {/* OFFER */}
           {item?.offers &&
           <View style={{position: 'absolute', top: 15, left: 15}}>
-            <LinearGradient
+            <GradientView
               colors={['#0000006B', '#9999996B']}
               style={{
                 padding: 8,
@@ -561,7 +562,7 @@ const filterHotelsByLocation = (city) => {
                 }}>
                 {item?.offers}
               </Text>
-            </LinearGradient>
+            </GradientView>
           </View>
           }
 
@@ -572,7 +573,7 @@ const filterHotelsByLocation = (city) => {
                 triggerScaleAnimation(itemName);
                 toggleLikes(itemName);
               }}>
-              <LinearGradient
+              <GradientView
                 colors={
                   like.includes(itemName)
                     ? ['#FFFFFF', '#FFFFFF']
@@ -597,7 +598,7 @@ const filterHotelsByLocation = (city) => {
                     <AntDesign name="hearto" size={15} color="#FFFFFFD1" />
                   )}
                 </Animated.View>
-              </LinearGradient>
+              </GradientView>
             </TouchableOpacity>
           </View>
         </View>
@@ -810,7 +811,7 @@ const filterHotelsByLocation = (city) => {
                       }}
                     />
                     <View style={{position: 'absolute', bottom: 10, right: 10}}>
-                      <LinearGradient
+                      <GradientView
                         colors={['#0000006B', '#9999996B']}
                         style={{
                           width: 40,
@@ -822,7 +823,7 @@ const filterHotelsByLocation = (city) => {
                           borderWidth: 1,
                         }}>
                         <Entypo name="map" color="#DD9D3B" size={18} />
-                      </LinearGradient>
+                      </GradientView>
                     </View>
                   </View>
 

@@ -7,6 +7,7 @@ import {
   Image,
   Dimensions,
   ScrollView,
+  StyleSheet,
 } from 'react-native';
 import * as shape from 'd3-shape';
 import { G, Text as SvgText } from 'react-native-svg';
@@ -14,6 +15,7 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import Ico from 'react-native-vector-icons/FontAwesome';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'react-native-linear-gradient';
+import GradientView from './components/GradientView';
 import { Dropdown } from 'react-native-element-dropdown';
 import { AppContext } from './Context/AppContext';
 import { GetAllCustomer } from './Services/UserApi';
@@ -397,7 +399,7 @@ export default function Owned() {
               </ScrollView>
             ) : (
               <View style={{ flex: 1, backgroundColor: '#FFF' }}>
-                <LinearGradient colors={['#c7e5fd', '#FFF']} style={{ width: width, height: height * 0.3, padding: 20, alignItems: 'center' }}></LinearGradient>
+                <GradientView colors={['#c7e5fd', '#FFF']} style={{ width: '100%', height: height * 0.3, padding: 20, alignItems: 'center' }}></GradientView>
                 <View style={{ position: 'absolute', top: height * 0.25, backfaceVisibility: 'visible', alignSelf: 'center', alignItems: 'center', justifyContent: 'center', }}>
                   <View style={{ alignItems: 'center', marginHorizontal: 40 }}>
                     <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/PortfolioEmpty.png' }} style={{ width: width * 0.5, height: height * 0.21 }} />
@@ -421,10 +423,14 @@ export default function Owned() {
         :
     <View style={{ flex: 1 }}>
   
-  {/* Background Gradient */}
+  {/* Gradient is only the background. With the content inside the native
+      LinearGradient, iOS (New Architecture) applied its padding but not its
+      width to the children: the block was shifted right and cut off. */}
   <LinearGradient
     colors={['#C7E5FD', '#FFF','#FFF']}
-    style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 }}>
+    style={StyleSheet.absoluteFill}
+  />
+  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 30 }}>
     <View style={{ alignItems: 'center' }}>
       {/* Image */}
       <Image
@@ -490,7 +496,7 @@ export default function Owned() {
 
     </View>
 
-  </LinearGradient>
+  </View>
 
 </View>
       }

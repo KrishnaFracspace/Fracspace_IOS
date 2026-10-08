@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import Property from '../Property';
 
 import { trackPaymentFailed, trackPurchase } from '../utils/analytics';
@@ -54,7 +55,7 @@ const location = route?.params?.location;
                 <Text style={styles.header}>Payment Summary</Text>
                 <View style={{ height: '90%', justifyContent: "space-between" }}>
                     <View style={styles.shadowWrapper}>
-                        <LinearGradient colors={['rgba(199, 229, 253, 0.5)', '#FFF', '#FFF']} style={styles.gradientCard}>
+                        <GradientView colors={['rgba(199, 229, 253, 0.5)', '#FFF', '#FFF']} style={styles.gradientCard}>
                             {/* Status Card */}
                             <View style={styles.statusCard}>
                                 <View
@@ -168,7 +169,7 @@ const location = route?.params?.location;
                                     Transaction ID: {txnId}
                                 </Text>
                             </View>
-                        </LinearGradient>
+                        </GradientView>
                     </View>
 
                     <View>

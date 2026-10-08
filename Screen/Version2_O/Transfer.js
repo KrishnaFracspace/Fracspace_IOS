@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import Icon from 'react-native-vector-icons/Entypo';
 import Icon1 from 'react-native-vector-icons/AntDesign';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import CustomModal from '../CustomModal';
 import { useNavigation } from '@react-navigation/native';
 import { PropertyDetails, SendConfirmationOTPEmail, TransferProperty, TransferPropertyOTP, TransferPropertyOTPVerify, VerifyOtpAndStoreMessageEmail } from '../Services/UserApi';
@@ -328,11 +329,11 @@ export default function Transfer(props) {
                         select != '' ? handleTransferOtp()
                             : setNotSelected(!select);
                     }}>
-                        <LinearGradient colors={['#021265', '#2D44B8']} style={{ padding: 15, alignItems: 'center', borderRadius: 10 }}>
+                        <GradientView colors={['#021265', '#2D44B8']} style={{ padding: 15, alignItems: 'center', borderRadius: 10 }}>
                         { loader == true ? (
                     <ActivityIndicator size="small" color="#ffffff" />
                 ) : ( <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#FFFFFF' }}>Transfer</Text>)}
-                        </LinearGradient>
+                        </GradientView>
                     </TouchableOpacity>
                     <View style={{ marginTop: 15 }}>
                         <Text style={{ fontFamily: 'WorkSans-Regular', fontSize: 13, color: '#000000' }}>

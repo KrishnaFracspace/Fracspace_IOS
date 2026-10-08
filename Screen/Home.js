@@ -13,6 +13,7 @@ import {
 import { AppContext } from './Context/AppContext';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from './components/GradientView';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchProperties } from './redux/reducer/homeReducer';
@@ -472,7 +473,7 @@ const shareReferral = async (propertyId) => {
                             setLikedProperty(prev => [...prev, propId]);
                           }
                         }} style={{}}>
-                          <LinearGradient
+                          <GradientView
                             colors={isLiked ? ["#FFFFFF", "#FFFFFF"] : ["#FFFFFF", '#FFFFFF']}
                             style={{ width: 36, height: 36, borderRadius: 36, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}
                           >
@@ -483,7 +484,7 @@ const shareReferral = async (propertyId) => {
                                 <Ico name={'heart-outline'} size={20} color="#ED1C24" />
                               )}
                             </Animated.View>
-                          </LinearGradient>
+                          </GradientView>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -563,7 +564,7 @@ const shareReferral = async (propertyId) => {
                           setLikedProperty(prev => [...prev, propId]);
                         }
                       }} style={{ marginLeft: 15 }}>
-                        <LinearGradient
+                        <GradientView
                           colors={isLiked ? ["#FFFFFF", "#FFFFFF"] : ["#FFFFFF", '#FFFFFF']}
                           style={{ width: 36, height: 36, borderRadius: 36, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}
                         >
@@ -574,7 +575,7 @@ const shareReferral = async (propertyId) => {
                               <Ico name={'heart-outline'} size={20} color="#ED1C24" />
                             )}
                           </Animated.View>
-                        </LinearGradient>
+                        </GradientView>
                       </TouchableOpacity>
                       <View>
                         <Image source={{ uri: 'https://duixj37yn5405.cloudfront.net/appImages/sold.png' }} style={{ width: 90, height: 30 }} />

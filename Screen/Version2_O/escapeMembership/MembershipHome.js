@@ -2,6 +2,7 @@ import { View, Text, ScrollView, Image, Dimensions, ImageBackground, Modal, Text
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import LinearGradient from 'react-native-linear-gradient'
+import GradientView from '../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Ico from 'react-native-vector-icons/FontAwesome';
 import Ic from 'react-native-vector-icons/FontAwesome6';
@@ -443,7 +444,7 @@ export default function MembershipHome() {
                             <TouchableOpacity onPress={() => {
                                 navigation.navigate('MembershipProfile', { data: userInvestmentDetails, plan: investmentData });
                             }} style={styles.container}>
-                                <LinearGradient
+                                <GradientView
                                     colors={['#AC935C', '#E9C484', '#8F6D36']}
                                     start={{ x: 0, y: 0 }}
                                     end={{ x: 1, y: 1 }}
@@ -465,7 +466,7 @@ export default function MembershipHome() {
                                     <Ico name={'user-circle-o'} size={15} color={'#5e390f'} />
 
                                     <Text style={styles.text}>{globalState?.userDetails?.userName}</Text>
-                                </LinearGradient>
+                                </GradientView>
                             </TouchableOpacity>
                         }
                     </View>
@@ -787,7 +788,7 @@ export default function MembershipHome() {
                                             <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 10, color: '#000' }}>1 Credit/Night</Text>
                                         </View>
                                         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, }}>
-                                            <LinearGradient colors={['#00000022', '#00000053', '#000']} style={{ padding: 10, borderBottomLeftRadius: 15, borderBottomRightRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <GradientView colors={['#00000022', '#00000053', '#000']} style={{ padding: 10, borderBottomLeftRadius: 15, borderBottomRightRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <View style={{ flex: 2 }}>
                                                     <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 10, color: '#FFF' }}>{item?.name} </Text>
                                                     <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 10, color: '#FFFFFFE6' }}>{item?.location?.address}</Text>
@@ -797,7 +798,7 @@ export default function MembershipHome() {
                                                         <Text style={{ fontFamily: 'WorkSans-Regular', fontSize: 10, color: '#FFF' }}>Book Now</Text>
                                                     </View>
                                                 </View>
-                                            </LinearGradient>
+                                            </GradientView>
                                         </View>
                                     </TouchableOpacity>
                                 ))}
@@ -815,7 +816,7 @@ export default function MembershipHome() {
                                             <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 10, color: '#000' }}>1 Credit/Night</Text>
                                         </View>
                                         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, }}>
-                                            <LinearGradient colors={['#00000022', '#00000053', '#000']} style={{ padding: 10, borderBottomLeftRadius: 15, borderBottomRightRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                                            <GradientView colors={['#00000022', '#00000053', '#000']} style={{ padding: 10, borderBottomLeftRadius: 15, borderBottomRightRadius: 15, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                                                 <View style={{ flex: 2 }}>
                                                     <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 10, color: '#FFF' }}>{item?.name} </Text>
                                                     <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 10, color: '#FFFFFFE6' }}>{item?.location?.address}</Text>
@@ -825,7 +826,7 @@ export default function MembershipHome() {
                                                         <Text style={{ fontFamily: 'WorkSans-Regular', fontSize: 10, color: '#FFF' }}>Book Now</Text>
                                                     </View>
                                                 </View>
-                                            </LinearGradient>
+                                            </GradientView>
                                         </View>
                                         {activeInvestment?.investmentPlan?.name === 'Escape Silver' &&
                                             <View style={{position:'absolute',top:0,bottom:0,left:0,right:0,backgroundColor:'#000000a0',justifyContent:'center',alignItems:'center',borderRadius:15,paddingHorizontal:20}}>

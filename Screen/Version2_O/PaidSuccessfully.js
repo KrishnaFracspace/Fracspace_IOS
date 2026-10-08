@@ -1,6 +1,7 @@
 import { View, Text,  Image, ScrollView, TouchableOpacity } from 'react-native'
 import React, { useState } from 'react'
 import LinearGradient from 'react-native-linear-gradient'
+import GradientView from '../components/GradientView';
 import Icon from 'react-native-vector-icons/Entypo';
 import Ico from 'react-native-vector-icons/Feather';
 import { useNavigation } from '@react-navigation/native';
@@ -29,7 +30,7 @@ export default function PaidSuccessfully(props) {
   return (
     <SafeAreaView style={{flex:1, backgroundColor:'#C7E5FD'}}>
         <ScrollView style={{flex:1, backgroundColor:'#FFF'}}>
-            <LinearGradient colors={['#C7E5FD','#FFFFFF']} style={{paddingBottom:70}}>
+            <GradientView colors={['#C7E5FD','#FFFFFF']} style={{paddingBottom:70}}>
                 <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:20}}>
                     <TouchableOpacity onPress={() => {
                        // navigation.navigate('WalletAmount', { email: email });
@@ -172,7 +173,7 @@ export default function PaidSuccessfully(props) {
                         <Text style={{fontFamily:'Poppins-Medium',fontSize:11,color:'#021265',marginLeft:5}}>Contact Support Person</Text>
                     </View> */}
                 </View>
-            </LinearGradient>
+            </GradientView>
         </ScrollView>
     </SafeAreaView>
   )

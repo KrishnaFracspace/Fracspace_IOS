@@ -138,6 +138,11 @@ Most screens came from the iOS app. Android-specific behaviour is behind `Platfo
   screen with a dark top (navy/black) must be added to `LIGHT_CONTENT_ROUTES`**, or its icons will be dark.
   Don't put `barStyle` on a `<StatusBar>` element; use `EDGE_TO_EDGE ? undefined : '…'` if old Android needs it.
   Android 14 and older keep the navy bar with white icons (HomePage's `<StatusBar>`).
+- **Gradients:** never put content inside `<LinearGradient>`; use `Screen/components/GradientView` (same props).
+  The native gradient view doesn't lay out its children reliably on iOS with the New Architecture (content
+  shifted or clipped). A self-closing `<LinearGradient style={StyleSheet.absoluteFill} />` as a pure
+  background is fine. Avoid `width: Dimensions.get('window').width` for full-width blocks (use `'100%'`): on
+  iPad the app runs in a resizable window and that launch-time width can be wrong.
 - **Timers and autoplay:** stack screens stay mounted when another screen opens on top. Gate every
   `setInterval`, carousel autoplay and animation loop on `useIsFocused()`, or it keeps running (CPU, battery)
   for the whole session.

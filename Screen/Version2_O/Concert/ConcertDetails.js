@@ -21,6 +21,7 @@ import {
 } from 'react-native';
 import Video from 'react-native-video';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {
   useFocusEffect,
@@ -459,7 +460,7 @@ export default function ConcertDetails() {
               : setFormVisible(true)
           }
           style={{ width: '100%' }}>
-          <LinearGradient
+          <GradientView
             colors={
               !bookingMode && registered
                 ? [T.surfaceActive, T.surface]
@@ -493,7 +494,7 @@ export default function ConcertDetails() {
                 ? concert?.cta?.registeredLabel || "You're Interested"
                 : concert?.cta?.label}
             </Text>
-          </LinearGradient>
+          </GradientView>
         </TouchableOpacity>
 
         <Text style={styles.ctaNote}>{concert?.cta?.note}</Text>

@@ -24,6 +24,7 @@ import moment from 'moment';
 import MultiSlider from '@ptomasroos/react-native-multi-slider';
 import {useNavigation} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import {DreamscapeHotels, PopularDestination} from '../Services/UserApi';
 import Swiper from 'react-native-swiper';
 import {SafeAreaView} from 'react-native-safe-area-context';
@@ -479,7 +480,7 @@ export default function RoomListing(props) {
       
                   {item?.offers &&
                   <View style={{position: 'absolute', top: 15, left: 15}}>
-                    <LinearGradient
+                    <GradientView
                       colors={['#0000006B', '#9999996B']}
                       style={{
                         padding: 8,
@@ -498,7 +499,7 @@ export default function RoomListing(props) {
                         }}>
                         {item?.offers}
                       </Text>
-                    </LinearGradient>
+                    </GradientView>
                   </View>
                   }
 
@@ -508,7 +509,7 @@ export default function RoomListing(props) {
                         triggerScaleAnimation(itemName);
                         toggleLikes(itemName);
                       }}>
-                      <LinearGradient
+                      <GradientView
                         colors={
                           like.includes(itemName)
                             ? ['#FFFFFF', '#FFFFFF']
@@ -533,7 +534,7 @@ export default function RoomListing(props) {
                             <Icon name="hearto" size={15} color="#FFFFFFD1" />
                           )}
                         </Animated.View>
-                      </LinearGradient>
+                      </GradientView>
                     </TouchableOpacity>
                   </View>
 

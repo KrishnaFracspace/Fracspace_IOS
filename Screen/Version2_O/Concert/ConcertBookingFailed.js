@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { CONCERT_THEME as T } from './utils/concertData';
@@ -226,7 +227,7 @@ export default function ConcertBookingFailed({ route, navigation }) {
       <View style={styles.footer}>
         {canRetry ? (
           <TouchableOpacity activeOpacity={0.9} onPress={onRetry} disabled={retrying}>
-            <LinearGradient
+            <GradientView
               colors={[T.goldLight, T.gold, T.goldDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -236,7 +237,7 @@ export default function ConcertBookingFailed({ route, navigation }) {
               ) : (
                 <Text style={styles.ctaText}>Try payment again</Text>
               )}
-            </LinearGradient>
+            </GradientView>
           </TouchableOpacity>
         ) : null}
 

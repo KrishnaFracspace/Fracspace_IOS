@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BOOKING_THEME as T } from './utils/concertData';
@@ -533,7 +534,7 @@ export default function ConcertBookingDetail({ route, navigation }) {
             disabled={busy}
             onPress={onResume}
             style={{ marginTop: 22 }}>
-            <LinearGradient
+            <GradientView
               colors={[T.goldDark, T.goldLight, T.goldDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -543,7 +544,7 @@ export default function ConcertBookingDetail({ route, navigation }) {
               ) : (
                 <Text style={styles.ctaText}>Complete payment</Text>
               )}
-            </LinearGradient>
+            </GradientView>
           </TouchableOpacity>
         ) : null}
 

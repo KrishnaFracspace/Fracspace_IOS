@@ -24,6 +24,7 @@ import {AppContext} from './Context/AppContext';
 import Back from './Back';
 import { PaymentPayU } from './Services/UserApi';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from './components/GradientView';
 
 const {height} = Dimensions.get('window');
 
@@ -164,7 +165,7 @@ const [summaryModal, setSummaryModal] = useState(false);
           style={styles.image}
         />
 
-        <LinearGradient colors={['#00000000', '#00000066', '#000000A6']} style={{position:'absolute',bottom:0,left:0,right:0,height:100}}>
+        <GradientView colors={['#00000000', '#00000066', '#000000A6']} style={{position:'absolute',bottom:0,left:0,right:0,height:100}}>
           <View style={styles.imageOverlay}>
             <Text style={styles.propertyTitle}>{Property?.name}</Text>
 
@@ -179,7 +180,7 @@ const [summaryModal, setSummaryModal] = useState(false);
               </Text>
             </View>
           </View>
-        </LinearGradient>
+        </GradientView>
       </View>
 
       {/* CONTENT */}

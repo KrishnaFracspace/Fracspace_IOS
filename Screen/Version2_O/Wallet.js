@@ -1,6 +1,7 @@
 import { View, Text,  Image, TouchableOpacity } from 'react-native'
 import React from 'react'
 import LinearGradient from 'react-native-linear-gradient'
+import GradientView from '../components/GradientView';
 import Icon from 'react-native-vector-icons/Feather';
 import FastImage from 'react-native-fast-image';
 import { useNavigation } from '@react-navigation/native';
@@ -11,7 +12,7 @@ export default function Wallet() {
     return (
         <SafeAreaView style={{ flex: 1 ,backgroundColor:'#C7E5FD'}}>
             <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-                <LinearGradient colors={['#C7E5FD', '#FFFFFF']}
+                <GradientView colors={['#C7E5FD', '#FFFFFF']}
                     style={{ flex: 1 }}>
                     <View style={{ flexDirection: 'row', padding: 20, alignItems: 'center', justifyContent: 'space-between' }}>
                         <TouchableOpacity
@@ -39,7 +40,7 @@ export default function Wallet() {
                         />
                     </View>
 
-                </LinearGradient>
+                </GradientView>
 
                 <View style={{ flex: 1.5, alignItems: 'center', marginTop: 20 }}>
                     <View style={{ marginTop: 30 }}>

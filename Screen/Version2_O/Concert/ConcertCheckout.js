@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -652,7 +653,7 @@ export default function ConcertCheckout({ route, navigation }) {
             style={{ marginTop: 16, opacity: canProceed ? 1 : 0.45 }}>
             {/* sampled off the frame: #CF9053 -> #E6B379 -> #D29355, so the
                 light band sits in the MIDDLE rather than at one end */}
-            <LinearGradient
+            <GradientView
               colors={[T.goldDark, T.goldLight, T.goldDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -662,7 +663,7 @@ export default function ConcertCheckout({ route, navigation }) {
                   ? options?.booking?.checkoutLabel || 'Proceed to pay'
                   : 'Select tickets'}
               </Text>
-            </LinearGradient>
+            </GradientView>
           </TouchableOpacity>
 
           {/* ---------- refunds ---------- */}

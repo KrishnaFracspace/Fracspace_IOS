@@ -58,6 +58,7 @@ import store from './redux/store/store';
 import { fetchProperties, setDeepLinkNav } from './redux/reducer/homeReducer';
 import Back from './Back';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from './components/GradientView';
 import { ApartmentLogo, AreaLogo } from './Version2_O/assets';
 import HighlightCarousel from './components/propertyDEtails.js/LocationHighlight';
 import analytics from '@react-native-firebase/analytics';
@@ -506,7 +507,7 @@ useEffect(() => {
     const hasVideo = PropertiesArray?.video;
 
     return (
-      <LinearGradient
+      <GradientView
       //  pointerEvents="box-none"
         colors={['transparent', 'rgba(0,0,0,0.7)']}
         style={{
@@ -600,7 +601,7 @@ useEffect(() => {
             )}
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </GradientView>
     );
   };
 

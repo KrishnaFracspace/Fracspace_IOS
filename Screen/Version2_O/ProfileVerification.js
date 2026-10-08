@@ -323,14 +323,16 @@ export default function ProfileVerification() {
         <SafeAreaView style={{ flex: 1 }}>
             {profile?.documents?.length === 0 && profile?.verification == false ?
                 <ScrollView style={{ backgroundColor: '#FFF' }}>
-                    <LinearGradient colors={['#C7E5FD', '#FFFFFF']}
-                        style={{ width: width, padding: 20, alignItems: 'center' }}
-                    >
+                    {/* Gradient is only the background (content inside the native
+                        LinearGradient was shifted/clipped on iOS), and full width
+                        comes from layout, not the launch-time screen width. */}
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                        <LinearGradient colors={['#C7E5FD', '#FFFFFF']} style={StyleSheet.absoluteFill} />
                         <View style={{ alignItems: 'center', paddingVertical: 30 }}>
                             <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#000' }}>Verify Your Profile</Text>
                             <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 12, color: '#000', marginTop: 15 }}>One quick step to unlock investing</Text>
                         </View>
-                    </LinearGradient>
+                    </View>
 
                     {DOCUMENTS.map((item) => {
                         const uploadedFile = uploadedDocs[item.key];
@@ -489,16 +491,16 @@ export default function ProfileVerification() {
                 </ScrollView>
                 :
                 <View style={{ flex: 1, backgroundColor: '#FFF' }}>
-                    <LinearGradient colors={['#C7E5FD', '#FFF']}
-                        style={{ width: width, padding: 20, alignItems: 'center', height: height * 0.3 }}
-                    >
+                    <View style={{ padding: 20, alignItems: 'center', height: height * 0.3 }}>
+                        <LinearGradient colors={['#C7E5FD', '#FFF']} style={StyleSheet.absoluteFill} />
                         <View style={{ alignItems: 'center', paddingVertical: 30 }}>
                             <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#000' }}>
                                 We’ve received your documents!
                             </Text>
                         </View>
-                    </LinearGradient>
-                    <View style={{ position: 'absolute', top: height * 0.25, alignItems: 'center' }}>
+                    </View>
+                    {/* left/right 0: an absolute block without them isn't centred. */}
+                    <View style={{ position: 'absolute', top: height * 0.25, left: 0, right: 0, alignItems: 'center' }}>
                         <View style={{ alignItems: 'center', marginHorizontal: 50 }}>
                             <Text style={{ fontFamily: 'WorkSans-Regular', fontSize: 16, color: '#00000099', textAlign: 'center' }}>
                                 Verification is in progress and may take up to <Text style={{ fontFamily: 'WorkSans-SemiBold', color: '#000' }}>1-2 business days</Text>

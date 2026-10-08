@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import Icon from 'react-native-vector-icons/Feather';
 import Ico from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
@@ -219,7 +220,7 @@ export default function CompleteProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <LinearGradient
+        <GradientView
           colors={['#C7E5FD', '#FFFFFF']}
           style={styles.headerGradient}
         >
@@ -237,7 +238,7 @@ export default function CompleteProfileScreen() {
           <Text style={styles.subTitle}>
             Add your profile picture and address to continue
           </Text>
-        </LinearGradient>
+        </GradientView>
 
         <View style={styles.cardContainer}>
           {/* Profile Picture Card */}

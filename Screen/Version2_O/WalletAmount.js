@@ -1,6 +1,7 @@
 import {View,Text,Image,TouchableOpacity,ScrollView,TextInput,Dimensions,Modal,ActivityIndicator,Alert,Animated,StyleSheet,KeyboardAvoidingView,Platform} from 'react-native';
 import React, {useCallback,useContext,useEffect,useRef,useState,} from 'react';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import Icon from 'react-native-vector-icons/Feather';
 import Ico from 'react-native-vector-icons/Entypo';
 import Ic from 'react-native-vector-icons/FontAwesome';
@@ -935,7 +936,7 @@ const handleOtpVerification = async () => {
           <ScrollView style={{backgroundColor: '#FFFFFF'}}>
             <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
               <View style={{flex: 1}}>
-                <LinearGradient
+                <GradientView
                   colors={['#C7E5FD', '#FFFFFF']}
                   style={{flex: 1}}>
                   <View
@@ -1046,7 +1047,7 @@ const handleOtpVerification = async () => {
                           </Text>
                       </View>
                   }
-                </LinearGradient>
+                </GradientView>
               </View>
 
               <View style={{flex: 2, paddingTop: 20,marginBottom:80}}>
@@ -2356,7 +2357,7 @@ const handleOtpVerification = async () => {
       ) : (
         <SafeAreaView style={{flex: 1, backgroundColor: '#C7E5FD'}}>
           <View style={{flex: 1, backgroundColor: '#FFFFFF'}}>
-            <LinearGradient colors={['#C7E5FD', '#FFFFFF']} style={{flex: 1}}>
+            <GradientView colors={['#C7E5FD', '#FFFFFF']} style={{flex: 1}}>
               <View
                 style={{
                   flexDirection: 'row',
@@ -2446,7 +2447,7 @@ const handleOtpVerification = async () => {
  <WalletAnimation/>
                     </View>
               </View>
-            </LinearGradient>
+            </GradientView>
 
             <View style={{flex: 1.5, alignItems: 'center', marginTop:-100,}}>
               <View style={{marginTop: 100}}>

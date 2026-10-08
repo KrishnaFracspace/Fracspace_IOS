@@ -21,6 +21,7 @@ import Back from './Back';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WishListLogo } from './Version2_O/assets';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from './components/GradientView';
 
 const HEADER_HEIGHT = 60;
 
@@ -108,7 +109,7 @@ export default function Like() {
 
   const EmptyWishlist = ({ }) => {
   return (
-    <LinearGradient
+    <GradientView
       colors={['#C7E5FD', '#FFFFFF','#FFFFFF']}
       style={styles.emptyContainer}>
       <View style={styles.emptyHeader}>
@@ -140,7 +141,7 @@ export default function Like() {
           Start Exploring
         </Text>
       </TouchableOpacity>
-    </LinearGradient>
+    </GradientView>
   );
 };
 

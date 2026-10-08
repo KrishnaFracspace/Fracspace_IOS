@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -548,7 +549,7 @@ export default function ConcertInterestForm({
                 disabled={submitting}
                 onPress={handleSubmit}
                 style={{ marginTop: 20 }}>
-                <LinearGradient
+                <GradientView
                   colors={[T.goldLight, T.gold, T.goldDark]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
@@ -568,7 +569,7 @@ export default function ConcertInterestForm({
                       />
                     </>
                   )}
-                </LinearGradient>
+                </GradientView>
               </TouchableOpacity>
             </ScrollView>
               </>

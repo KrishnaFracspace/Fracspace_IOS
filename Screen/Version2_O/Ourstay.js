@@ -4,6 +4,7 @@ import StaggeredList from "@mindinventory/react-native-stagger-view";
 import Icon from 'react-native-vector-icons/AntDesign';
 import Ico from 'react-native-vector-icons/SimpleLineIcons';
 import LinearGradient from "react-native-linear-gradient";
+import GradientView from '../components/GradientView';
 import { useNavigation } from "@react-navigation/native";
 import { DreamscapeHotels } from "../Services/UserApi";
 import { AppContext } from "../Context/AppContext";
@@ -66,9 +67,9 @@ export default function Ourstay (props){
                 }} style={styles.card}>
                     <Image source={{uri: item?.images[0]}} style={[styles.image, { height: randomHeight }]} />
 
-                    <LinearGradient colors={['#0000006B','#9999996B']} style={{paddingHorizontal:10,paddingVertical:7,borderWidth:1,borderColor:'#FFFFFF',position:'absolute',top:15,left:15,borderRadius:20}}>
+                    <GradientView colors={['#0000006B','#9999996B']} style={{paddingHorizontal:10,paddingVertical:7,borderWidth:1,borderColor:'#FFFFFF',position:'absolute',top:15,left:15,borderRadius:20}}>
                         <Text style={{fontFamily:'Montserrat-Bold',fontSize:9,color:'#FFFFFF'}}>{`Rooms from ₹ ${item?.roomsAndCorrespondingPrice[0]?.price} /-`}</Text>
-                    </LinearGradient>
+                    </GradientView>
                     
                     <View style={{backgroundColor:'#1010104D',padding:7,position:'absolute',bottom:0,width:'100%',paddingHorizontal:10}}>
                         <Text style={styles.title}>{item?.name}</Text>

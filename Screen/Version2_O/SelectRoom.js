@@ -4,6 +4,7 @@ import Icon from 'react-native-vector-icons/AntDesign';
 import Ico from 'react-native-vector-icons/Entypo';
 import { useNavigation } from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import Swiper from 'react-native-swiper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -50,9 +51,9 @@ export default function SelectRoom(props) {
 
                                 {RoomDetails?.offers &&
                                 <View style={{ position: "absolute", top: 15, left: 15, }}>
-                                    <LinearGradient colors={['#0000006B', '#9999996B']} style={{ padding: 8, borderRadius: 25, paddingHorizontal: 10, borderColor: '#FFFFFF', borderWidth: 1, alignItems: 'center', justifyContent: 'center' }}>
+                                    <GradientView colors={['#0000006B', '#9999996B']} style={{ padding: 8, borderRadius: 25, paddingHorizontal: 10, borderColor: '#FFFFFF', borderWidth: 1, alignItems: 'center', justifyContent: 'center' }}>
                                         <Text style={{ fontFamily: 'Montserrat-Bold', fontSize: 12, color: '#FFFFFF' }}>{RoomDetails?.offers}</Text>
-                                    </LinearGradient>
+                                    </GradientView>
                                 </View>
                                 }
 

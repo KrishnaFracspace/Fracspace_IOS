@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../../../components/GradientView';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { CONCERT_THEME as T } from '../utils/concertData';
 
@@ -44,13 +45,13 @@ export default function ConcertSuccessSheet({
         bounces={false}
         contentContainerStyle={{ paddingTop: 20 }}>
         <View style={styles.center}>
-          <LinearGradient
+          <GradientView
             colors={[T.goldLight, T.gold]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.checkCircle}>
             <Icon name="checkmark" size={52} color="#FFFFFF" />
-          </LinearGradient>
+          </GradientView>
 
           <Text style={styles.title}>
             {copy?.title || "You're on the list!"}
@@ -92,7 +93,7 @@ export default function ConcertSuccessSheet({
           activeOpacity={0.9}
           onPress={onGoHome}
           style={{ marginTop: 22 }}>
-          <LinearGradient
+          <GradientView
             colors={[T.goldLight, T.gold, T.goldDark]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
@@ -100,7 +101,7 @@ export default function ConcertSuccessSheet({
             <Text style={styles.homeBtnText}>
               {copy?.primaryCta?.label || 'Go to Home'}
             </Text>
-          </LinearGradient>
+          </GradientView>
         </TouchableOpacity>
       </ScrollView>
     </View>

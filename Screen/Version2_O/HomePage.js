@@ -7,6 +7,7 @@ import IconI from 'react-native-vector-icons/AntDesign';
 import Iconn from 'react-native-vector-icons/Feather';
 import {findFocusedRoute,useFocusEffect,useIsFocused,useNavigation,} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import Video, { VideoRef } from 'react-native-video';
 import { videoSource } from '../utils/videoSource';
 import { EDGE_TO_EDGE } from '../utils/statusBar';
@@ -818,7 +819,7 @@ const Categories = carousel?.category
           <Image resizeMethod="resize"
             resizeMode="cover"
             source={{ uri: item?.image }}
-            style={{ width: 60, height: 60 }}
+            style={{ width: 55, height: 55 }}
           />
         </View>
       </TouchableOpacity>
@@ -1082,7 +1083,7 @@ const Categories = carousel?.category
                               }
                             }}
                             style={{}}>
-                            <LinearGradient
+                            <GradientView
                               colors={
                                 isLiked
                                   ? ['#FFFFFF', '#FFFFFF']
@@ -1111,7 +1112,7 @@ const Categories = carousel?.category
                                   />
                                 )}
                               </Animated.View>
-                            </LinearGradient>
+                            </GradientView>
                           </TouchableOpacity>
                         </View>
                         <View
@@ -1675,7 +1676,7 @@ const Categories = carousel?.category
                           openPopupLink();
                         }}
                         style={{ position: 'absolute', bottom: 40, alignSelf: 'center' }}>
-                        <LinearGradient
+                        <GradientView
                           colors={popupData?.buttonColor || ['#FAD059', '#FFE7A2']}
                           start={{ x: 0, y: 0 }}
                           end={{ x: 1, y: 0 }}
@@ -1703,7 +1704,7 @@ const Categories = carousel?.category
 
                             </View>
                           </View>
-                        </LinearGradient>
+                        </GradientView>
                       </TouchableOpacity></>) : null}
 
                   </TouchableOpacity>

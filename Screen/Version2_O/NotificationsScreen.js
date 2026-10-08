@@ -9,6 +9,7 @@ import { DeleteNotification, GetAllNotification, MonitorNotification } from '../
 import { AppContext } from '../Context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import ReactNativeBlobUtil from 'react-native-blob-util';
 import DeviceInfo from 'react-native-device-info';
 
@@ -250,7 +251,7 @@ export default function NotificationsScreen(props) {
             <View style={{ backgroundColor: '#FFFFFF', flex: 1 }}>
                 {filteredNotifications.length === 0 ?
                     <View style={{flex:1,backgroundColor:'#FFF',alignItems:'center'}}>
-                        <LinearGradient colors={['#C7E5FD', '#FFF']} style={{width: width, height: height*0.3,padding:20,}}>
+                        <GradientView colors={['#C7E5FD', '#FFF']} style={{width: '100%', height: height*0.3,padding:20,}}>
                             <View style={{alignItems:'center',flexDirection:'row',justifyContent:'space-between',paddingVertical:20}}>
                                 <TouchableOpacity onPress={() => {
                                     navigation.goBack();
@@ -260,7 +261,7 @@ export default function NotificationsScreen(props) {
                                 <Text style={{fontFamily:'Montserrat-SemiBold',fontSize:16,color:'#000'}}>Notification</Text>
                                 <View/>
                             </View>
-                        </LinearGradient>
+                        </GradientView>
                         <View style={{position:'absolute',top:height*0.2,alignItems:'center'}}>
                             <Image resizeMode='contain' source={{uri: "https://duixj37yn5405.cloudfront.net/appImages/NoNotification.png"}} style={{width:width*0.55,height:height*0.25}}/>
                             <View style={{alignItems:'center'}}>

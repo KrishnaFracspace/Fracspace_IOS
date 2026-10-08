@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IconC from 'react-native-vector-icons/Ionicons';
 import LinearGradient from 'react-native-linear-gradient';
+import GradientView from '../components/GradientView';
 import { useNavigation } from '@react-navigation/native';
 import { handleEnquiryPackage, HandlePackage } from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
@@ -68,7 +69,7 @@ dispatch(getPackages())
   return (
     <SafeAreaView style={{ flex: 1,backgroundColor:"#FEFFF2"}}>
       {/* <LinearGradient colors={['#FEFFF2 ', '#FCFDF6','#FAFAFA']} style={{ flex: 1 }}> */}
-      <LinearGradient colors={['#FEFFF2', '#FCFDF6', '#FAFAFA']} style={{ flex: 1 }}>
+      <GradientView colors={['#FEFFF2', '#FCFDF6', '#FAFAFA']} style={{ flex: 1 }}>
         <View style={{
           flexDirection: 'row',
           justifyContent: 'space-between',
@@ -214,7 +215,7 @@ dispatch(getPackages())
             </View>
           </Pressable>
         </Modal>
-      </LinearGradient>
+      </GradientView>
 
     </SafeAreaView>
   )
