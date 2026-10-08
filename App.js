@@ -20,6 +20,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import NetInfo from '@react-native-community/netinfo';
 import NoInternet from './Screen/components/NoInternet';
 import { applyStatusBarForRoute } from './Screen/utils/statusBar';
+import { trackScreen } from './Screen/utils/analytics';
 
 // OTA updates: Stallion on both platforms.
 import * as Stallion from 'react-native-stallion';
@@ -406,6 +407,8 @@ const App = () => {
                 onReady={() => {
                   routeNameRef.current = navigationRef.getCurrentRoute()?.name;
                   applyStatusBarForRoute(routeNameRef.current);
+                  // The first screen (Home or Login) never triggers onStateChange.
+                  trackScreen(routeNameRef.current);
                 }}
                 onStateChange={async () => {
                   const previousRouteName = routeNameRef.current;
@@ -413,14 +416,7 @@ const App = () => {
                   // Status bar icons follow the screen's top colour (iOS, Android 15+).
                   applyStatusBarForRoute(currentRouteName);
                   if (currentRouteName && previousRouteName !== currentRouteName) {
-                    try {
-                      await analytics().logScreenView({
-                        screen_name: currentRouteName,
-                        screen_class: currentRouteName,
-                      });
-                    } catch (e) {
-                      console.log('Screen view analytics error:', e);
-                    }
+                    trackScreen(currentRouteName);
                   }
                   routeNameRef.current = currentRouteName;
                 }}

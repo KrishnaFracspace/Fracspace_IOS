@@ -8,6 +8,7 @@ import { AppContext } from '../Context/AppContext';
 import { DeleteAccount } from '../Services/UserApi';
 import { logout as resetHomeState } from '../redux/reducer/homeReducer';
 import { logout as resetProfileState } from '../redux/reducer/profileReducer';
+import { clearAnalyticsUser } from './analytics';
 
 /**
  * Logout and Delete Account, shared by the Home side menu and the Profile tab
@@ -35,6 +36,8 @@ export default function useAccountActions() {
     }));
     dispatch(resetProfileState());
     dispatch(resetHomeState());
+    // The next person to log in on this phone is a different analytics user.
+    clearAnalyticsUser();
   }, [dispatch, setGlobalState]);
 
   const logOut = useCallback(async () => {

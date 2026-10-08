@@ -212,6 +212,24 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
   so the player can drop quality on a slow network. The Discover Altaira intro froze for 28 s on mobile data
   before this. It now also shows a spinner, a Skip button, and skips itself on error or a 6 s stall.
 
+### Analytics (Firebase)
+All tracking goes through `Screen/utils/analytics.js`.
+- **Never send email, phone, name or other personal data** to Firebase/Google Analytics (it breaks Google's
+  terms). Users are identified by their account `_id`: `identifyUser()` runs whenever the profile loads
+  (`profileReducer.js`) and sets the Firebase user ID, Crashlytics user ID and the `user_type` / `verified`
+  user properties. Logout/delete call `clearAnalyticsUser()`. To know who an ID is, look it up in the user database.
+- **Screens:** `App.js` logs every React Navigation route name (including the first screen). Firebase's
+  automatic native screen names are switched off in `firebase.json`
+  (`google_analytics_automatic_screen_reporting_enabled: false`; React Native Firebase applies it to both platforms).
+- **Events:** `login` / `sign_up` (`method`: `phone_otp` | `email_otp`); booking funnel `begin_checkout` →
+  `purchase` / `payment_failed` with `flow` = `property` | `concert` | `membership`; `generate_lead` with
+  `lead_type` for every enquiry form (logged inside the enquiry API functions via `withLead`); plus
+  `view_property`, `share_property`, `amount_withdraw`, `app_open`.
+- **Console:** register custom parameters (`flow`, `lead_type`, `method`, `property_id`, `reason`) as custom
+  dimensions, set data retention to 14 months, and use Explore → User explorer to follow one user.
+- **Testing:** reports lag 24–48 h. To see events live, enable DebugView on a test device
+  (`adb shell setprop debug.firebase.analytics.app com.fracspace`; iOS: `-FIRDebugEnabled` launch argument).
+
 ### Navigation
 - **Aliases**, so old Android or backend screen names keep working:
 

@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import api from "../../utils/config/api";
 import { endpoints } from "../../utils/config/config";
-import analytics from '@react-native-firebase/analytics';
+import { identifyUser, trackLead } from '../../utils/analytics';
 import messaging from '@react-native-firebase/messaging';
 
 const initialState = {
@@ -43,13 +43,9 @@ export const profileDetails = createAsyncThunk(
       // console.log("Profile res: ", res?.data);
       if(res?.data?.success){
         const userType = res?.data?.data?.verification || res?.data?.data?.ownedProperties?.length > 0;
-        // console.log('UserType: ',userType);
-        if(userType){
-          analytics().setUserProperty('user_type', 'owners');
-        }else{
-          analytics().setUserProperty('user_type', 'normal');
-        }
-        
+        // Firebase: tie this session's events to the account id (+ user_type).
+        identifyUser(res?.data?.data);
+
 
         handleUserType(userType);
       }
@@ -97,6 +93,7 @@ export const AltairaInterest = createAsyncThunk(
       //   })
       
     //  console.log("INTEREST API SUCCESS ===>", res.data);
+      if (res?.data?.success !== false) trackLead('altaira_interest');
 
       return res.data;
 

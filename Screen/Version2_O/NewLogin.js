@@ -13,7 +13,7 @@ import { GetLogin, GetOtpForLoginWithNumber, OtpLoginWithEmail, verifyOtpLogin }
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../Context/AppContext'
 import { SafeAreaView } from 'react-native-safe-area-context';
-import analytics from '@react-native-firebase/analytics';
+import { trackLogin } from '../utils/analytics';
 import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
 
 export default function NewLogin() {
@@ -120,9 +120,8 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
     try {
       let { data: res } = await GetOtpForLoginWithNumber(payload);
       if (res?.success) {
-        analytics().logEvent('user_login_indian', {
-          user_id: res?.email
-        });
+        // Standard Firebase "login" event; never send the email (GA terms).
+        trackLogin('phone_otp');
         await handleLoginSuccess(res, selectedCode?.code + phone);
       }
     } catch (error) {
@@ -202,9 +201,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
       let { data: res } = await verifyOtpLogin(payload);
       //  console.log(res,"========data==67")
       if (res?.success) {
-        analytics().logEvent('user_login_international', {
-          user_id: res?.email
-        });
+        trackLogin('email_otp');
         await handleLoginSuccess(res, selectedCode?.code + phone);
       }
     } catch (error) {

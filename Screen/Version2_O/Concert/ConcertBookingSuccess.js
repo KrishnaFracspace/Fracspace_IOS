@@ -35,6 +35,8 @@ function goToHome(navigation) {
   }
 }
 
+import { trackPurchase } from '../../utils/analytics';
+
 export default function ConcertBookingSuccess({ route, navigation }) {
   useBookingStatusBar();
   const { booking, concert } = route.params || {};
@@ -43,6 +45,12 @@ export default function ConcertBookingSuccess({ route, navigation }) {
 
   useEffect(() => {
     clearPendingBooking();
+    // Analytics funnel: concert booking paid.
+    trackPurchase('concert', {
+      value: booking?.totalAmount,
+      transactionId: booking?.referenceCode || booking?.bookingId,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const goHome = () => goToHome(navigation);

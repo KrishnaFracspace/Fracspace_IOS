@@ -22,6 +22,7 @@ import Icon
 from 'react-native-vector-icons/Ionicons';
 import { verifyPaymentForEscape } from '../../Services/UserApi';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { trackCheckoutStarted } from '../../utils/analytics';
 
 const EscapePaymentPage = ({
     route,
@@ -33,6 +34,11 @@ const EscapePaymentPage = ({
         TxnID,
         investmentData
     } = route.params;
+
+    // Analytics funnel: membership purchase reached the payment gateway.
+    useEffect(() => {
+        trackCheckoutStarted('membership');
+    }, []);
 
     const [loading, setLoading] =
         useState(true);

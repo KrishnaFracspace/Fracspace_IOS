@@ -1,6 +1,17 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 import DeviceInfo from 'react-native-device-info';
+import { trackLead } from '../utils/analytics';
+
+// Analytics: an enquiry/interest form that the server accepted (2xx, not
+// success:false) is logged as a Firebase "generate_lead" with its type.
+const withLead = (leadType, request) => async (...args) => {
+  const res = await request(...args);
+  if (res?.status >= 200 && res?.status < 300 && res?.data?.success !== false) {
+    trackLead(leadType);
+  }
+  return res;
+};
 export const Registration = async payload => {
   return await axios.post('https://apitest.fracspace.com/api/users/userRegisterationWithoutPassword', payload,{
     headers: {
@@ -91,7 +102,7 @@ export const DisLike = async (payload) => {
   });
 };
 
-export const SiteVisit = async (payload) => {
+const siteVisitRequest = async (payload) => {
   return await axios.post('https://apitest.fracspace.com/api/users/site-visit',payload,{
     headers: {
       'content-type': 'application/json',
@@ -99,6 +110,7 @@ export const SiteVisit = async (payload) => {
     },
   });
 };
+export const SiteVisit = withLead('site_visit', siteVisitRequest);
 
 export const ProfilePic = async (payload) => {
   return await axios.post('https://apitest.fracspace.com/api/users/uploadProfilePic',payload,{
@@ -366,7 +378,7 @@ export const GetBookingAmountDate = async payload => {
     },
   );
 };
-export const StayBooking = async payload => {
+const stayBookingRequest = async payload => {
   return await axios.post(
     'https://apitest.fracspace.com/api/users/bookYourFreeStays',
     payload,
@@ -388,6 +400,7 @@ export const GetAllCustomer = async () => {
     },
   });
 };
+export const StayBooking = withLead('stay_booking_request', stayBookingRequest);
 
 
 /////version2.0
@@ -446,7 +459,7 @@ export const InteriorForm = async payload => {
   );
 };
 
-export const ConstructionForm = async payload => {
+const constructionFormRequest = async payload => {
   return await axios.post(
     'https://apitest.fracspace.com/api/v1/interiorConstruction/submitConstruction',
     payload,
@@ -459,6 +472,7 @@ export const ConstructionForm = async payload => {
     },
   );
 };
+export const ConstructionForm = withLead('interior_construction', constructionFormRequest);
 
 export const PropertyMetaDataApi = async () => {
   return await axios.get(
@@ -587,7 +601,7 @@ export const GetAllBookingByEmail = async payload => {
   );
 };
 
-export const GetBookingFSHotel = async payload => {
+const getBookingFSHotelRequest = async payload => {
   return await axios.post(
     'https://apitest.fracspace.com/api/v1/travel/enquiryForHotelBooking_app',
     payload,
@@ -600,6 +614,7 @@ export const GetBookingFSHotel = async payload => {
     },
   );
 };
+export const GetBookingFSHotel = withLead('stay_enquiry', getBookingFSHotelRequest);
 export const CoOwnerBookingverification = async payload => {
   return await axios.post(
     'https://apitest.fracspace.com/api/users/bookFraction',
@@ -955,7 +970,7 @@ export const HandlePackage = async () => {
   );
 };
 
-export const handleEnquiryPackage = async (payload,PackagId )=> {
+const handleEnquiryPackageRequest = async (payload,PackagId )=> {
     return await axios.post(
         `https://apitest.fracspace.com/api/users/packages/${PackagId}/bookingEnquiry`,
         payload,
@@ -968,6 +983,7 @@ export const handleEnquiryPackage = async (payload,PackagId )=> {
     );
 
 };
+export const handleEnquiryPackage = withLead('package_enquiry', handleEnquiryPackageRequest);
 
 
 export const GetLabelsProp = async () => {
@@ -994,7 +1010,7 @@ export const AltairaExp = async () => {
     );
 };
 
-export const UploadEnquiry = async (payload) => {
+const uploadEnquiryRequest = async (payload) => {
     return await axios.post(
         //'https://apitest.fracspace.com/api/users/altaira/enquireform',
         'https://apitest.fracspace.com/api/users/altairaEnquiryForm',
@@ -1007,6 +1023,7 @@ export const UploadEnquiry = async (payload) => {
         },
     );
 };
+export const UploadEnquiry = withLead('altaira_property_enquiry', uploadEnquiryRequest);
 
 export const GetCarousel = async () => {
     return await axios.get(
@@ -1188,7 +1205,7 @@ export const GetInvestmentDetails = async () => {
 };
 
 
-export const EnquiryForCreditUsage = async(payload) => {
+const enquiryForCreditUsageRequest = async(payload) => {
   return await axios.post(
     'https://apitest.fracspace.com/api/v1/escapeInvestment/enquiryForCreditUsage',
     payload,
@@ -1200,6 +1217,7 @@ export const EnquiryForCreditUsage = async(payload) => {
     },
   );
 };
+export const EnquiryForCreditUsage = withLead('membership_credit_enquiry', enquiryForCreditUsageRequest);
 
 
 
@@ -1282,7 +1300,7 @@ export const GetConcertSection = async ({ concertId, cityId, token } = {}) => {
  * user is already on the list - that is a success for the UI, not an error.
  * Everything else rejects and is classified by classifyInterestError below.
  */
-export const RegisterConcertInterest = async (concertId, payload, token) => {
+const registerConcertInterestRequest = async (concertId, payload, token) => {
   return await axios.post(
     `${CONCERT_BASE}/${encodeURIComponent(concertId)}/interest`,
     payload,
@@ -1293,6 +1311,7 @@ export const RegisterConcertInterest = async (concertId, payload, token) => {
     },
   );
 };
+export const RegisterConcertInterest = withLead('concert_interest', registerConcertInterestRequest);
 
 /**
  * Turns an interest response/error into one of:

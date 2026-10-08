@@ -1084,32 +1084,32 @@ useEffect(() => {
 
               <View style={{flexDirection:'row',alignItems:'center',marginTop:15}}>
                   <Text style={{fontFamily:'WorkSans-Medium',fontSize:16,color:'#000'}}>Only</Text>
-                  <View style={{overflow: 'hidden',borderRadius: 20,alignSelf: 'flex-start',marginHorizontal:5}}>
+                  {/* The text sits in a plain View that sizes the pill; the gradient is
+                      only its background. With the text inside the native
+                      LinearGradient, iOS (New Architecture) didn't size the pill to
+                      fit, so overflow:hidden clipped it to "5 Fr". */}
+                  <View style={{overflow: 'hidden',borderRadius: 20,alignSelf: 'center',marginHorizontal:5}}>
                       <LinearGradient
                               colors={['#021265', '#7c8de1', '#363b8f']}
                               start={{ x: 0, y: 0 }}
                               end={{ x: 1, y: 1 }}
-                              style={{borderRadius: 20,    paddingVertical: 5,paddingHorizontal:10,    flexDirection: 'row',    alignItems: 'center',    gap: 5,    overflow: 'hidden',}}
-                          >
-                              <Animated.View style={[{position: 'absolute',left: -100,top: 0,bottom: 0,width: 80,transform: [{ rotate: '20deg' }]}, animatedStyle]}>
-                                <LinearGradient
-                                    colors={[
-                                    'rgba(255,255,255,0)',
-                                    'rgba(255, 255, 255, 0.51)',
-                                    'rgba(255,255,255,0)',
-                                    ]}
-                                    start={{ x: 0, y: 0 }}
-                                    end={{ x: 1, y: 0 }}
-                                    style={{flex:1}}
-                                />
-                              </Animated.View>
-
-                              {availableFrac < 100 && availableFrac > 10 ?
-                                  <Text style={{fontFamily: 'WorkSans-SemiBold',fontSize: 12,color: '#FFF'}}>{PropertiesArray?.AvailableFractions} {PropertiesArray?.name == "ALTAIRA – VILLA" ?  "Villas" : "Frac"}</Text>
-                                  :
-                                  <Text style={{fontFamily: 'WorkSans-SemiBold',fontSize: 12,color: '#FFF'}}>{PropertiesArray?.AvailableFractions} {PropertiesArray?.name == "ALTAIRA – VILLA" ?  "Villas" : "Frac"}</Text>
-                              }
-                      </LinearGradient>
+                              style={StyleSheet.absoluteFill}
+                          />
+                      <Animated.View style={[{position: 'absolute',left: -100,top: 0,bottom: 0,width: 80,transform: [{ rotate: '20deg' }]}, animatedStyle]}>
+                        <LinearGradient
+                            colors={[
+                            'rgba(255,255,255,0)',
+                            'rgba(255, 255, 255, 0.51)',
+                            'rgba(255,255,255,0)',
+                            ]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={{flex:1}}
+                        />
+                      </Animated.View>
+                      <View style={{paddingVertical: 5,paddingHorizontal:10,flexDirection: 'row',alignItems: 'center'}}>
+                          <Text style={{fontFamily: 'WorkSans-SemiBold',fontSize: 12,color: '#FFF'}}>{PropertiesArray?.AvailableFractions} {PropertiesArray?.name == "ALTAIRA – VILLA" ?  "Villas" : "Frac"}</Text>
+                      </View>
                   </View>
                   <Text style={{fontFamily:'WorkSans-Medium',fontSize:16,color:'#000'}}>left!</Text>
               </View>

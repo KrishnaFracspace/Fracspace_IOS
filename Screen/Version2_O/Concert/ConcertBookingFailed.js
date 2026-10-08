@@ -78,6 +78,8 @@ function goToHome(navigation) {
   }
 }
 
+import { trackPaymentFailed } from '../../utils/analytics';
+
 export default function ConcertBookingFailed({ route, navigation }) {
   useBookingStatusBar();
   const {
@@ -90,6 +92,12 @@ export default function ConcertBookingFailed({ route, navigation }) {
     booking,
     concert,
   } = route.params || {};
+
+  // Analytics funnel: concert booking not paid (failed / cancelled / unconfirmed).
+  useEffect(() => {
+    trackPaymentFailed('concert', outcome);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [retrying, setRetrying] = useState(false);
   const retryingRef = useRef(false);

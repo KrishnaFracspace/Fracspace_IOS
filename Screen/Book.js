@@ -527,7 +527,9 @@ const [summaryModal, setSummaryModal] = useState(false);
         </View>
         
   <View style={styles.verticalDivider} />
-        <View style={{ marginLeft: 12 }}>
+        {/* flex: 1 limits this column to the card's remaining width, so long
+            text (the address) is cut with "…" instead of overflowing. */}
+        <View style={{ marginLeft: 12, flex: 1 }}>
           <View style={styles.iconRow}>
             <Fontisto name="email" size={14} color="#021265" />
             <Text style={styles.profileText}>
@@ -549,8 +551,10 @@ const [summaryModal, setSummaryModal] = useState(false);
                             size={15}
                             color="#021265"
                           />
-            <Text style={styles.profileText}>
-              {globalState?.userDetails?.address ? globalState?.userDetails?.postalAddress :"Not Available"}
+            {/* One line, "…" at the end; flexShrink lets it fit inside the row. */}
+            <Text style={[styles.profileText, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">
+              {/* The profile field is postalAddress (there is no `address`). */}
+              {globalState?.userDetails?.postalAddress || 'Not Available'}
             </Text>
           </View>
 

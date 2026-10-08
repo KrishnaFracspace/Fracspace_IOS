@@ -24,7 +24,7 @@ import {
   verifyOtpLogin,
 } from '../Services/UserApi';
 import { AppContext } from '../Context/AppContext';
-import analytics from '@react-native-firebase/analytics';
+import { trackSignUp } from '../utils/analytics';
 import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
 
 export default function NewSigin() {
@@ -137,24 +137,9 @@ const handleOTPLogin = async () => {
       await AsyncStorage.setItem('mytoken', token);
       await AsyncStorage.setItem('Email', email);
 
-      // `res` was undefined here (this function's variable is `response`), so
-      // this threw a ReferenceError inside the try and the catch reported it
-      // as "Invalid OTP" - after the token had already been saved. Analytics
-      // must never be able to fail a signup, hence the guard.
-      try {
-        const analyticsUserId = response?.data?.email || email;
-        if (selectedCode.code === '+91') {
-          analytics().logEvent('newUser_signin_indian', {
-            user_id: analyticsUserId,
-          });
-        } else {
-          analytics().logEvent('newUser_signin_international', {
-            user_id: analyticsUserId,
-          });
-        }
-      } catch (e) {
-        console.log('signup analytics failed (non-fatal):', e?.message);
-      }
+      // Standard Firebase "sign_up" event (never the email: GA terms). The
+      // helper can't throw, so analytics can't fail a signup.
+      trackSignUp(selectedCode.code === '+91' ? 'phone_otp' : 'email_otp');
 
       setGlobalState(prev => ({
         ...prev,

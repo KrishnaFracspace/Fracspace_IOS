@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { trackPurchase } from '../../utils/analytics';
 import {
   View,
   Text,
@@ -24,6 +25,12 @@ const PaymentSuccessEscape = (props) => {
     const serviceFee = paymentData?.paymentProof?.serviceFee;
     const totalCharges = (gst || 0) + (serviceFee || 0);
     const totalAmount = paidAmount + (gst || 0) + (serviceFee || 0);
+
+    // Analytics funnel: membership paid.
+    useEffect(() => {
+        trackPurchase('membership', { value: totalAmount, transactionId: paymentData?._id });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const formatDateTime = isoDate => {
         const date = new Date(isoDate);

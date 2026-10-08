@@ -28,7 +28,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import CustomModal from '../CustomModal';
 import WalletAnimation from '../components/WalletImg';
 import { DefaultBank } from '../assets';
-import analytics from '@react-native-firebase/analytics';
+import { trackEvent } from '../utils/analytics';
 
 export default function WalletAmount() {
   const {globalState, setGlobalState} = useContext(AppContext);
@@ -2283,9 +2283,7 @@ const handleOtpVerification = async () => {
                 <Modal visible={visible2} transparent animationType="fade">
                   <TouchableOpacity
                     onPress={() => {
-                      analytics().logEvent('amount_withdraw', {
-                        user_id: email
-                      });
+                      trackEvent('amount_withdraw');
                       setVisible2(false);
                       // navigation.navigate('ProfileScreen');
                       // fetchWalletInfo();

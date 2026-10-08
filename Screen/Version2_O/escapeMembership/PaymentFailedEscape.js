@@ -1,5 +1,6 @@
 import { useNavigation } from '@react-navigation/native';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { trackPaymentFailed } from '../../utils/analytics';
 import {
   View,
   Text,
@@ -18,6 +19,11 @@ const PaymentFailedEscape = (props) => {
     const [paymentData, setPaymentData] = useState(props?.route?.params?.paymentData?.investment || props?.route?.params?.paymentData);
     console.log("Payment Data: ", props?.route?.params?.paymentData?.investment || props?.route?.params?.paymentData);
     const navigation = useNavigation();
+
+    // Analytics funnel: membership payment failed.
+    useEffect(() => {
+        trackPaymentFailed('membership', 'failed');
+    }, []);
 
     const paidAmount = paymentData?.paymentProof?.bookingAmount || 0;
     const gst = paymentData?.paymentProof?.gst;

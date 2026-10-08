@@ -43,6 +43,8 @@ const intentToSchemeUrl = url => {
   return `${match[1]}://${body}`;
 };
 
+import { trackCheckoutStarted } from './utils/analytics';
+
 export default function PaymentPage(props) {
   //console.log(props?.route?.params?.property);
     const {globalState, setGlobalState} = useContext(AppContext);
@@ -62,6 +64,12 @@ const location = props?.route?.params?.location;
  const taxAmount = props?.route?.params?.taxAmount;
  const numberParam = props?.route?.params?.Number;
  const baseAmount = props?.route?.params?.baseAmount;
+
+ // Analytics funnel: property booking reached the payment gateway.
+ useEffect(() => {
+   trackCheckoutStarted('property', parseFloat(totalAmount));
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, []);
 
  // The PayU form is loaded with the gateway's own origin so its POST is
  // same-origin and its cookies first-party (Android WebView blocks

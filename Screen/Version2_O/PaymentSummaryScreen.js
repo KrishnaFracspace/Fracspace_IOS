@@ -14,6 +14,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Property from '../Property';
 
+import { trackPaymentFailed, trackPurchase } from '../utils/analytics';
+
 const PaymentSummaryScreen = ({ route }) => {
     const navigation = useNavigation();
     const { success, message, property, txnId, bookingData } = route.params;
@@ -25,6 +27,17 @@ const location = route?.params?.location;
   const bookingId = route?.params?.bookingId;      
  const time = route?.params?.time;
     const isSuccess = success;
+
+    // Analytics funnel: property booking result. (This file shadows the global
+    // Number, hence parseFloat.)
+    useEffect(() => {
+        if (isSuccess) {
+            trackPurchase('property', { value: parseFloat(totalAmount), transactionId: txnId || bookingId });
+        } else {
+            trackPaymentFailed('property', message);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Hardware back must not return to Book/PaymentPage (that would allow paying again).
     useEffect(() => {

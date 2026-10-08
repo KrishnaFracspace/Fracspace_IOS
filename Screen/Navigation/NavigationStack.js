@@ -191,9 +191,11 @@ useLayoutEffect(() => {
 // Logging in (NewLogin / NewSigin) only stores the token, name and email; the
 // full profile was fetched at app start only, so screens that read
 // globalState.userDetails stayed empty until the Profile tab refetched it.
-// Load it whenever we are logged in without a profile.
+// Load it whenever we are logged in without a profile. AppContext starts
+// userDetails as [] (truthy), so check for a real profile, not just a value:
+// otherwise a fresh install never loaded it after the first login.
 useEffect(() => {
-  if (!LoadingS && globalState?.token && globalState?.userEmail && !globalState?.userDetails) {
+  if (!LoadingS && globalState?.token && globalState?.userEmail && !globalState?.userDetails?._id) {
     handleProfile(globalState.userEmail, globalState.token);
   }
 }, [LoadingS, globalState?.token, globalState?.userEmail, globalState?.userDetails]);

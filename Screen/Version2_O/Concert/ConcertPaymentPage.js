@@ -19,6 +19,7 @@ import useBookingStatusBar from './utils/useBookingStatusBar';
 import { VerifyConcertPayment, classifyBookingError } from '../../Services/UserApi';
 import { classifyVerifyResponse } from './utils/concertBookingAdapter';
 import { clearPendingBooking, savePendingBooking } from './utils/concertPendingBooking';
+import { trackCheckoutStarted } from '../../utils/analytics';
 
 /**
  * Markers that mean PayU has handed the browser back.
@@ -93,6 +94,8 @@ export default function ConcertPaymentPage({ route, navigation }) {
   useEffect(() => {
     mounted.current = true;
     if (booking) savePendingBooking(booking);
+    // Analytics funnel: concert booking reached the payment gateway.
+    trackCheckoutStarted('concert', booking?.totalAmount ?? quotedTotal);
     return () => {
       mounted.current = false;
     };

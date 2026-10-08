@@ -320,15 +320,23 @@ export default function Review(props) {
               //flex:1
             }}>
             <IconF name="location-dot" size={20} color="#021265" />
+            {/* One line, "…" at the end; flexShrink lets it fit inside the row. */}
             <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
               style={{
                 fontFamily: 'Montserrat-SemiBold',
                 fontSize: 14,
                 color: '#000000',
                 paddingLeft: 10,
+                flexShrink: 1,
               }}>
-              {globalState?.userDetails?.postalAddress}{'Not Availble'},
-              {globalState?.userDetails?.pincode}
+              {/* Was "<address>Not Availble," every time. */}
+              {globalState?.userDetails?.postalAddress
+                ? [globalState?.userDetails?.postalAddress, globalState?.userDetails?.pincode]
+                    .filter(Boolean)
+                    .join(', ')
+                : 'Not Available'}
               {/* Yorem ipsum dolor sit amet, consectetur adipiscing elit. */}
             </Text>
           </View>
