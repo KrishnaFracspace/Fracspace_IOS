@@ -23,6 +23,7 @@ from 'react-native-vector-icons/Ionicons';
 import { verifyPaymentForEscape } from '../../Services/UserApi';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { trackCheckoutStarted } from '../../utils/analytics';
+import { toPaymentAppUrl } from '../../utils/upiLink';
 
 const EscapePaymentPage = ({
     route,
@@ -196,7 +197,8 @@ const EscapePaymentPage = ({
             url.includes('bhim')
         ) {
 
-            Linking.openURL(url)
+            // Android intent:// links must be unwrapped to upi://, or no app opens.
+            Linking.openURL(toPaymentAppUrl(url))
                 .catch(() => {
 
                     Alert.alert(

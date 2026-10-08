@@ -284,9 +284,13 @@ All tracking goes through `Screen/utils/analytics.js`.
   - `bookingStatus` from the verification.
 - Verified failures and user cancels are recorded as `Failed`. If PayU can't be reached, nothing is recorded.
 - PayU's cancel is handled in the app. If the page fails to load, it shows a "Couldn't load the payment page" screen.
-- **UPI:** any non-web URL scheme is handed to the matching app with `Linking.openURL`. On Android the property
-  page converts `intent://` links first (the concert page doesn't yet, see open issues). `AndroidManifest.xml`
-  `<queries>` lists `upi` plus GPay, PhonePe, Paytm and BHIM.
+- **UPI:** any non-web URL scheme is handed to the matching app with `Linking.openURL`. On Android, `intent://`
+  links are unwrapped to the plain scheme first (`Screen/utils/upiLink.js`, used by the property, concert and
+  Escape payment pages). `AndroidManifest.xml` `<queries>` lists `upi` plus GPay, PhonePe, Paytm and BHIM.
+- **PayU's per-app UPI tiles (Google Pay, PhonePe, CRED…) do nothing inside the app's WebView.** Checked with the
+  WebView inspector (2026-10-08): a tile tap only calls PayU's `validateOffer` and logs `isInLiveMode: false`; PayU
+  never sends a link. Only **"Pay using any UPI App"** launches UPI (a `upi://pay?…` link → Android's app chooser).
+  This is PayU-side: ask PayU to enable app-specific UPI intent for in-app checkout, or use the native SDK.
 - **Known PhonePe problem (live and 2.3.0):** PhonePe opens and closes straight away, and the app then shows
   "Confirming your payment". UPI apps expect to be launched "for a result"; `Linking.openURL` can't do that and
   PhonePe rejects it. Google Pay / Paytm usually work. Planned fix after 2.3.0: native checkout (section 9).
@@ -298,11 +302,11 @@ All tracking goes through `Screen/utils/analytics.js`.
 - **Notifications:** only the last **45 days**. The list, the empty state, the header unread counter and the
   Home bell dot all use the same window.
 - **Profile verification (non-Indian users):** bank account and branch fields; PDF or image for PAN and cheque.
-- **Profile verification photo uploads on iOS:** photos taken with an iPhone/iPad camera are HEIC. The image picker
-  (default `assetRepresentationMode: 'auto'`) returns the HEIC bytes but names them `.jpg` / `image/jpeg`, and the
-  upload can fail; screenshots and downloaded images (real JPEG/PNG) work. Fix (not applied yet): pick with
-  `assetRepresentationMode: 'compatible'` plus `maxWidth`/`maxHeight` ~2000 and `quality: 0.8`, on every screen
-  that uploads photos (verification, Complete profile, Profile).
+- **Photo uploads on iOS:** iPhone/iPad camera photos are HEIC. With the picker's default
+  `assetRepresentationMode: 'auto'` the HEIC bytes came back named `.jpg` / `image/jpeg` and verification uploads
+  failed (screenshots and downloaded images worked). Every upload picker now uses `UPLOAD_PHOTO_OPTIONS`
+  (`Screen/utils/photoPicker.js`: `'compatible'` → real JPEG, max 2000 px, quality 0.8); Profile also asks for
+  `'compatible'`. Use those options for any new photo upload.
 - **Book / Review:** the user's address is `userDetails.postalAddress` (there is no `address` field), shown on one
   line with an ellipsis.
 - **Enquire from Dashboard (complimentary stay):** the route param is `{property}`, the payload has `bookingFor: 'me'`,
@@ -400,10 +404,9 @@ All tracking goes through `Screen/utils/analytics.js`.
   when the app starts sending new data.
 - **Payments**
   - PhonePe opens and immediately closes from the PayU page (section 5, Payments). Native checkout is planned.
-  - The concert payment page passes Android `intent://` UPI links straight to `Linking.openURL` without
-    converting them like `PaymentPage.js` does.
+  - PayU's per-app UPI tiles don't launch apps inside the WebView (section 5, Payments); only "Pay using any
+    UPI App" works. Ask PayU to enable app-specific UPI intent for in-app checkout.
   - PayU success/failure URLs point to `test.bunknbeyond.com`; confirm with the backend that this is intended.
-- **iOS photo uploads:** HEIC photos uploaded as `.jpg` (section 5, Other screens). Fix ready to apply.
 - **Android app size (analysed 2026-10-08, left as is):** the universal APK is ~107 MB but a phone downloads
   roughly 25–30 MB (one CPU type). Possible later savings: drop x86/x86_64 (upload/build size only), replace
   react-native-pdf's pdfium (~5 MB per phone), Facebook SDK core only (~1–1.5 MB; needs marketing to confirm),

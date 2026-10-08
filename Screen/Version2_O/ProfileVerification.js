@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import { AppContext } from '../Context/AppContext';
 import { ProfileDetails, Verification } from '../Services/UserApi';
 import { launchImageLibrary } from 'react-native-image-picker'
+import { UPLOAD_PHOTO_OPTIONS } from '../utils/photoPicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileVerification() {
@@ -49,11 +50,8 @@ export default function ProfileVerification() {
                 // PAN & Cheque → use image picker (supports jpg, png, also pdf in many cases)
                 const response = await new Promise((resolve, reject) => {
                     launchImageLibrary(
-                        {
-                            mediaType: 'photo',           // or 'mixed' if you want to allow PDF too
-                            includeBase64: false,
-                            selectionLimit: 1,
-                        },
+                        // Real JPEG on iOS (camera photos are HEIC), max 2000 px.
+                        UPLOAD_PHOTO_OPTIONS,
                         (res) => {
                             if (res.didCancel) reject('cancelled');
                             else if (res.errorCode) reject(res.errorMessage);

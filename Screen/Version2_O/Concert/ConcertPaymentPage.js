@@ -20,6 +20,7 @@ import { VerifyConcertPayment, classifyBookingError } from '../../Services/UserA
 import { classifyVerifyResponse } from './utils/concertBookingAdapter';
 import { clearPendingBooking, savePendingBooking } from './utils/concertPendingBooking';
 import { trackCheckoutStarted } from '../../utils/analytics';
+import { toPaymentAppUrl } from '../../utils/upiLink';
 
 /**
  * Markers that mean PayU has handed the browser back.
@@ -236,7 +237,8 @@ export default function ConcertPaymentPage({ route, navigation }) {
       // happened elsewhere". Reaching the gateway is not: pulling down the
       // notification shade would otherwise look identical.
       leftForUpi.current = true;
-      Linking.openURL(url).catch(() =>
+      // Android intent:// links must be unwrapped to upi://, or no app opens.
+      Linking.openURL(toPaymentAppUrl(url)).catch(() =>
         Alert.alert(
           'App not found',
           'That payment app does not seem to be installed. Please pick another method.',

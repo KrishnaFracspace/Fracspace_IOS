@@ -15,6 +15,7 @@ import GradientView from '../components/GradientView';
 import Icon from 'react-native-vector-icons/Feather';
 import Ico from 'react-native-vector-icons/Ionicons';
 import { launchImageLibrary } from 'react-native-image-picker';
+import { UPLOAD_PHOTO_OPTIONS } from '../utils/photoPicker';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import Toast from 'react-native-toast-message';
@@ -61,11 +62,8 @@ export default function CompleteProfileScreen() {
     try {
       const response = await new Promise((resolve, reject) => {
         launchImageLibrary(
-          {
-            mediaType: 'photo',
-            includeBase64: false,
-            selectionLimit: 1,
-          },
+          // Real JPEG on iOS (camera photos are HEIC), max 2000 px.
+          UPLOAD_PHOTO_OPTIONS,
           res => {
             if (res.didCancel) reject('cancelled');
             else if (res.errorCode) reject(res.errorMessage);

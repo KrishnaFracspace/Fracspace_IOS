@@ -79,6 +79,8 @@ const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith(
       mediaType: 'photo',
       selectionLimit: 1,
       quality: 0.2,
+      // Ask iOS for a JPEG rather than the original HEIC.
+      assetRepresentationMode: 'compatible',
     };
     ImagePicker.launchImageLibrary(options, async response => {
       if (response?.didCancel != true && response?.assets?.[0]) {

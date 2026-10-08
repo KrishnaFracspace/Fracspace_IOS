@@ -34,16 +34,9 @@ const withTimeout = (promise, label) => {
 const isPayUCancel = url =>
   /payu\.in\/cancel/i.test(url) || (/payu/i.test(url) && /[?&](amp;)?status=cancel/i.test(url));
 
-// Converts an Android `intent://...#Intent;scheme=upi;...;end` link into the
-// plain scheme URL (`upi://...`) that Linking can hand to the UPI app.
-const intentToSchemeUrl = url => {
-  const match = /#Intent;.*?scheme=([^;]+);/i.exec(url);
-  if (!match) return url;
-  const body = url.slice('intent://'.length).split('#Intent')[0];
-  return `${match[1]}://${body}`;
-};
-
 import { trackCheckoutStarted } from './utils/analytics';
+// Android intent:// links -> plain upi:// (shared with the concert and Escape pages).
+import { toPaymentAppUrl } from './utils/upiLink';
 
 export default function PaymentPage(props) {
   //console.log(props?.route?.params?.property);
@@ -335,11 +328,7 @@ const handleNavigationStateChange = (state) => {
     // Anything else is a hand-off to a payment app (upi://, phonepe://,
     // tez://, paytmmp://, intent://...). Matching on the scheme means a new
     // wallet works without a code change.
-    const target =
-      Platform.OS === 'android' && url.startsWith('intent://')
-        ? intentToSchemeUrl(url)
-        : url;
-    Linking.openURL(target).catch(() =>
+    Linking.openURL(toPaymentAppUrl(url)).catch(() =>
       Alert.alert(
         'UPI App Not Found',
         'Please install a UPI app to continue payment.',
