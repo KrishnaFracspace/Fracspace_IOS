@@ -6,7 +6,8 @@ now, the conventions to follow, and what changed in the merge and the React Nati
 
 - Merge details, per-file decisions and the production bugs found: [`docs/merge-2.3.0/MERGE-NOTES.md`](merge-2.3.0/MERGE-NOTES.md)
 - Unused-file cleanup (what was removed and why): [`docs/UNUSED-FILES.md`](UNUSED-FILES.md)
-- Last updated: 2026-10-06 (RN 0.81 upgrade, memory, cleanup, audio, app size, OTP autofill)
+- Last updated: 2026-10-08 (RN 0.81 upgrade, memory, cleanup, audio, app size, OTP autofill, pre-release review
+  fixes, UX polish, Profile logout/delete, analytics by user ID, iOS gradient layouts)
 
 ---
 
@@ -25,7 +26,8 @@ now, the conventions to follow, and what changed in the merge and the React Nati
 Android app, and will be archived once 2.3.0 ships on both stores.
 
 **How changes land:** one short branch per change off `release/2.3.0` (`fix/…`, `feature/…`, `docs/…`).
-Test it on an Android phone and an iPad, then fast-forward merge it into `release/2.3.0`.
+Test it on an Android phone and an iPad, then fast-forward merge it into `release/2.3.0` and **delete the branch**
+(locally and on GitHub) once it is merged. Normally only `main` and `release/2.3.0` exist.
 
 App identifiers stay different per platform: Android `com.fracspace`, iOS `com.fracspace.fracspace`.
 Version **2.3.0**: Android versionCode **76** (75 is already on Play internal testing; every Play upload
@@ -65,7 +67,15 @@ cd android && ./gradlew bundleRelease        # AAB for Play
 - If Gradle can't find the SDK: `export ANDROID_HOME=$HOME/Library/Android/sdk`.
 - iOS: open `ios/Fracspace.xcworkspace` in Xcode. From the command line the simulator needs `ARCHS=arm64`,
   because the Podfile excludes x86_64 simulator builds.
-- After pulling native changes (Podfile, fonts, Xcode project, patches), do **Product → Clean Build Folder** in Xcode.
+- After pulling native changes (Podfile, fonts, Xcode project, patches, `firebase.json`), do **Product → Clean Build
+  Folder** in Xcode.
+- **Gradle memory:** `android/gradle.properties` gives Gradle 4 GB (`-Xmx4096m`) and has **Jetifier off**. 2 GB ran
+  out of heap ("Java heap space" in `JetifyTransform`), and no dependency uses the old `android.support` libraries.
+  Only turn Jetifier back on if a new library needs it.
+- **Faster local Android builds:** a release build compiles native code for 4 CPU types. For your own phone only:
+  `./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a`. Store builds must keep all of them.
+- **Installing over a Play build:** an APK signed with the upload key can't replace a build installed from Play
+  (Play re-signs apps; "signatures do not match"). Uninstall the Play build first.
 
 ### Reading logs and JS errors
 **Release builds contain no `console.*` from app code.** `babel.config.js` strips them when `BABEL_ENV=production`
@@ -76,6 +86,11 @@ React Native 0.77+ no longer prints the app's `console.*` in the Metro terminal.
 - **Android:** `adb logcat` (`ReactNativeJS` for JS, `AndroidRuntime` for crashes).
 - **iOS:** press `j` in Metro to open React Native DevTools (console, errors). Native logs: Xcode's console, or
   `xcrun devicectl device process launch --console`.
+
+### Testing on the iPad
+The test iPad runs Fracspace as an **iPhone app in a resizable window**. Layout bugs that appear only there are often
+caused by `Dimensions.get('window')` read once at launch (the window size changes afterwards); confirm on a real
+iPhone (TestFlight) before treating them as iOS bugs, and prefer flex / `'100%'` over that launch-time width.
 
 ### Line endings
 Many JS files are **CRLF**. Keep each file's existing line endings, or the diff marks every line as changed.
@@ -179,13 +194,19 @@ Most screens came from the iOS app. Android-specific behaviour is behind `Platfo
   - Android 13+ asks for the `POST_NOTIFICATIONS` permission.
   - A push that arrives while the app is open shows an `Alert` on both platforms. Data-only messages are skipped.
 - **Login:**
-  - The full profile (`globalState.userDetails`) is fetched whenever the user is logged in without one, including straight after login.
-  - **Logout and Delete Account clear the whole session**: AsyncStorage, `globalState`, and the redux `profile` and `home` state.
+  - The full profile (`globalState.userDetails`) is fetched whenever the user is logged in without one, including
+    straight after login. The check is `!userDetails?._id`: `AppContext` starts `userDetails` as `[]`, which is
+    truthy, so a plain `!userDetails` never loaded it after the first login on a fresh install (Book then showed
+    empty name, email and phone). Don't change the initial value or the check without keeping that in mind.
+  - **Logout and Delete Account** live in the Home side menu **and** the Profile tab, sharing
+    `Screen/utils/useAccountActions.js` (+ `Screen/components/DeleteAccountModal.js`). Both clear the whole
+    session (AsyncStorage, `globalState`, the redux `profile` and `home` state) and the analytics identity.
+    Delete shows a spinner, ignores double taps and reports network errors.
 - **Deep links (AppsFlyer OneLink):**
   - Property id = `af_sub2 || deep_link_sub1 || af_sub1`.
   - The install-conversion link is used only on first launch.
   - Links that need a login go through the `redirectAfterLogin` route param and AsyncStorage `pendingDeepLink`.
-- **Analytics:** a Firebase screen view is logged on every route change, on both platforms.
+- **Analytics:** see "Analytics (Firebase)" below.
 
 ### OTP autofill (login and signup)
 Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `NewSigin.js`.
@@ -263,14 +284,27 @@ All tracking goes through `Screen/utils/analytics.js`.
   - `bookingStatus` from the verification.
 - Verified failures and user cancels are recorded as `Failed`. If PayU can't be reached, nothing is recorded.
 - PayU's cancel is handled in the app. If the page fails to load, it shows a "Couldn't load the payment page" screen.
-- **UPI:** any non-web URL scheme is handed to the matching app. On Android, `intent://` links are converted
-  first. `AndroidManifest.xml` `<queries>` lists `upi` plus GPay, PhonePe, Paytm and BHIM.
+- **UPI:** any non-web URL scheme is handed to the matching app with `Linking.openURL`. On Android the property
+  page converts `intent://` links first (the concert page doesn't yet, see open issues). `AndroidManifest.xml`
+  `<queries>` lists `upi` plus GPay, PhonePe, Paytm and BHIM.
+- **Known PhonePe problem (live and 2.3.0):** PhonePe opens and closes straight away, and the app then shows
+  "Confirming your payment". UPI apps expect to be launched "for a result"; `Linking.openURL` can't do that and
+  PhonePe rejects it. Google Pay / Paytm usually work. Planned fix after 2.3.0: native checkout (section 9).
+- The same flow (PayU WebView, UPI handoff, verify on return) is used by the concert (`ConcertPaymentPage.js`) and
+  Escape membership (`EscapePaymentPage.js`) payments.
 - The amount sent to PayU is rounded to 2 decimals. The fee and GST formulas are unchanged.
 
 ### Other screens
 - **Notifications:** only the last **45 days**. The list, the empty state, the header unread counter and the
   Home bell dot all use the same window.
 - **Profile verification (non-Indian users):** bank account and branch fields; PDF or image for PAN and cheque.
+- **Profile verification photo uploads on iOS:** photos taken with an iPhone/iPad camera are HEIC. The image picker
+  (default `assetRepresentationMode: 'auto'`) returns the HEIC bytes but names them `.jpg` / `image/jpeg`, and the
+  upload can fail; screenshots and downloaded images (real JPEG/PNG) work. Fix (not applied yet): pick with
+  `assetRepresentationMode: 'compatible'` plus `maxWidth`/`maxHeight` ~2000 and `quality: 0.8`, on every screen
+  that uploads photos (verification, Complete profile, Profile).
+- **Book / Review:** the user's address is `userDetails.postalAddress` (there is no `address` field), shown on one
+  line with an ellipsis.
 - **Enquire from Dashboard (complimentary stay):** the route param is `{property}`, the payload has `bookingFor: 'me'`,
   and the user returns to `Dashboard` with `ownedProDetails`.
 - **Altaira "I'm interested":** the enquiry is sent first; the thank-you modal shows only on success.
@@ -364,6 +398,16 @@ All tracking goes through `Screen/utils/analytics.js`.
   data) and **no tracking** (the app shows no ATT prompt). The App Store privacy labels and Play Data safety form
   must match. If ad campaigns need the IDFA, add the ATT prompt and set tracking to true. Keep this file updated
   when the app starts sending new data.
+- **Payments**
+  - PhonePe opens and immediately closes from the PayU page (section 5, Payments). Native checkout is planned.
+  - The concert payment page passes Android `intent://` UPI links straight to `Linking.openURL` without
+    converting them like `PaymentPage.js` does.
+  - PayU success/failure URLs point to `test.bunknbeyond.com`; confirm with the backend that this is intended.
+- **iOS photo uploads:** HEIC photos uploaded as `.jpg` (section 5, Other screens). Fix ready to apply.
+- **Android app size (analysed 2026-10-08, left as is):** the universal APK is ~107 MB but a phone downloads
+  roughly 25–30 MB (one CPU type). Possible later savings: drop x86/x86_64 (upload/build size only), replace
+  react-native-pdf's pdfium (~5 MB per phone), Facebook SDK core only (~1–1.5 MB; needs marketing to confirm),
+  English-only resources (~1 MB), `shrinkResources` (~0.5–1.5 MB).
 - **Android deep links:** only `https://fracspace.onelink.me` opens the app. `fracspace://`, `fsapp://` and
   `https://fracspace.com` need intent filters if they are used.
 
@@ -380,10 +424,19 @@ All tracking goes through `Screen/utils/analytics.js`.
 | 2 Android OTA: CodePush → Stallion | ✅ OTA verified on device |
 | 3 Upgrade to React Native 0.81 (16 KB, New Architecture, iOS on Hermes) | ✅ tested on both; Play shows "Supports 16 KB" |
 | 3+ Memory, cleanup, audio, splash, iOS size, OTP autofill | ✅ tested on both |
+| 3++ Pre-release review fixes (OTA restart, release logging, OTP double submit, iOS location, versionCode 76, backend-name guards), UX polish (testimonials, concert card, Altaira, status bar, timers), Facebook SDK pin, storage permissions, privacy manifest, Profile logout/delete, analytics by user ID, first-login profile, Book/Review address, iOS gradient layouts | ✅ tested on both |
 | 4 QA on both stores' test tracks (TestFlight; Play internal as versionCode 76+) | next |
 | 5 Release 2.3.0, merge to `main`, archive `Fracspace_Android` | |
 
 **After 2.3.0**
+- **Native payment checkout** instead of the PayU WebView: PayU's Checkout Pro React Native SDK
+  (`payu-non-seam-less-react`, the package removed as unused in the merge) opens UPI apps properly (fixes PhonePe)
+  and shows a native payment sheet. Needs a backend endpoint that signs each payment ("hash"; the PayU salt must
+  stay on the server) and a check that the SDK works on the New Architecture. Start with a 1–2 day spike in PayU
+  test mode. Alternatives if it doesn't fit: PayU Core/UPI SDKs (fully custom UI), Razorpay or Cashfree.
+- **Analytics with email/phone for the team:** Firebase stays ID-only. Either join Firebase's BigQuery export with
+  the user table in Looker Studio, or add a customer-analytics tool (CleverTap, MoEngage, WebEngage, Mixpanel)
+  that may hold contact details.
 - **Move from `react-native-video` to `expo-video`.** Its `audioMixingMode: 'auto'` gives the background-music
   behaviour natively on both platforms, so the patch can go. It needs Expo's core modules (Expo SDK 54 matches
   RN 0.81) and a rewrite of the ~11 video usages. Note: its cache doesn't work with HLS on iOS.
