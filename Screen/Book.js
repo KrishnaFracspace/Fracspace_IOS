@@ -58,6 +58,14 @@ const [summaryModal, setSummaryModal] = useState(false);
   const gstFromBackend = Property?.gstAmount || 0;
   const totalAmountFromBackend = baseAmount + platformFeeFromBackend + gstFromBackend || 0;
     //  console.log(totalAmount,taxAmount,Number,baseAmount)
+  // Display helpers for the price breakdown. "₹1,25,000"; fees may have paise.
+  const inr = value =>
+    `₹${(globalThis.Number(value) || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 })}`;
+  // Offer: fees the user doesn't pay (shown as savings).
+  const offerSavings = Property?.offer
+    ? Math.max(0, platformFee + gst - (platformFeeFromBackend + gstFromBackend))
+    : 0;
+
   // PayU amount, rounded to 2 decimals (the fee/GST formulas above are unchanged)
   const payableAmount = globalThis.Number(
     (Property?.offer ? totalAmountFromBackend : totalAmount).toFixed(2),
@@ -285,10 +293,9 @@ const [summaryModal, setSummaryModal] = useState(false);
             ₹ {Math.round(totalAmount).toLocaleString('en-IN')}
           </Text>
         :
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <View style={{position:'absolute',alignSelf:'center',justifyContent:'center',borderWidth:0.5,borderColor:'#0000009c',left:-2,right:55,top:12}}/>
-          <Text style={{fontFamily:'WorkSans-Regular',fontSize:14,color:'#0000009c'}}>₹ {Math.round(totalAmount).toLocaleString('en-IN')}</Text>
-          <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:14,color:'#000000',marginLeft:10}}>{Math.round(totalAmountFromBackend).toLocaleString('en-IN')}</Text>
+        <View style={{flexDirection:'row',alignItems:'baseline'}}>
+          <Text style={[styles.totalAmount, {marginRight: 8}]}>{inr(Math.round(totalAmountFromBackend))}</Text>
+          <Text style={styles.strikeAmount}>{inr(Math.round(totalAmount))}</Text>
         </View>
         }
 
@@ -329,67 +336,74 @@ const [summaryModal, setSummaryModal] = useState(false);
     />
 
     <View style={styles.bottomModalBox}>
-      <Text style={styles.modalTitle}>Price Breakdown</Text>
-
-      <View style={styles.modalRow}>
-        <Text>Booking ({Number} × ₹{Property?.BookingAmount})</Text>
-        <Text>₹ {baseAmount?.toLocaleString('en-IN')}</Text>
-        {/* {!Property?.offer ? 
-        <Text>₹ {baseAmount?.toLocaleString('en-IN')}</Text>
-        :
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <View style={{position:'absolute',alignSelf:'center',justifyContent:'center',borderWidth:0.5,borderColor:'#0000009c',left:-2,right:18,top:10.5}}/>
-          <Text style={{fontFamily:'WorkSans-Regular',fontSize:14,color:'#0000009c'}}>₹ {baseAmount?.toLocaleString('en-IN')}</Text>
-        </View>
-        } */}
+      <View style={styles.sheetHandle} />
+      <View style={styles.breakdownHeader}>
+        <Text style={styles.breakdownTitle}>Price Breakdown</Text>
+        <TouchableOpacity onPress={() => setPriceModal(false)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
+          <Entypo name="cross" size={22} color="#6B7280" />
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.modalRow}>
-        <Text>Platform Fee (2.2%)</Text>
-        {/* <Text>₹ {platformFee?.toLocaleString('en-IN')}</Text> */}
-        {!Property?.offer ? 
-        <Text>₹ {platformFee?.toLocaleString('en-IN')}</Text>
-        :
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <View style={{position:'absolute',alignSelf:'center',justifyContent:'center',borderWidth:0.5,borderColor:'#0000009c',left:-2,right:18,top:8}}/>
-          <Text style={{fontFamily:'WorkSans-Regular',fontSize:14,color:'#0000009c'}}>₹ {platformFee?.toLocaleString('en-IN')}</Text>
-          <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:14,color:'#000000',marginLeft:10}}>{platformFeeFromBackend?.toLocaleString('en-IN')}</Text>
+      {/* Booking */}
+      <View style={styles.breakdownRow}>
+        <View style={{flexShrink: 1}}>
+          <Text style={styles.breakdownLabel}>Booking amount</Text>
+          <Text style={styles.breakdownSub}>
+            {Number} × {inr(Property?.BookingAmount)}
+          </Text>
         </View>
-        }
+        <Text style={styles.breakdownValue}>{inr(baseAmount)}</Text>
       </View>
 
-      <View style={styles.modalRow}>
-        <Text>GST (18%)</Text>
-        {/* <Text>₹ {gst.toFixed(0)?.toLocaleString('en-IN')}</Text> */}
-        {!Property?.offer ? 
-        <Text>₹ {gst.toFixed(0)?.toLocaleString('en-IN')}</Text>
-        :
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <View style={{position:'absolute',alignSelf:'center',justifyContent:'center',borderWidth:0.5,borderColor:'#0000009c',left:-2,right:18,top:8}}/>
-          <Text style={{fontFamily:'WorkSans-Regular',fontSize:14,color:'#0000009c'}}>₹ {gst?.toLocaleString('en-IN')}</Text>
-          <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:14,color:'#000000',marginLeft:10}}>{gstFromBackend?.toLocaleString('en-IN')}</Text>
+      {/* Fees: with an offer, the original amount is struck through and the
+          new one (or FREE) shown beside it, using real strikethrough text. */}
+      {[
+        {label: 'Platform fee', note: '2.2%', normal: platformFee, offer: platformFeeFromBackend},
+        {label: 'GST', note: '18% on platform fee', normal: gst, offer: gstFromBackend},
+      ].map(row => (
+        <View key={row.label} style={styles.breakdownRow}>
+          <View style={{flexShrink: 1}}>
+            <Text style={styles.breakdownLabel}>{row.label}</Text>
+            <Text style={styles.breakdownSub}>{row.note}</Text>
+          </View>
+          {!Property?.offer ? (
+            <Text style={styles.breakdownValue}>{inr(row.normal)}</Text>
+          ) : (
+            <View style={styles.amountPair}>
+              <Text style={styles.strikeAmount}>{inr(row.normal)}</Text>
+              {row.offer > 0 ? (
+                <Text style={styles.breakdownValue}>{inr(row.offer)}</Text>
+              ) : (
+                <Text style={styles.freeText}>FREE</Text>
+              )}
+            </View>
+          )}
         </View>
-        }
+      ))}
+
+      <View style={styles.breakdownDivider} />
+
+      {/* Total */}
+      <View style={[styles.breakdownRow, {marginBottom: 0}]}>
+        <Text style={styles.breakdownTotalLabel}>Total payable</Text>
+        {!Property?.offer ? (
+          <Text style={styles.breakdownTotalValue}>{inr(Math.round(totalAmount))}</Text>
+        ) : (
+          <View style={styles.amountPair}>
+            <Text style={styles.strikeAmount}>{inr(Math.round(totalAmount))}</Text>
+            <Text style={styles.breakdownTotalValue}>{inr(Math.round(totalAmountFromBackend))}</Text>
+          </View>
+        )}
       </View>
 
-      <View style={styles.divider} />
-
-      <View style={styles.modalRow}>
-        <Text style={{fontWeight: 'bold'}}>Total</Text>
-        {/* <Text style={{fontWeight: 'bold'}}>
-          ₹ {Math.round(totalAmount).toLocaleString('en-IN')}
-        </Text> */}
-
-        {!Property?.offer ? 
-        <Text>₹ {Math.round(totalAmount).toLocaleString('en-IN')}</Text>
-        :
-        <View style={{flexDirection:'row',alignItems:'center'}}>
-          <View style={{position:'absolute',alignSelf:'center',justifyContent:'center',borderWidth:0.5,borderColor:'#0000009c',left:-2,right:50,top:8}}/>
-          <Text style={{fontFamily:'WorkSans-Regular',fontSize:14,color:'#0000009c'}}>₹ {Math.round(totalAmount).toLocaleString('en-IN')}</Text>
-          <Text style={{fontFamily:'WorkSans-SemiBold',fontSize:14,color:'#000000',marginLeft:10}}>{totalAmountFromBackend?.toLocaleString('en-IN')}</Text>
+      {offerSavings > 0 && (
+        <View style={styles.savingsBox}>
+          <Entypo name="price-tag" size={14} color="#0F7B3F" />
+          <Text style={styles.savingsText}>
+            Offer applied: you save {inr(Math.round(offerSavings))} on fees
+          </Text>
         </View>
-        }
-      </View>
+      )}
 
       {/* <TouchableOpacity
         style={styles.continueBtn}
@@ -929,11 +943,100 @@ modalOverlay: {
 
 bottomModalBox: {
   backgroundColor: '#fff',
-  padding: 20,
+  paddingHorizontal: 20,
+  paddingTop: 10,
+  paddingBottom: 40,
   borderTopLeftRadius: 20,
   borderTopRightRadius: 20,
-  paddingVertical:40,
-  paddingBottom:70
+},
+
+// Price breakdown sheet
+sheetHandle: {
+  alignSelf: 'center',
+  width: 40,
+  height: 4,
+  borderRadius: 2,
+  backgroundColor: '#D1D5DB',
+  marginBottom: 14,
+},
+breakdownHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 18,
+},
+breakdownTitle: {
+  fontFamily: 'Montserrat-SemiBold',
+  fontSize: 18,
+  color: '#0F1130',
+},
+breakdownRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 16,
+},
+breakdownLabel: {
+  fontFamily: 'WorkSans-Medium',
+  fontSize: 14,
+  color: '#1A1A1A',
+},
+breakdownSub: {
+  fontFamily: 'WorkSans-Regular',
+  fontSize: 12,
+  color: '#6B7280',
+  marginTop: 2,
+},
+breakdownValue: {
+  fontFamily: 'WorkSans-SemiBold',
+  fontSize: 14,
+  color: '#1A1A1A',
+},
+amountPair: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+strikeAmount: {
+  fontFamily: 'WorkSans-Regular',
+  fontSize: 13,
+  color: '#9CA3AF',
+  textDecorationLine: 'line-through',
+  marginRight: 8,
+},
+freeText: {
+  fontFamily: 'WorkSans-SemiBold',
+  fontSize: 14,
+  color: '#0F7B3F',
+},
+breakdownDivider: {
+  height: 1,
+  backgroundColor: '#E5E7EB',
+  marginBottom: 16,
+},
+breakdownTotalLabel: {
+  fontFamily: 'WorkSans-SemiBold',
+  fontSize: 16,
+  color: '#0F1130',
+},
+breakdownTotalValue: {
+  fontFamily: 'WorkSans-Bold',
+  fontSize: 18,
+  color: '#021265',
+},
+savingsBox: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: '#E8F5EE',
+  borderRadius: 8,
+  paddingVertical: 10,
+  paddingHorizontal: 12,
+  marginTop: 16,
+},
+savingsText: {
+  fontFamily: 'WorkSans-Medium',
+  fontSize: 13,
+  color: '#0F7B3F',
+  marginLeft: 8,
 },
 
 modalTitle: {
