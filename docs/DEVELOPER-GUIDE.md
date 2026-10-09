@@ -248,8 +248,9 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
   `MainApplication.kt` and set as Firebase's default in `firebase.json`
   (`messaging_android_notification_channel_id`). A channel's importance can't be raised once it exists on a
   phone; use a new id to change it. Some OPPO/ColorOS phones also need Banners enabled per app.
-- **Testing:** long-press the version ("V 2.3.0") at the bottom of Profile to share the device's FCM token, then
-  Firebase console → "Send test message". Xcode builds receive pushes through APNs sandbox (works with an APNs
+- **Testing:** in a **development build** (Xcode Run / `run-android` with Metro), long-press the version
+  ("V 2.3.0") at the bottom of Profile to share the device's FCM token, then Firebase console → "Send test
+  message". The long-press is disabled in release builds (`__DEV__`), so live users don't have it. Xcode builds receive pushes through APNs sandbox (works with an APNs
   auth key in Firebase).
 - **Adding a target:** add a branch in `tryNavigate`; open tab screens through `BottomNavigations` (as the
   portfolio/profile/dreamscape entries do) so the tab bar stays visible.

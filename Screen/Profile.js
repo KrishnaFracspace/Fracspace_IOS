@@ -959,18 +959,23 @@ const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith(
 
         </View>
         <View style={{alignItems: 'center', top:0}}>
-          {/* Hidden helper for push testing: long-press the version to share this
-              device's FCM token (paste it in Firebase console -> Cloud Messaging ->
-              "Send test message"). Release builds have no logs to read it from. */}
+          {/* Development builds only (Xcode Run / run-android with Metro): long-press
+              the version to share this device's FCM token for Firebase console ->
+              "Send test message". __DEV__ is false in every release build, so live
+              users never get it. */}
           <Text
-            onLongPress={async () => {
-              try {
-                const token = await messaging().getToken();
-                await Share.share({ message: token });
-              } catch (e) {
-                Alert.alert('FCM token', 'Could not read the token. Check the internet connection.');
-              }
-            }}
+            onLongPress={
+              __DEV__
+                ? async () => {
+                    try {
+                      const token = await messaging().getToken();
+                      await Share.share({ message: token });
+                    } catch (e) {
+                      Alert.alert('FCM token', 'Could not read the token. Check the internet connection.');
+                    }
+                  }
+                : undefined
+            }
             style={{
               fontFamily: 'WorkSans-Regular',
               fontSize: 12,
