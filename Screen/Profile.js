@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Dimensions,
   Alert,
+  Share,
   TextInput,
   Linking,
   Modal,
@@ -38,6 +39,7 @@ import {
 import Back from './Back';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DeviceInfo from 'react-native-device-info';
+import messaging from '@react-native-firebase/messaging';
 import useAccountActions from './utils/useAccountActions';
 import DeleteAccountModal from './components/DeleteAccountModal';
 
@@ -957,7 +959,18 @@ const isPDF = (url) => !!url && url.split('?')[0].trim().toLowerCase().endsWith(
 
         </View>
         <View style={{alignItems: 'center', top:0}}>
+          {/* Hidden helper for push testing: long-press the version to share this
+              device's FCM token (paste it in Firebase console -> Cloud Messaging ->
+              "Send test message"). Release builds have no logs to read it from. */}
           <Text
+            onLongPress={async () => {
+              try {
+                const token = await messaging().getToken();
+                await Share.share({ message: token });
+              } catch (e) {
+                Alert.alert('FCM token', 'Could not read the token. Check the internet connection.');
+              }
+            }}
             style={{
               fontFamily: 'WorkSans-Regular',
               fontSize: 12,

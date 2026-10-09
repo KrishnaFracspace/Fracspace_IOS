@@ -9,7 +9,7 @@ import NavigationStack from './Screen/Navigation/NavigationStack';
 import store from './Screen/redux/store/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setDeepLinkNav } from './Screen/redux/reducer/homeReducer';
-import Toast from 'react-native-toast-message';
+import Toast, { BaseToast } from 'react-native-toast-message';
 import analytics from '@react-native-firebase/analytics';
 import DeviceInfo from 'react-native-device-info';
 import UpdatePopup from './components/UpdatePopup';
@@ -20,7 +20,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import NetInfo from '@react-native-community/netinfo';
 import NoInternet from './Screen/components/NoInternet';
 import { applyStatusBarForRoute } from './Screen/utils/statusBar';
-import { trackScreen } from './Screen/utils/analytics';
+import { trackEvent, trackScreen } from './Screen/utils/analytics';
 
 // OTA updates: Stallion on both platforms.
 import * as Stallion from 'react-native-stallion';
@@ -28,6 +28,22 @@ import * as Stallion from 'react-native-stallion';
 // Longest the splash may stay up (its video is ~4.6 s).
 const SPLASH_MAX_MS = 6000;
 const navigationRef = createNavigationContainerRef();
+
+// Toast types: the library defaults plus 'push', the banner shown for a push
+// notification that arrives while the app is open (two lines of text).
+const toastConfig = {
+  push: props => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: '#021265', borderLeftWidth: 6, width: '92%', height: undefined, minHeight: 64, paddingVertical: 8 }}
+      contentContainerStyle={{ paddingHorizontal: 14 }}
+      text1Style={{ fontFamily: 'WorkSans-SemiBold', fontSize: 14, color: '#0F1130' }}
+      text2Style={{ fontFamily: 'WorkSans-Regular', fontSize: 13, color: '#4A4A4A' }}
+      text1NumberOfLines={1}
+      text2NumberOfLines={2}
+    />
+  ),
+};
 
 // Must render inside withStallion (useStallionUpdate needs its provider).
 // A downloaded update is applied on the next cold start. Don't call
@@ -109,16 +125,61 @@ const App = () => {
     NetInfo.fetch().then(state => setIsConnected(state.isConnected !== false));
   };
 
-  // Foreground push: show title/body; skip data-only messages.
+  // A tapped push (or "View" on the in-app alert) opens the screen in its
+  // `data` payload: same keys as AppsFlyer links, routed by tryNavigate below.
+  // Keys: deep_link_value (+ deep_link_sub1 for an id), optional campaign.
+  // See docs/DEVELOPER-GUIDE.md "Push notification deep links".
+  const openFromNotification = (remoteMessage, appState) => {
+    const data = remoteMessage?.data;
+    if (!data?.deep_link_value) return;
+    trackEvent('notification_open', {
+      target: String(data.deep_link_value).slice(0, 100),
+      campaign: String(data.campaign || '').slice(0, 100),
+      app_state: appState,
+    });
+    tryNavigate(data, 'notification');
+  };
+
+  // Foreground push: Android/iOS don't show it themselves while the app is open,
+  // so slide in a banner at the top (react-native-toast-message) that hides
+  // after a few seconds; tapping it opens the push's target. Data-only
+  // messages are skipped.
   useEffect(() => {
     const unsubscribe = messaging().onMessage(async remoteMessage => {
       const title = remoteMessage?.notification?.title;
       const body = remoteMessage?.notification?.body;
       if (title || body) {
-        Alert.alert(title || '', body || '');
+        Toast.show({
+          type: 'push',
+          position: 'top',
+          text1: title || body,
+          text2: title ? body : undefined,
+          visibilityTime: 5000,
+          topOffset: 50,
+          onPress: () => {
+            Toast.hide();
+            openFromNotification(remoteMessage, 'foreground');
+          },
+        });
       }
     });
     return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Push tapped while the app was closed (launches it) or in the background.
+  // When closed, navigation isn't ready yet (splash): tryNavigate keeps the
+  // target and the 'ready' listener opens it.
+  useEffect(() => {
+    messaging()
+      .getInitialNotification()
+      .then(message => message && openFromNotification(message, 'closed'))
+      .catch(() => {});
+    const unsubscribe = messaging().onNotificationOpenedApp(message =>
+      openFromNotification(message, 'background'),
+    );
+    return unsubscribe;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -168,6 +229,22 @@ const App = () => {
       redirectData = {
         screen: 'ConcertDetails',
         params: { concertId: data?.deep_link_sub1 || data?.af_sub2 || data?.af_sub1 || null },
+      };
+    // Tabs are opened inside BottomNavigations so the tab bar stays visible.
+    } else if (data.deep_link_value === 'portfolio_section') {
+      redirectData = {
+        screen: 'BottomNavigations',
+        params: { screen: 'DashboardStack', params: { screen: 'Owned' } },
+      };
+    } else if (data.deep_link_value === 'profile_section') {
+      redirectData = {
+        screen: 'BottomNavigations',
+        params: { screen: 'ProfileStack', params: { screen: 'Profile' } },
+      };
+    } else if (data.deep_link_value === 'dreamscape_section') {
+      redirectData = {
+        screen: 'BottomNavigations',
+        params: { screen: 'HomeStack', params: { screen: 'DreamscapeHome' } },
       };
     } else {
       return;
@@ -432,7 +509,7 @@ const App = () => {
           </Provider>
         </GestureHandlerRootView>
       )}
-      <Toast />
+      <Toast config={toastConfig} />
       <UpdatePopup
         visible={showUpdateModal}
         title={updateConfig?.title}

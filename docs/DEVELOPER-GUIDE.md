@@ -190,9 +190,8 @@ Most screens came from the iOS app. Android-specific behaviour is behind `Platfo
   about 1–2 MB, web-optimised), because it streams on every launch.
 - **OTA updates:** Stallion on both platforms (section 6).
 - **Offline:** `Screen/components/NoInternet.js` shows as an overlay over the app. Navigation state is kept.
-- **Push notifications:**
-  - Android 13+ asks for the `POST_NOTIFICATIONS` permission.
-  - A push that arrives while the app is open shows an `Alert` on both platforms. Data-only messages are skipped.
+- **Push notifications:** Android 13+ asks for the `POST_NOTIFICATIONS` permission. Taps, deep links and the
+  in-app banner: see "Push notifications and deep links" below.
 - **Login:**
   - The full profile (`globalState.userDetails`) is fetched whenever the user is logged in without one, including
     straight after login. The check is `!userDetails?._id`: `AppContext` starts `userDetails` as `[]`, which is
@@ -223,6 +222,37 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
   function directly; `submitOtp` sends one request at a time. `onComplete` must return the request's promise.
 - Going back to change the number calls `resetOtp()`, so an old code can't be submitted.
 - To use it on another OTP screen (Wallet, Transfer…): call the hook and use what it returns, as in `NewLogin.js`.
+
+### Push notifications and deep links
+- **Opening a screen from a push:** add **custom data** to the push (Firebase console → Messaging → campaign →
+  *Additional options → Custom data*, or the backend). Keys are the same as the AppsFlyer links and are routed by
+  `tryNavigate` in `App.js`:
+
+  | `deep_link_value` | Opens | Also send |
+  |---|---|---|
+  | `property` | Property page | `deep_link_sub1` = property id |
+  | `payment_link` | Book | `deep_link_sub1` = property id |
+  | `concert_section` | Concert details | `deep_link_sub1` = concert id |
+  | `wallet_section` | Wallet | – |
+  | `escape_section` | Escape membership | – |
+  | `portfolio_section` | Portfolio tab | – |
+  | `profile_section` | Profile tab | – |
+  | `dreamscape_section` | Dreamscape (inside the Home tab) | – |
+
+  Optional `campaign` (any text) is logged with the Firebase `notification_open` event. A push without
+  `deep_link_value` still shows and just opens the app. Unknown values are ignored. All values must be strings.
+- **App states:** closed → `getInitialNotification()` (the target opens after the splash, via the navigation
+  "ready" listener); background → `onNotificationOpenedApp()`; open → `onMessage()` shows a banner at the top
+  (`Toast` type `push`, 5 s) and tapping it opens the target. Logged out → Login first, then the target.
+- **Android heads-up pop-up:** pushes use the `fracspace_alerts` channel (HIGH importance), created in
+  `MainApplication.kt` and set as Firebase's default in `firebase.json`
+  (`messaging_android_notification_channel_id`). A channel's importance can't be raised once it exists on a
+  phone; use a new id to change it. Some OPPO/ColorOS phones also need Banners enabled per app.
+- **Testing:** long-press the version ("V 2.3.0") at the bottom of Profile to share the device's FCM token, then
+  Firebase console → "Send test message". Xcode builds receive pushes through APNs sandbox (works with an APNs
+  auth key in Firebase).
+- **Adding a target:** add a branch in `tryNavigate`; open tab screens through `BottomNavigations` (as the
+  portfolio/profile/dreamscape entries do) so the tab bar stays visible.
 
 ### Video and audio
 - **Background music:** a **muted** video never stops the user's music. Unmuting (or playing a video with sound)
