@@ -76,8 +76,39 @@ const linking = {
   },
 };
 
+// Screens of an in-progress payment. A deep link / push tap must not navigate
+// away from them (the PayU page would be destroyed before the payment is
+// verified and, for property bookings, recorded); it waits until the user
+// leaves this flow.
+const PAYMENT_FLOW_ROUTES = new Set([
+  'Book',
+  'PaymentPage',
+  'PaymentSummary',
+  'ConcertCheckout',
+  'ConcertReviewBooking',
+  'ConcertPaymentPage',
+  'EscapePaymentPage',
+]);
+
 const App = () => {
   const pendingLinkRef = useRef(null);
+  const afterPaymentLinkRef = useRef(null);
+
+  const openDeepLinkTarget = redirectData => {
+    const current = navigationRef.isReady() ? navigationRef.getCurrentRoute()?.name : null;
+    if (current && PAYMENT_FLOW_ROUTES.has(current)) {
+      afterPaymentLinkRef.current = redirectData;
+      Toast.show({
+        type: 'info',
+        position: 'top',
+        text1: 'We\'ll open this after your payment',
+        visibilityTime: 3000,
+        topOffset: 50,
+      });
+      return;
+    }
+    navigationRef.navigate(redirectData.screen, redirectData.params);
+  };
   const [showSplash, setShowSplash] = useState(true);
   const [updateConfig, setUpdateConfig] = useState(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
@@ -89,7 +120,7 @@ const App = () => {
     const token = await AsyncStorage.getItem('mytoken');
     console.log('navigateWithAuthCheck: token:', token);
     if (token) {
-      navigationRef.navigate(redirectData.screen, redirectData.params);
+      openDeepLinkTarget(redirectData);
     } else {
       // Keep the target so signup can pick it up too.
       await AsyncStorage.setItem(
@@ -132,7 +163,8 @@ const App = () => {
   const openFromNotification = (remoteMessage, appState) => {
     const data = remoteMessage?.data;
     if (!data?.deep_link_value) return;
-    trackEvent('notification_open', {
+    // 'notification_open' is reserved by Firebase (logEvent rejects it).
+    trackEvent('push_open', {
       target: String(data.deep_link_value).slice(0, 100),
       campaign: String(data.campaign || '').slice(0, 100),
       app_state: appState,
@@ -264,7 +296,7 @@ const App = () => {
       }
       if (navigationRef.isReady()) {
         if (token) {
-          navigationRef.navigate(redirectData.screen, redirectData.params);
+          openDeepLinkTarget(redirectData);
         } else {
           navigationRef.navigate('NewLogin', { redirectAfterLogin: redirectData });
         }
@@ -376,7 +408,7 @@ const App = () => {
           AsyncStorage.getItem('mytoken').then((token) => {
             if (navigationRef.isReady()) {
               if (token) {
-                navigationRef.navigate(redirectData.screen, redirectData.params);
+                openDeepLinkTarget(redirectData);
               } else {
                 navigationRef.navigate('NewLogin', { redirectAfterLogin: redirectData });
               }
@@ -496,6 +528,16 @@ const App = () => {
                     trackScreen(currentRouteName);
                   }
                   routeNameRef.current = currentRouteName;
+                  // A link tapped during a payment opens once the user has left it.
+                  if (
+                    afterPaymentLinkRef.current &&
+                    currentRouteName &&
+                    !PAYMENT_FLOW_ROUTES.has(currentRouteName)
+                  ) {
+                    const target = afterPaymentLinkRef.current;
+                    afterPaymentLinkRef.current = null;
+                    openDeepLinkTarget(target);
+                  }
                 }}
               >
                 <NavigationStack />

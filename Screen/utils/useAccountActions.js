@@ -25,6 +25,10 @@ export default function useAccountActions() {
   const clearSession = useCallback(async () => {
     await AsyncStorage.setItem('mytoken', '');
     await AsyncStorage.setItem('Email', '');
+    // HomePage only sends the push token to the backend when it differs from
+    // this saved copy; without clearing it, the next account to log in on this
+    // phone was never linked to the token and got no pushes.
+    await AsyncStorage.removeItem('fcmToken');
     setGlobalState(prev => ({
       ...prev,
       token: '',
@@ -40,10 +44,21 @@ export default function useAccountActions() {
     clearAnalyticsUser();
   }, [dispatch, setGlobalState]);
 
+  // Replace the whole navigation history (from the root navigator, since this
+  // runs inside tab stacks), so Android back can't return to logged-in screens.
+  const resetTo = useCallback(
+    routeName => {
+      let root = navigation;
+      while (root.getParent?.()) root = root.getParent();
+      root.reset({ index: 0, routes: [{ name: routeName }] });
+    },
+    [navigation],
+  );
+
   const logOut = useCallback(async () => {
     await clearSession();
-    navigation.navigate('NewLogin');
-  }, [clearSession, navigation]);
+    resetTo('NewLogin');
+  }, [clearSession, resetTo]);
 
   /** Returns true when the account was deleted (the caller closes its dialog). */
   const deleteAccount = useCallback(async () => {
@@ -55,7 +70,7 @@ export default function useAccountActions() {
       if (res?.success) {
         await clearSession();
         Toast.show({ type: 'success', text1: `${res?.message}`, position: 'top' });
-        navigation.navigate('NewSigin');
+        resetTo('NewSigin');
         return true;
       }
     } catch (error) {
@@ -70,7 +85,7 @@ export default function useAccountActions() {
       setDeleting(false);
     }
     return false;
-  }, [clearSession, deleting, navigation]);
+  }, [clearSession, deleting, resetTo]);
 
   return { clearSession, logOut, deleteAccount, deleting };
 }

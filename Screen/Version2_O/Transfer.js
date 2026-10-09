@@ -75,9 +75,10 @@ export default function Transfer(props) {
             if (res?.success) {
                 // setTransfer(!transfer);
                 setLoader(false);
-
-
+                return true;
             }
+            Alert.alert('Transfer failed', res?.message || 'The transfer was not completed. Please try again.');
+            return false;
         } catch (error) {
            // console.log(error);
 
@@ -92,6 +93,7 @@ export default function Transfer(props) {
                 Alert.alert('Error:', `${error?.message}`);
                 //setLoader(false);
             }
+            return false;
         }
     };
 
@@ -163,7 +165,19 @@ export default function Transfer(props) {
     };
 
 
+    // One verification at a time: a double tap on Verify could transfer twice.
+    const transferInFlight = useRef(false);
     const handleTransferOtpVerify = async (code) => {
+        if (transferInFlight.current) return;
+        transferInFlight.current = true;
+        try {
+            await verifyAndTransfer(code);
+        } finally {
+            transferInFlight.current = false;
+        }
+    };
+
+    const verifyAndTransfer = async (code) => {
         setLoader(true);
         if (
             globalState?.userDetails?.phoneNumber?.startsWith('+91') &&
@@ -183,7 +197,8 @@ export default function Transfer(props) {
             //console.log(res);
 
                 if (res?.success) {
-                    handleTransfer();
+                    // Show success only if the transfer itself succeeded.
+                    if (!(await handleTransfer())) return;
                     const resultAction = await dispatch(
                         profileDetails({ email: globalState?.userDetails?.email })
                     );
@@ -200,6 +215,8 @@ export default function Transfer(props) {
                     setVisible2(false);
                     setTransfer(true);
 
+                } else {
+                    Alert.alert('Invalid OTP', res?.message || 'The OTP you entered is incorrect.');
                 }
             } catch (error) {
                 console.log(error);
@@ -237,7 +254,8 @@ export default function Transfer(props) {
                     // );
                     // }
                     if (res?.success) {
-                        handleTransfer();
+                        // Show success only if the transfer itself succeeded.
+                        if (!(await handleTransfer())) return;
                         const resultAction = await dispatch(
                             profileDetails({ email: globalState?.userDetails?.email })
                         );
@@ -254,6 +272,8 @@ export default function Transfer(props) {
                         setVisible2(false);
                         setTransfer(true);
 
+                    } else {
+                        Alert.alert('Invalid OTP', res?.message || 'The OTP you entered is incorrect.');
                     }
                 } catch (error) {
                     if (error?.response) {

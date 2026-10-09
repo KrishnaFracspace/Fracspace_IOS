@@ -200,7 +200,9 @@ Most screens came from the iOS app. Android-specific behaviour is behind `Platfo
   - **Logout and Delete Account** live in the Home side menu **and** the Profile tab, sharing
     `Screen/utils/useAccountActions.js` (+ `Screen/components/DeleteAccountModal.js`). Both clear the whole
     session (AsyncStorage, `globalState`, the redux `profile` and `home` state) and the analytics identity.
-    Delete shows a spinner, ignores double taps and reports network errors.
+    Delete shows a spinner, ignores double taps and reports network errors. Both reset the whole navigation
+    history (Android back can't return to logged-in screens) and remove the saved `fcmToken`, so the next
+    account to log in on the phone gets its push token registered.
 - **Deep links (AppsFlyer OneLink):**
   - Property id = `af_sub2 || deep_link_sub1 || af_sub1`.
   - The install-conversion link is used only on first launch.
@@ -239,8 +241,11 @@ Shared logic in `Screen/utils/useOtpAutofill.js`, used by `NewLogin.js` and `New
   | `profile_section` | Profile tab | – |
   | `dreamscape_section` | Dreamscape (inside the Home tab) | – |
 
-  Optional `campaign` (any text) is logged with the Firebase `notification_open` event. A push without
+  Optional `campaign` (any text) is logged with the Firebase `push_open` event (`notification_open` is reserved by Firebase). A push without
   `deep_link_value` still shows and just opens the app. Unknown values are ignored. All values must be strings.
+- **During a payment** (Book, PaymentPage, PaymentSummary, concert checkout/review/payment, Escape payment) a
+  tapped push or link is **held** and opens once the user leaves those screens (`PAYMENT_FLOW_ROUTES` in
+  `App.js`), so the PayU page is never torn down before the payment is verified.
 - **App states:** closed → `getInitialNotification()` (the target opens after the splash, via the navigation
   "ready" listener); background → `onNotificationOpenedApp()`; open → `onMessage()` shows a banner at the top
   (`Toast` type `push`, 5 s) and tapping it opens the target. Logged out → Login first, then the target.

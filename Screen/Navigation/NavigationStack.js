@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useContext, useLayoutEffect, useRef } from 'react';
 import { View, Image, Dimensions, Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from '../Home';
@@ -194,9 +194,15 @@ useLayoutEffect(() => {
 // Load it whenever we are logged in without a profile. AppContext starts
 // userDetails as [] (truthy), so check for a real profile, not just a value:
 // otherwise a fresh install never loaded it after the first login.
+// Once per login (token): if a profile ever comes back without an _id, or a
+// screen stores one without it, this must not refetch in a loop.
+const profileRequestedFor = useRef(null);
 useEffect(() => {
-  if (!LoadingS && globalState?.token && globalState?.userEmail && !globalState?.userDetails?._id) {
-    handleProfile(globalState.userEmail, globalState.token);
+  const token = globalState?.token;
+  if (!LoadingS && token && globalState?.userEmail && !globalState?.userDetails?._id
+      && profileRequestedFor.current !== token) {
+    profileRequestedFor.current = token;
+    handleProfile(globalState.userEmail, token);
   }
 }, [LoadingS, globalState?.token, globalState?.userEmail, globalState?.userDetails]);
 

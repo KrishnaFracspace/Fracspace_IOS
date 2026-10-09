@@ -40,10 +40,14 @@ const location = route?.params?.location;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    // Leaving the summary replaces the whole history with Home. replace() kept
+    // Book/PaymentPage underneath, so Back from Home could reach them and pay again.
+    const goHome = () => navigation.reset({ index: 0, routes: [{ name: 'BottomNavigations' }] });
+
     // Hardware back must not return to Book/PaymentPage (that would allow paying again).
     useEffect(() => {
         const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-            navigation.replace('BottomNavigations');
+            goHome();
             return true;
         });
         return () => sub.remove();
@@ -187,7 +191,7 @@ const location = route?.params?.location;
                                         ? 'rgba(105, 161, 67, 1)'
                                         : '#F8181C',
                                 },]}>{message} </Text>
-                        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.replace("BottomNavigations")}>
+                        <TouchableOpacity style={styles.primaryButton} onPress={goHome}>
                             <Text style={styles.primaryButtonText}>
                                 Back to Home
                             </Text>

@@ -60,11 +60,14 @@ export const trackEvent = (name, params) => safe(() => analytics().logEvent(name
  * Booking funnel. flow: 'property' | 'concert' | 'membership'.
  * value is the amount in INR when known.
  */
+// Firebase rejects the whole event if only one of value/currency is set, so
+// send them together, and only when the amount is known.
+const money = value => (Number.isFinite(value) ? { value, currency: 'INR' } : {});
+
 export const trackCheckoutStarted = (flow, value) =>
   safe(() =>
     analytics().logBeginCheckout({
-      currency: 'INR',
-      ...(Number.isFinite(value) ? { value } : {}),
+      ...money(value),
       items: [{ item_category: flow }],
     }),
   );
@@ -72,8 +75,7 @@ export const trackCheckoutStarted = (flow, value) =>
 export const trackPurchase = (flow, { value, transactionId } = {}) =>
   safe(() =>
     analytics().logPurchase({
-      currency: 'INR',
-      ...(Number.isFinite(value) ? { value } : {}),
+      ...money(value),
       ...(transactionId ? { transaction_id: String(transactionId) } : {}),
       items: [{ item_category: flow }],
     }),

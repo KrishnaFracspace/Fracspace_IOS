@@ -292,7 +292,11 @@ export default function MembershipHome() {
         }
     };
 
+    // One payment start at a time: a double tap on Continue opened two payments.
+    const paymentStarting = useRef(false);
     const handleInitiatePayment = async () => {
+        if (paymentStarting.current) return;
+        paymentStarting.current = true;
         try {
             setPaymentLoading(true);
             const payload = JSON.stringify({
@@ -365,7 +369,7 @@ export default function MembershipHome() {
             );
 
         } finally {
-
+            paymentStarting.current = false;
             setPaymentLoading(false);
         }
     };
@@ -1260,7 +1264,7 @@ export default function MembershipHome() {
 
                                     <TouchableOpacity onPress={() => {
                                         handleInitiatePayment();
-                                    }} style={{ backgroundColor: '#AC935C', borderRadius: 5, padding: 10, alignItems: 'center', marginTop: 15 }}>
+                                    }} disabled={paymentLoading} style={{ backgroundColor: '#AC935C', borderRadius: 5, padding: 10, alignItems: 'center', marginTop: 15, opacity: paymentLoading ? 0.6 : 1 }}>
                                         <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 12, color: '#FFF' }}>Continue</Text>
                                     </TouchableOpacity>
 
@@ -1311,7 +1315,7 @@ export default function MembershipHome() {
 
                                     <TouchableOpacity onPress={() => {
                                         handleInitiatePayment();
-                                    }} style={{ backgroundColor: '#AC935C', borderRadius: 5, padding: 10, alignItems: 'center', marginTop: 15 }}>
+                                    }} disabled={paymentLoading} style={{ backgroundColor: '#AC935C', borderRadius: 5, padding: 10, alignItems: 'center', marginTop: 15, opacity: paymentLoading ? 0.6 : 1 }}>
                                         <Text style={{ fontFamily: 'WorkSans-Medium', fontSize: 12, color: '#FFF' }}>Continue</Text>
                                     </TouchableOpacity>
 

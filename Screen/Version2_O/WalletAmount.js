@@ -302,13 +302,18 @@ const remainingWithdrawLimit =
         upiId: '',
       },
     });
+    // Failures are thrown, so the withdrawal stops instead of going ahead
+    // without the new bank account.
+    let res;
     try {
-      let {data: res} = await UploadBankData(payload);
-      console.log("Resposee bank details uploaded: ", res);
-      return res;
+      ({data: res} = await UploadBankData(payload));
     } catch (error) {
-      console.error('Error in Uploading Bank Data: ', error);
+      throw new Error(extractError(error));
     }
+    if (res?.success === false) {
+      throw new Error(res?.message || 'Could not save the bank details.');
+    }
+    return res;
   };
 
   // const handleBankUpdate = async () => {
@@ -398,12 +403,15 @@ setChooseBank(false);
                 }
             );
             console.log('Payload: ',payload);
+            // Thrown, so a failed switch doesn't send the money to the old account.
+            let res;
             try {
-                let {data : res} = await SetPrimaryAccount(payload);
-                const data = res.primaryAccount;
-                console.log('Data :',data);
+                ({data : res} = await SetPrimaryAccount(payload));
             } catch (error) {
-                console.error('Error in setting Primary Account: ',error.response.data);
+                throw new Error(extractError(error));
+            }
+            if (res?.success === false) {
+                throw new Error(res?.message || 'Could not change the primary bank account.');
             }
     }
 
@@ -414,6 +422,9 @@ setChooseBank(false);
     });
     try {
       let {data: res} = await RequestForWithdrawal(payload);
+      if (res?.success === false) {
+        throw new Error(res?.message || 'The withdrawal request was not accepted.');
+      }
       return res;
     } catch (error) {
       // Re-throw so callers show the error instead of the success modal
@@ -421,7 +432,12 @@ setChooseBank(false);
     }
   };
 
+  // One withdrawal at a time: a double tap could request it twice.
+  const withdrawInFlight = useRef(false);
+
   const handleOldBankAccount = async () => {
+          if (withdrawInFlight.current) return;
+          withdrawInFlight.current = true;
           setIsUploading(true);
           Animated.timing(animatedWidth, {
               toValue: 1,
@@ -448,8 +464,9 @@ setChooseBank(false);
               setVisible2(true);
               setChooseBank(false);
           } catch (error) {
-              Alert.alert('Error', 'Something went wrong');
+              Alert.alert('Error', error?.message || 'Something went wrong');
           } finally {
+              withdrawInFlight.current = false;
               setTimeout(() => {
                   setIsUploading(false);
                   animatedWidth.setValue(0);
@@ -586,6 +603,8 @@ setChooseBank(false);
       };
 
 const handleOtpVerification = async () => {
+  if (withdrawInFlight.current) return;
+  withdrawInFlight.current = true;
   let otpString = otpDigits.join('');
 
   let payload;
@@ -654,6 +673,7 @@ const handleOtpVerification = async () => {
   } catch (otpErr) {
     Alert.alert("OTP Error", extractError(otpErr));
   } finally {
+    withdrawInFlight.current = false;
     setTimeout(() => {
       setIsUploading(false);
       animatedWidth.setValue(0);
@@ -2243,6 +2263,7 @@ const handleOtpVerification = async () => {
                           onPress={() => {
                             handleOtpVerification();
                           }}
+                          disabled={isUploading}
                           style={{
                             backgroundColor: '#021265',
                             borderRadius: 8,
