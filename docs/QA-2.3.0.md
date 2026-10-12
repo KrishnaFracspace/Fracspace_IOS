@@ -1,6 +1,6 @@
 # 2.3.0 manual test plan
 
-Build under test: **2.3.0** — Android versionCode **76**, iOS build **46**, from `release/2.3.0`.
+Build under test: **2.3.0** — Android versionCode **77**, iOS build **46**, from `release/2.3.0`.
 
 **Rules while testing**
 - **PayU is live. Never complete a payment.** Go as far as the PayU page / UPI app, then cancel.
@@ -108,7 +108,7 @@ Custom data `deep_link_value` = `portfolio_section`, `profile_section`, `dreamsc
 - [ ] Battery/heat: 10 minutes of normal use, no unusual heat; leaving Home stops banner timers.
 
 ## 14. Before pressing "release"
-- [ ] Play: AAB **versionCode 76** → internal testing first; App bundle explorer says **"Supports 16 KB"**.
+- [ ] Play: AAB **versionCode 77** → internal testing first; App bundle explorer says **"Supports 16 KB"**.
 - [ ] Play **Data safety** and App Store **privacy labels** match `ios/PrivacyInfo.xcprivacy` (12 data types, no tracking);
       advertising ID = yes (AppsFlyer).
 - [ ] App Store Connect: **build 46** unused for 2.3.0.

@@ -30,7 +30,7 @@ Test it on an Android phone and an iPad, then fast-forward merge it into `releas
 (locally and on GitHub) once it is merged. Normally only `main` and `release/2.3.0` exist.
 
 App identifiers stay different per platform: Android `com.fracspace`, iOS `com.fracspace.fracspace`.
-Version **2.3.0**: Android versionCode **76** (75 is already on Play internal testing; every Play upload
+Version **2.3.0**: Android versionCode **77** (75 and 76 are already on Play internal testing; every Play upload
 needs a new code), iOS build 46 (check App Store Connect before uploading; bump it if 46 was used).
 
 ---
@@ -449,6 +449,23 @@ All tracking goes through `Screen/utils/analytics.js`.
   English-only resources (~1 MB), `shrinkResources` (~0.5–1.5 MB).
 - **Android deep links:** only `https://fracspace.onelink.me` opens the app. `fracspace://`, `fsapp://` and
   `https://fracspace.com` need intent filters if they are used.
+- **App Store upload warnings on 2.3.0 (46). Fix in the next update.**
+  - **ITMS-90683, missing `NSLocationAlwaysAndWhenInUseUsageDescription`.** It was removed in `0d30600` because
+    the app only asks for "while using" location. But `@react-native-community/geolocation` (`RNCGeolocation.mm`)
+    contains `requestAlwaysAuthorization`, and Apple requires the purpose string whenever that code is in the
+    binary. 2.3.0 was accepted with the warning; App Review may still flag it. Fix: add the key back to
+    `ios/Fracspace/Info.plist` with an honest string, e.g. "Fracspace uses your location only while you're using
+    the app, to show properties and places near you. It is never tracked in the background." This adds no new
+    prompt (the app requests only `LOCATION_WHEN_IN_USE`).
+  - **"Upload Symbols Failed" for `hermes.framework`.** The prebuilt Hermes has no dSYM in the archive, so
+    crashes inside the Hermes engine itself aren't symbolicated by Apple (app code and JS are unaffected). Fix:
+    download `react-native-artifacts-<RN version>-hermes-framework-dSYM-release.tar.gz` from Maven Central and
+    add it to the archive's `dSYMs` folder before uploading (or upload it to Crashlytics).
+- **From the 2026-10-12 live payment tests** (fraction booking ₹1 paid on both platforms; concert cancelled on both)
+  - Concert `/bookings/:id/pay` re-uses the same PayU `txnid` on every retry (`FS2026000094`). PayU may reject a
+    retry as a duplicate once an attempt has really reached it. Ask the backend to issue a new txnid per attempt.
+  - Ask the backend to cancel/refund the two ₹1 test bookings: `fracspace1791778964184822` (booking
+    `6acc60c02b059f47eae8af76`) and `fracspace1791779201838179`.
 
 ---
 
@@ -464,10 +481,11 @@ All tracking goes through `Screen/utils/analytics.js`.
 | 3 Upgrade to React Native 0.81 (16 KB, New Architecture, iOS on Hermes) | ✅ tested on both; Play shows "Supports 16 KB" |
 | 3+ Memory, cleanup, audio, splash, iOS size, OTP autofill | ✅ tested on both |
 | 3++ Pre-release review fixes (OTA restart, release logging, OTP double submit, iOS location, versionCode 76, backend-name guards), UX polish (testimonials, concert card, Altaira, status bar, timers), Facebook SDK pin, storage permissions, privacy manifest, Profile logout/delete, analytics by user ID, first-login profile, Book/Review address, iOS gradient layouts | ✅ tested on both |
-| 4 QA on both stores' test tracks (TestFlight; Play internal as versionCode 76+) | next |
+| 4 QA on both stores' test tracks (TestFlight; Play internal as versionCode 77+) | next |
 | 5 Release 2.3.0, merge to `main`, archive `Fracspace_Android` | |
 
 **After 2.3.0**
+- **Next update (2.3.1), first:** the two App Store upload warnings and the concert txnid retry (section 8).
 - **Native payment checkout** instead of the PayU WebView: PayU's Checkout Pro React Native SDK
   (`payu-non-seam-less-react`, the package removed as unused in the merge) opens UPI apps properly (fixes PhonePe)
   and shows a native payment sheet. Needs a backend endpoint that signs each payment ("hash"; the PayU salt must
