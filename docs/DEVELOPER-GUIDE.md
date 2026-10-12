@@ -6,8 +6,9 @@ now, the conventions to follow, and what changed in the merge and the React Nati
 
 - Merge details, per-file decisions and the production bugs found: [`docs/merge-2.3.0/MERGE-NOTES.md`](merge-2.3.0/MERGE-NOTES.md)
 - Unused-file cleanup (what was removed and why): [`docs/UNUSED-FILES.md`](UNUSED-FILES.md)
-- Last updated: 2026-10-08 (RN 0.81 upgrade, memory, cleanup, audio, app size, OTP autofill, pre-release review
-  fixes, UX polish, Profile logout/delete, analytics by user ID, iOS gradient layouts)
+- Last updated: 2026-10-12 (RN 0.81 upgrade, memory, cleanup, audio, app size, OTP autofill, pre-release review
+  fixes, UX polish, Profile logout/delete, analytics by user ID, iOS gradient layouts, push deep links, Book price
+  breakdown, live ₹1 payment tests, store uploads of 2.3.0)
 
 ---
 
@@ -15,7 +16,7 @@ now, the conventions to follow, and what changed in the merge and the React Nati
 
 | What | Where | Status |
 |---|---|---|
-| **The merged app (2.3.0)** | this repo, branch **`release/2.3.0`** | All active development. Not released yet. |
+| **The merged app (2.3.0)** | this repo, branch **`release/2.3.0`** | Uploaded to both stores on 2026-10-12 (Play internal testing, App Store Connect). Not live yet. |
 | Last fully tested point | tag `v2.3.0-rn081-tested` | RN 0.81 + memory, cleanup, audio and splash work, tested on Android and iPad. |
 | iOS before the merge | this repo, `main`, tag `pre-merge-ios` | Matches the iOS app before the merge. |
 | Before the RN upgrade | tag `pre-rn-0.81` | `release/2.3.0` on RN 0.73.6, before Phase 3. |
@@ -31,7 +32,8 @@ Test it on an Android phone and an iPad, then fast-forward merge it into `releas
 
 App identifiers stay different per platform: Android `com.fracspace`, iOS `com.fracspace.fracspace`.
 Version **2.3.0**: Android versionCode **77** (75 and 76 are already on Play internal testing; every Play upload
-needs a new code), iOS build 46 (check App Store Connect before uploading; bump it if 46 was used).
+needs a new code), iOS build **46** (uploaded to App Store Connect on 2026-10-12). The next upload of either needs a
+higher number: versionCode 78+, build 47+.
 
 ---
 
@@ -75,7 +77,31 @@ cd android && ./gradlew bundleRelease        # AAB for Play
 - **Faster local Android builds:** a release build compiles native code for 4 CPU types. For your own phone only:
   `./gradlew assembleRelease -PreactNativeArchitectures=arm64-v8a`. Store builds must keep all of them.
 - **Installing over a Play build:** an APK signed with the upload key can't replace a build installed from Play
-  (Play re-signs apps; "signatures do not match"). Uninstall the Play build first.
+  (Play re-signs apps; "signatures do not match"). Uninstall the Play build first. The same applies between a
+  **debug** build (debug keystore) and a release build: switching either way needs an uninstall, which logs the
+  user out.
+- **`./gradlew clean bundleRelease` can fail with "Usage: prefab [<options>] <package_path>..."** (New Architecture
+  native modules after a clean). Run `./gradlew bundleRelease` again without `clean`; it builds normally.
+- **Build one platform at a time.** The build Mac has 8 GB of RAM. An Android release build and an Xcode archive at
+  the same time pushed it 16 GB into swap and took over 40 minutes; alone, an Android release build takes 10–15.
+
+### Checking a release build before uploading
+Run these on the AAB (`android/app/build/outputs/bundle/release/app-release.aab`) before a Play upload:
+```bash
+# Signed with the upload key (CN=fracspace)
+keytool -printcert -jarfile app-release.aab | grep -E "Owner|SHA1"
+# versionCode / versionName and the final permission list (parse the XML: a plain grep also matches comments,
+# e.g. the commented-out ACCESS_BACKGROUND_LOCATION)
+android/app/build/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml
+# 16 KB: every 64-bit .so must have LOAD alignment 0x4000 (unzip base/lib/* and run llvm-readelf -lW from the NDK)
+# JS: base/assets/index.android.bundle starts with Hermes bytecode (c6 1f bc 03) and contains no test code
+```
+For iOS, check the archive in `~/Library/Developer/Xcode/Archives/<date>/`: `Info.plist` (version, build, team),
+`Products/Applications/Fracspace.app` (size, `PrivacyInfo.xcprivacy`, Hermes `main.jsbundle`). The archive folder
+name has a narrow no-break space before "AM/PM", so use a glob (`ls -d *11.11*.xcarchive`) rather than typing it.
+
+The 2.3.0 builds passed all of these on 2026-10-12: Android 77, upload key, 52/52 libraries 16 KB-aligned, no
+background location, storage permissions capped, R8 mapping and native symbols included; iOS 2.3.0 (46), 44 MB.
 
 ### Reading logs and JS errors
 **Release builds contain no `console.*` from app code.** `babel.config.js` strips them when `BABEL_ENV=production`
@@ -86,6 +112,12 @@ React Native 0.77+ no longer prints the app's `console.*` in the Metro terminal.
 - **Android:** `adb logcat` (`ReactNativeJS` for JS, `AndroidRuntime` for crashes).
 - **iOS:** press `j` in Metro to open React Native DevTools (console, errors). Native logs: Xcode's console, or
   `xcrun devicectl device process launch --console`.
+- **Without the Metro terminal** (Metro started in the background, where its keyboard shortcuts don't work):
+  - Reload every connected app: send `{"version":2,"method":"reload"}` to `ws://localhost:8081/message`.
+  - Read JS logs from both devices at once: list targets at `http://localhost:8081/json/list` and connect a CDP
+    client to each device's **"React Native Bridgeless"** target (not "Reanimated UI runtime", which has no app
+    logs), then send `Runtime.enable` and read `Runtime.consoleAPICalled`. Only one debugger per target: a second
+    connection, or DevTools, disconnects the first.
 
 ### Testing on the iPad
 The test iPad runs Fracspace as an **iPhone app in a resizable window**. Layout bugs that appear only there are often
@@ -311,7 +343,8 @@ All tracking goes through `Screen/utils/analytics.js`.
   and `LableProperty`.
 
 ### Payments (`Screen/PaymentPage.js`)
-- **PayU is live (`secure.payu.in`). Never complete a payment while testing; cancel on the PayU page.**
+- **PayU is live (`secure.payu.in`). Never complete a payment while testing; cancel on the PayU page**, except
+  for a deliberate ₹1 test (below).
 - **Booking flow:** Book → `initiatePayment` → PayU WebView → **verify with PayU (up to 3 tries, 2 s apart)** → `bookFraction` → `PaymentSummary`.
 - `bookFraction` records:
   - the selected frac count;
@@ -333,6 +366,27 @@ All tracking goes through `Screen/utils/analytics.js`.
 - The same flow (PayU WebView, UPI handoff, verify on return) is used by the concert (`ConcertPaymentPage.js`) and
   Escape membership (`EscapePaymentPage.js`) payments.
 - The amount sent to PayU is rounded to 2 decimals. The fee and GST formulas are unchanged.
+- **Book price breakdown:** the sheet shows the booking amount (frac count × price), platform fee (2.2%) and GST (18%
+  on the fee), then "Total payable". With an offer, the normal fee is struck through and the offer amount (or "FREE")
+  is shown beside it, with a savings note. It only displays the amounts; what is sent to PayU is unchanged.
+
+#### Testing a real payment (₹1)
+PayU and the backend are live in **debug builds too**: the PayU key and hash come from the backend, not the build.
+A test payment is real money and creates a real booking.
+- **Property booking:** in `Screen/Book.js` the PayU payload has a commented `// amount: 1,` line. Swap it with
+  `amount: payableAmount` for the test, and **never commit it**; check `git diff` before any commit or build.
+- **Concert:** the amount is set by the backend (`/concerts/:id/book` and `/pay`), so the app can't make it ₹1. Ask
+  the backend for a ₹1 test ticket, or test only up to PayU and cancel.
+- **Escape membership** (`MembershipHome.js`, `amount:`) isn't live; it wasn't tested.
+- After the test, ask the backend to cancel the bookings and refund them.
+- On return, the log shows "Encountered an error loading page … `test.bunknbeyond.com/paymentsuccess`" (iOS reports
+  it under PayU's `/response` URL). That's expected: the return domain doesn't exist and the app takes over when it
+  sees the URL.
+
+**Results on 2026-10-12 (debug builds, OPPO Android 16 and iPad):**
+- Property booking ₹1 paid on both: PayU verified, booking saved, "Payment Successful" with booking ID.
+- Concert, cancelled on both (one booking shared by the same account on both devices): verify returned
+  `payment_failed`, nothing charged; the booking could be resumed from My bookings on the other device.
 
 ### Other screens
 - **Notifications:** only the last **45 days**. The list, the empty state, the header unread counter and the
@@ -397,7 +451,8 @@ All tracking goes through `Screen/utils/analytics.js`.
   crashes without them on RN 0.81), Stallion, pdfium and the PDF viewer, AppsFlyer, and readable Crashlytics stack
   traces. If a crash happens in release but not debug, suspect a missing keep rule.
 - The AAB includes native symbol tables, and Crashlytics uploads native symbols.
-- **Play 16 KB page size: supported** since 2.3.0 (all 26 native libraries aligned). Play blocks updates without it
+- **Play 16 KB page size: supported** since 2.3.0 (all 52 64-bit native libraries aligned, 26 each for arm64-v8a and
+  x86_64). Play blocks updates without it
   after 1 Feb 2027, so check the App bundle explorer still says "Supports 16 KB" after adding a native library.
 - Custom native module: `SmsConsentModule.kt` / `SmsConsentPackage.kt` (OTP autofill), registered in `MainApplication.kt`.
 - The vector-icons fonts Gradle script needs the lint tasks to depend on `copyReactNativeVectorIconFonts`
@@ -412,6 +467,22 @@ All tracking goes through `Screen/utils/analytics.js`.
   `react-native-vector-icons` npm package, a second copy of the icon fonts, and an old `test.jsbundle`. Removing
   them, plus compressing images, took the app from **88 MB to 57 MB**. What's left: app binary about 25 MB, frameworks
   13 MB (Hermes 4.6 MB; Facebook SDK pieces about 8 MB, some unused), JS bundle 8 MB, images 5 MB, fonts about 4 MB.
+  The 2.3.0 (46) archive is 44 MB.
+
+### Uploading to the App Store
+- Signing is **automatic with a cloud-managed distribution certificate**. The build Mac's keychain has only
+  "Apple Development" certificates; Xcode signs for distribution through Apple when you click Distribute App.
+- **"Unable to process request - PLA Update available" + "No signing certificate 'iOS Distribution' found"**
+  (2026-10-12): Apple had a new Program License Agreement. The second error follows from the first, because the
+  cloud certificate request is blocked too. The **Account Holder** accepts it at developer.apple.com/account; then
+  in Xcode use Settings → Accounts → Download Manual Profiles and distribute the same archive again (no re-archive).
+  If the certificate error stays, create one in Settings → Accounts → Manage Certificates → + → Apple Distribution.
+- App Store Connect → Business: only the **Free Apps Agreement** is needed (Active). Leave the Paid Apps Agreement
+  alone: PayU payments for bookings and tickets are real-world purchases, not in-app purchases.
+- 2.3.0 (46) uploaded with two warnings to fix in the next update (section 8): ITMS-90683 (Always-location purpose
+  string) and "Upload Symbols Failed" for `hermes.framework`.
+- The `aps-environment` entitlement is `development` in the project; Xcode switches it to `production` on App Store
+  export (same as the 2.2.x builds).
 
 ---
 
@@ -480,9 +551,28 @@ All tracking goes through `Screen/utils/analytics.js`.
 | 2 Android OTA: CodePush → Stallion | ✅ OTA verified on device |
 | 3 Upgrade to React Native 0.81 (16 KB, New Architecture, iOS on Hermes) | ✅ tested on both; Play shows "Supports 16 KB" |
 | 3+ Memory, cleanup, audio, splash, iOS size, OTP autofill | ✅ tested on both |
-| 3++ Pre-release review fixes (OTA restart, release logging, OTP double submit, iOS location, versionCode 76, backend-name guards), UX polish (testimonials, concert card, Altaira, status bar, timers), Facebook SDK pin, storage permissions, privacy manifest, Profile logout/delete, analytics by user ID, first-login profile, Book/Review address, iOS gradient layouts | ✅ tested on both |
-| 4 QA on both stores' test tracks (TestFlight; Play internal as versionCode 77+) | next |
+| 3++ Pre-release review fixes (OTA restart, release logging, OTP double submit, iOS location, backend-name guards), UX polish (testimonials, concert card, Altaira, status bar, timers), Facebook SDK pin, storage permissions, privacy manifest, Profile logout/delete, analytics by user ID, first-login profile, Book/Review address, iOS gradient layouts, push deep links, final-review fixes, Book price breakdown | ✅ tested on both |
+| 3+++ Live ₹1 payment tests (property paid, concert cancelled) and release-build checks | ✅ 2026-10-12, both platforms |
+| 4 Store uploads: Play internal testing (versionCode 77), App Store Connect 2.3.0 (46) | ✅ uploaded 2026-10-12; review and test tracks next |
 | 5 Release 2.3.0, merge to `main`, archive `Fracspace_Android` | |
+
+**Release day (after both stores approve):**
+- Merge `release/2.3.0` into `main`.
+- Stallion: release OTA bundles **only to 2.3.0**.
+- Keep the RevoPush/CodePush deployment live for Android users still on 2.2.x.
+- Backend `appVersion`: set the new current versions with `forceUpdate = false`.
+- Play Data safety and App Store privacy labels must match `ios/PrivacyInfo.xcprivacy`.
+
+**Store "What's New" text used for 2.3.0:**
+```
+What's New
+• Faster login: your OTP fills in automatically
+• Notifications now open the right screen
+• Smoother videos that no longer stop your music
+• Clearer price breakdown when booking
+• Log out or delete your account right from Profile
+• Bug fixes and an improved overall experience
+```
 
 **After 2.3.0**
 - **Next update (2.3.1), first:** the two App Store upload warnings and the concert txnid retry (section 8).
