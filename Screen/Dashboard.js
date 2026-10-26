@@ -13,12 +13,13 @@ import {
   Linking,
   TextInput,
   ActivityIndicator,
+  InteractionManager,
   FlatList,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import React, { useState, useEffect, useContext, useRef } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo, memo } from 'react';
 import IconDown from 'react-native-vector-icons/MaterialIcons';
 const { width, height } = Dimensions.get('window');
 import { useIsFocused, useNavigation } from '@react-navigation/native';
@@ -51,6 +52,40 @@ import { profileDetails } from './redux/reducer/profileReducer';
 const ANDROID_OTP_BOX = Platform.OS === 'android'
   ? { width: 44, height: 48, padding: 0, paddingHorizontal: 0, paddingVertical: 0, includeFontPadding: false, textAlign: 'center', textAlignVertical: 'center' }
   : {};
+
+// Guest bookings are drawn in batches of this size as the user scrolls.
+const BOOKING_BATCH_SIZE = 15;
+
+// One guest booking card; memoized so cards only re-render when their booking changes.
+const GuestBookingRow = memo(({ item }) => (
+  <View style={styles.bookingCard}>
+    <View style={styles.bookingRow}>
+      <Image
+        source={require('./assets/NewProfileimageSmall.jpg')}
+        style={styles.bookingAvatar}
+      />
+      <View style={styles.bookingBody}>
+        <View style={styles.bookingHeader}>
+          <Text style={styles.bookingGuest}>{item?.guestName}</Text>
+          <Text style={styles.bookingAmount}>₹{item?.rentalAmount}</Text>
+        </View>
+
+        <View style={{ flexDirection: 'row' }}>
+          <Text style={styles.bookingDate}>{item?.checkInDate} -</Text>
+          <Text style={styles.bookingDate}>{item?.checkOutDate}</Text>
+        </View>
+
+        <View style={styles.bookingSourceRow}>
+          <Text style={styles.bookingSourceLabel}>Source of Booking :</Text>
+          <Text style={styles.bookingSource}>
+            {' '}
+            {item?.via}
+          </Text>
+        </View>
+      </View>
+    </View>
+  </View>
+));
 
 export default function Dashboard(props) {
   const { globalState, setGlobalState } = useContext(AppContext);
@@ -552,16 +587,19 @@ const parseDate = (dateStr) => {
 };
 
 
-const yearsData = Array.from(
+// Parse each booking's check-out date once per load, not on every render.
+const bookings = useMemo(
+  () => (GestArray || []).map(item => ({ item, date: parseDate(item?.checkOutDate) })),
+  [GestArray],
+);
+
+const yearsData = useMemo(() => Array.from(
   new Set(
-    (GestArray || [])
-      .map(item => {
-        const date = parseDate(item?.checkOutDate);
-        return date ? date.getFullYear() : null;
-      })
+    bookings
+      .map(({ date }) => (date ? date.getFullYear() : null))
       .filter(year => year !== null && !isNaN(year))
   )
-).sort((a, b) => b - a);
+).sort((a, b) => b - a), [bookings]);
 
 
 // Android behaviour: preselect the latest year that has bookings once the
@@ -574,44 +612,99 @@ useEffect(() => {
 
 const selectedYear = Number(yearBy) || yearsData[0] || null;
 
-const monthsData = Array.from(
+const monthsData = useMemo(() => Array.from(
   new Set(
-    (GestArray || [])
-      .map(item => parseDate(item?.checkOutDate))
-      .filter(date => date && date.getFullYear() === selectedYear)
-      .map(date => date.getMonth() + 1)
+    bookings
+      .filter(({ date }) => date && date.getFullYear() === selectedYear)
+      .map(({ date }) => date.getMonth() + 1)
   )
-).sort((a, b) => b - a);
+).sort((a, b) => b - a), [bookings, selectedYear]);
 
-const getMonthRevenue = (year, month) => {
-  return (GestArray || [])
-    .filter(item => {
-      const date = parseDate(item?.checkOutDate);
-      if (!date) return false;
+// Year and year-month revenue totals, built in one pass for the pickers.
+const revenueByPeriod = useMemo(() => {
+  const totals = {};
+  bookings.forEach(({ item, date }) => {
+    if (!date) return;
+    const amount = Number(item?.rentalAmount);
+    if (isNaN(amount)) return;
+    const yearKey = `${date.getFullYear()}`;
+    const monthKey = `${yearKey}-${date.getMonth() + 1}`;
+    totals[yearKey] = (totals[yearKey] || 0) + amount;
+    totals[monthKey] = (totals[monthKey] || 0) + amount;
+  });
+  return totals;
+}, [bookings]);
 
-      return (
-        date.getFullYear() === Number(year) &&
-        date.getMonth() + 1 === Number(month)
-      );
-    })
-    .reduce((acc, curr) => {
-      const amount = Number(curr?.rentalAmount);
-      return acc + (isNaN(amount) ? 0 : amount);
-    }, 0);
-};
+const getMonthRevenue = (year, month) =>
+  revenueByPeriod[`${Number(year)}-${Number(month)}`] || 0;
 
-const getYearRevenue = (year) => {
-  return (GestArray || [])
-    .filter(item => {
-      const date = parseDate(item?.checkOutDate);
-      if (!date) return false;
+const getYearRevenue = (year) => revenueByPeriod[`${Number(year)}`] || 0;
 
-      return date.getFullYear() === Number(year);
-    })
-    .reduce((acc, curr) => {
-      const amount = Number(curr?.rentalAmount);
-      return acc + (isNaN(amount) ? 0 : amount);
-    }, 0);
+const periodData = useMemo(() => bookings
+  .filter(({ date }) => {
+    if (!date) return !yearBy && !monthBy;
+
+    if (yearBy && date.getFullYear() !== Number(yearBy)) return false;
+
+    if (monthBy && (date.getMonth() + 1 !== Number(monthBy))) return false;
+
+    return true;
+  })
+  .map(({ item }) => item), [bookings, yearBy, monthBy]);
+
+const filteredData = useMemo(() => periodData
+  .filter(item => {
+    if (sortBy === 'Complimentary Stays') {
+      return (item.rentalAmount || 0) === 0;
+    }
+    // As on Android, price sorting only lists paid stays.
+    if (sortBy === 'Low to High' || sortBy === 'High to Low') {
+      return (item.rentalAmount || 0) > 0;
+    }
+    return true;
+  })
+  .sort((a, b) => {
+    if (sortBy === 'Low to High') {
+      return (a.rentalAmount || 0) - (b.rentalAmount || 0);
+    }
+
+    if (sortBy === 'High to Low') {
+      return (b.rentalAmount || 0) - (a.rentalAmount || 0);
+    }
+
+    return 0;
+  }), [periodData, sortBy]);
+
+// Period revenue (year/month), independent of the sort option, as on Android.
+const totalRevenue = useMemo(() => Math.round(periodData.reduce(
+  (acc, curr) => acc + (curr.rentalAmount || 0),
+  0,
+)), [periodData]);
+
+// Show the Guest Booking tab at once with a loader, and draw the list only
+// after the tab switch has finished.
+const [guestListReady, setGuestListReady] = useState(false);
+useEffect(() => {
+  if (selectDetails !== 'Guest Booking Details') {
+    setGuestListReady(false);
+    return;
+  }
+  const task = InteractionManager.runAfterInteractions(() => setGuestListReady(true));
+  return () => task.cancel();
+}, [selectDetails]);
+
+// Start from the first batch whenever the tab opens or the filters change.
+const [visibleBookingCount, setVisibleBookingCount] = useState(BOOKING_BATCH_SIZE);
+useEffect(() => {
+  setVisibleBookingCount(BOOKING_BATCH_SIZE);
+}, [filteredData, selectDetails]);
+
+const handleMainScroll = ({ nativeEvent }) => {
+  if (selectDetails !== 'Guest Booking Details' || visibleBookingCount >= filteredData.length) return;
+  const { layoutMeasurement, contentOffset, contentSize } = nativeEvent;
+  if (layoutMeasurement.height + contentOffset.y >= contentSize.height - 400) {
+    setVisibleBookingCount(count => count + BOOKING_BATCH_SIZE);
+  }
 };
 
 const monthNames = [
@@ -641,7 +734,10 @@ const formatIndianAmount = (amount) => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-      <ScrollView style={{ backgroundColor: '#FFFFFF' }}>
+      <ScrollView
+        style={{ backgroundColor: '#FFFFFF' }}
+        onScroll={handleMainScroll}
+        scrollEventThrottle={200}>
         <View style={styles.mainImageContainer}>
 
           <Swiper
@@ -1811,7 +1907,7 @@ const formatIndianAmount = (amount) => {
                     color: '#021265',
                   }}>
             {monthBy
-    ? new Date(0, Number(monthBy) - 1).toLocaleString('default', { month: 'long' })
+    ? monthNames[Number(monthBy) - 1]
     : 'Month'}
                 </Text>
                 <Icon
@@ -1864,50 +1960,6 @@ const formatIndianAmount = (amount) => {
               Guest Booking Details
             </Text>
 
-            {(() => {
-  const periodData = [...(GestArray || [])]
-    .filter(item => {
-      const date = parseDate(item?.checkOutDate);
-      if (!date) return !yearBy && !monthBy;
-
-      if (yearBy && date.getFullYear() !== Number(yearBy)) return false;
-
-      if (monthBy && (date.getMonth() + 1 !== Number(monthBy))) return false;
-
-      return true;
-    });
-
-  const filteredData = periodData
-    .filter(item => {
-      if (sortBy === 'Complimentary Stays') {
-        return (item.rentalAmount || 0) === 0;
-      }
-      // As on Android, price sorting only lists paid stays.
-      if (sortBy === 'Low to High' || sortBy === 'High to Low') {
-        return (item.rentalAmount || 0) > 0;
-      }
-      return true;
-    })
-
-    .sort((a, b) => {
-      if (sortBy === 'Low to High') {
-        return (a.rentalAmount || 0) - (b.rentalAmount || 0);
-      }
-
-      if (sortBy === 'High to Low') {
-        return (b.rentalAmount || 0) - (a.rentalAmount || 0);
-      }
-
-      return 0;
-    });
-
-  // Period revenue (year/month), independent of the sort option, as on Android.
-  const totalRevenue = Math.round(periodData.reduce(
-    (acc, curr) => acc + (curr.rentalAmount || 0),
-    0,
-  ));
-
-  return (
     <>
       <View style={{ marginTop: 20 }}>
            {(sortBy || yearBy || monthBy) ?   <View
@@ -1942,97 +1994,14 @@ const formatIndianAmount = (amount) => {
       </View>
 
       {/* Render Filtered Guest Cards */}
-      {filteredData.map((item, index) => (
-        <View
-          key={index}
-          style={{
-            backgroundColor: '#F6F6F6',
-            borderRadius: 10,
-            padding: 10,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            marginTop: 15,
-          }}>
-          <View style={{ flexDirection: 'row', width: '100%' }}>
-            <Image
-              source={require('./assets/NewProfileimage.jpg')}
-              style={{ width: 50, height: 50, borderRadius: 50 }}
-            />
-            <View style={{ width: '85%', paddingLeft: 10 }}>
-              <View
-                style={{
-                  flexDirection: 'row',
-                  width: '100%',
-                  justifyContent: 'space-between',
-                }}>
-                <Text
-                  style={{
-                    fontFamily: 'Montserrat-SemiBold',
-                    fontSize: 12,
-                    color: '#0F1130',
-                  }}>
-                  {item?.guestName}
-                </Text>
-
-                <Text
-                  style={{
-                    fontFamily: 'WorkSans-SemiBold',
-                    fontSize: 14,
-                    color: '#188C16',
-                  }}>
-                  ₹{item?.rentalAmount}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row' }}>
-                <Text
-                  style={{
-                    fontFamily: 'WorkSans-Medium',
-                    fontSize: 12,
-                    color: '#1E3A8A',
-                  }}>
-                  {item?.checkInDate} -
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'WorkSans-Medium',
-                    fontSize: 12,
-                    color: '#1E3A8A',
-                  }}>
-                  {item?.checkOutDate}
-                </Text>
-              </View>
-
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                }}>
-                <Text
-                  style={{
-                    fontFamily: 'WorkSans-Medium',
-                    fontSize: 12,
-                    color: '#0F1130',
-                  }}>
-                  Source of Booking :
-                </Text>
-                <Text
-                  style={{
-                    fontFamily: 'WorkSans-SemiBold',
-                    fontSize: 11,
-                    color: '#1E3A8A',
-                  }}>
-                  {' '}
-                  {item?.via}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
-      ))}
+      {guestListReady ? (
+        filteredData.slice(0, visibleBookingCount).map((item, index) => (
+          <GuestBookingRow key={item?._id || index} item={item} />
+        ))
+      ) : (
+        <ActivityIndicator size="large" color="#021365" style={{ marginTop: 30 }} />
+      )}
     </>
-  );
-})()}
             </View>
         )}
 
@@ -2810,9 +2779,7 @@ const formatIndianAmount = (amount) => {
                           fontSize: 14,
                           color: '#000000',
                         }}>
-                        {new Date(0, m - 1).toLocaleString('default', {
-                          month: 'long',
-                        })}
+                        {monthNames[m - 1]}
                       </Text>
                     </View>
 
@@ -2938,6 +2905,28 @@ const formatIndianAmount = (amount) => {
 }
 
 const styles = StyleSheet.create({
+  bookingCard: {
+    backgroundColor: '#F6F6F6',
+    borderRadius: 10,
+    padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+  },
+  bookingRow: { flexDirection: 'row', width: '100%' },
+  bookingAvatar: { width: 50, height: 50, borderRadius: 50 },
+  bookingBody: { width: '85%', paddingLeft: 10 },
+  bookingHeader: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  bookingGuest: { fontFamily: 'Montserrat-SemiBold', fontSize: 12, color: '#0F1130' },
+  bookingAmount: { fontFamily: 'WorkSans-SemiBold', fontSize: 14, color: '#188C16' },
+  bookingDate: { fontFamily: 'WorkSans-Medium', fontSize: 12, color: '#1E3A8A' },
+  bookingSourceRow: { flexDirection: 'row', alignItems: 'center' },
+  bookingSourceLabel: { fontFamily: 'WorkSans-Medium', fontSize: 12, color: '#0F1130' },
+  bookingSource: { fontFamily: 'WorkSans-SemiBold', fontSize: 11, color: '#1E3A8A' },
   title: {
     fontSize: 18,
     fontFamily: 'WorkSans-SemiBold',
