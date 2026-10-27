@@ -25,6 +25,10 @@ import {bookingTabs, completed, countdown, upcoming} from './data';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const META = '#ADA597';
+// Colour helpers are plain JS, so resolve them before they reach a worklet.
+const ST_BORDER = colors.whiteA(0.1);
+const WHITE_0 = colors.whiteA(0);
+const CNT_BG = colors.goldA(0.18);
 
 /** `.bin`: cards rise in when a sub-tab is picked (.6s --out). */
 const bin = () => {
@@ -44,11 +48,11 @@ function SubTab({tab, on, onPress}) {
   const v = useToggle(on, {duration: 300, easing: E.ease});
   const box = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(v.value, [0, 1], [colors.card, colors.cream]),
-    borderColor: interpolateColor(v.value, [0, 1], [colors.whiteA(0.1), colors.whiteA(0)]),
+    borderColor: interpolateColor(v.value, [0, 1], [ST_BORDER, WHITE_0]),
   }));
   const text = useAnimatedStyle(() => ({color: interpolateColor(v.value, [0, 1], [colors.soft, colors.ink])}));
   const cnt = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(v.value, [0, 1], [colors.goldA(0.18), colors.ink]),
+    backgroundColor: interpolateColor(v.value, [0, 1], [CNT_BG, colors.ink]),
   }));
   const cntText = useAnimatedStyle(() => ({color: interpolateColor(v.value, [0, 1], [colors.soft, colors.gold])}));
   return (

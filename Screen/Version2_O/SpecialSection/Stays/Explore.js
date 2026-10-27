@@ -22,6 +22,9 @@ import Offers, {COUPON_W} from './Offers';
 
 const RCARD_W = 302;
 const RCARD_GAP = 14;
+// Colour helpers are plain JS, so resolve them before they reach a worklet.
+const CHIP_BORDER = colors.whiteA(0.12);
+const GOLD_0 = colors.goldA(0);
 
 /** `.sticky-search`: sticks to the top and darkens over the first 120px of scroll. */
 function SearchBar({scrollY}) {
@@ -88,7 +91,7 @@ function Chip({chip, on, onPress}) {
   const pop = useShot(on, 450);
   const bg = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(v.value, [0, 1], [colors.card, colors.gold]),
-    borderColor: interpolateColor(v.value, [0, 1], [colors.whiteA(0.12), colors.goldA(0)]),
+    borderColor: interpolateColor(v.value, [0, 1], [CHIP_BORDER, GOLD_0]),
     transform: [{scale: kf(pop.value, [[0, 0.9], [0.6, 1.06], [1, 1]], E.spring)}],
   }));
   const text = useAnimatedStyle(() => ({color: interpolateColor(v.value, [0, 1], ['#E6E0D6', colors.ink])}));

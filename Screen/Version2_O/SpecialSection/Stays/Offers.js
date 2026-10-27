@@ -9,6 +9,11 @@ import {E, PressScale, kf, useToggle} from '../anim';
 import {Confetti, Loop} from './bits';
 import {BadgeIcon, CheckIcon} from './icons';
 
+// Colour helpers are plain JS, so resolve them before they reach a worklet.
+const CODE_BORDER = colors.goldA(0.4);
+const GOLD_0 = colors.goldA(0);
+const GOLD_14 = colors.goldA(0.14);
+
 export const COUPON_W = 314;
 const COUPON_H = 216;
 
@@ -148,8 +153,8 @@ function Art({kind}) {
 function Coupon({offer, got, onClaim}) {
   const v = useToggle(got, {duration: 300, easing: E.ease});
   const code = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(v.value, [0, 1], [colors.goldA(0.4), colors.gold]),
-    backgroundColor: interpolateColor(v.value, [0, 1], [colors.goldA(0), colors.goldA(0.14)]),
+    borderColor: interpolateColor(v.value, [0, 1], [CODE_BORDER, colors.gold]),
+    backgroundColor: interpolateColor(v.value, [0, 1], [GOLD_0, GOLD_14]),
   }));
   const codeText = useAnimatedStyle(() => ({color: interpolateColor(v.value, [0, 1], ['#E6E0D6', colors.gold])}));
   const btn = useAnimatedStyle(() => ({backgroundColor: interpolateColor(v.value, [0, 1], [colors.gold, '#E6F4EA'])}));
