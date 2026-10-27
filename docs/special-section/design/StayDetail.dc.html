@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stay Detail</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#050506}
+*{box-sizing:border-box}
+a{color:#F1DDBA;text-decoration:none}a:hover{color:#FFF1D6}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:left}
+h1,h2,h3,p{margin:0}
+.app{--spring:cubic-bezier(.34,1.56,.64,1);--out:cubic-bezier(.16,1,.3,1);position:relative;width:390px;height:844px;overflow:hidden;background:#0A0A0C;color:#F4EFE6;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+.scroller{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.grain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.07;mix-blend-mode:soft-light;z-index:60}
+.press{transition:transform .45s var(--spring)}
+.press:active{transform:scale(.96)}
+.rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.muted{color:#A9A39A}
+.h2{font-size:19px;font-weight:700;letter-spacing:-.01em}
+@supports (animation-timeline: scroll()){
+.gal{animation:par linear both;animation-timeline:scroll(nearest);animation-range:0 420px}
+.mh{animation:mhin linear both;animation-timeline:scroll(nearest);animation-range:330px 400px}
+.rv{animation:rv linear both;animation-timeline:view();animation-range:entry 0% entry 55%}
+}
+@keyframes par{to{transform:translateY(170px) scale(1.06);filter:brightness(.55)}}
+@keyframes mhin{from{opacity:0;visibility:hidden;transform:translateY(-8px)}to{opacity:1;visibility:visible;transform:none}}
+@keyframes rv{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+.gbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(10,10,12,.42);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;transition:transform .4s var(--spring),background .2s}
+.gbtn:hover{color:#fff;background:rgba(10,10,12,.6)}
+.gbtn:active{transform:scale(.86)}
+.mh{position:absolute;left:0;right:0;top:0;height:62px;display:flex;align-items:center;gap:10px;padding:0 12px;background:rgba(10,10,12,.8);backdrop-filter:blur(18px) saturate(1.4);-webkit-backdrop-filter:blur(18px) saturate(1.4);border-bottom:1px solid rgba(255,255,255,.06);opacity:0;visibility:hidden}
+
+/* hero gallery */
+.hero{position:relative;height:420px;overflow:hidden;background:#000}
+.gal{position:absolute;inset:0}
+.gi{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.08);transition:opacity .7s ease,transform 1.2s var(--out)}
+.gi.on{opacity:1;transform:scale(1);animation:kb 9s ease-out .7s both}
+@keyframes kb{from{transform:scale(1)}to{transform:scale(1.08)}}
+.hshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,12,.45) 0%,rgba(10,10,12,0) 22%,rgba(10,10,12,0) 70%,rgba(10,10,12,.75) 100%);pointer-events:none}
+.tap{position:absolute;top:80px;bottom:70px;width:50%;z-index:2}
+.gpill{display:inline-flex;align-items:center;gap:8px;height:36px;padding:0 14px 0 6px;border-radius:999px;background:rgba(10,10,12,.5);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#fff;font-size:12.5px;font-weight:600;transition:transform .4s var(--spring)}
+.gpill:active{transform:scale(.92)}
+.ring{transform:rotate(-90deg)}
+.ring .prog{stroke-dasharray:69.1;stroke-dashoffset:69.1;animation:ringfill 6s linear infinite}
+@keyframes ringfill{to{stroke-dashoffset:0}}
+.gdots{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);display:flex;gap:5px;z-index:3}
+.gdots i{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.45);transition:width .45s var(--out),background .3s}
+.gdots i.on{width:18px;background:#fff}
+.odo{display:inline-block;overflow:hidden;vertical-align:top}
+.odo .strip{display:flex;flex-direction:column;transition:transform .6s var(--spring)}
+.toast{position:absolute;left:50%;top:76px;z-index:50;display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 16px;border-radius:999px;background:#F1DDBA;color:#1A1611;font-size:13px;font-weight:700;transform:translate(-50%,-20px);opacity:0;pointer-events:none;transition:transform .5s var(--spring),opacity .25s}
+.toast.show{transform:translate(-50%,0);opacity:1}
+
+/* about */
+.card{border-radius:24px;background:linear-gradient(160deg,#17161A,#111114);border:1px solid rgba(255,255,255,.08)}
+
+/* suites */
+.suite{position:relative;display:block;width:100%;height:152px;border-radius:22px;overflow:hidden;border:1.5px solid rgba(255,255,255,.08);background:#141418;transition:border-color .35s,box-shadow .35s,transform .45s var(--spring)}
+.suite:active{transform:scale(.97)}
+.suite img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform 1s var(--out),filter .4s}
+.suite .sh{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,12,0) 30%,rgba(10,10,12,.88) 100%);transition:background .4s}
+.suite.sel{border-color:#F1DDBA;box-shadow:0 0 0 4px rgba(241,221,186,.12),0 18px 40px rgba(0,0,0,.5);animation:selpop .55s var(--spring)}
+.suite.sel img{transform:scale(1.06)}
+.suite:not(.sel) img{filter:saturate(.75) brightness(.85)}
+@keyframes selpop{0%{transform:scale(.97)}60%{transform:scale(1.015)}100%{transform:scale(1)}}
+.radio{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.85);display:grid;place-items:center;background:rgba(10,10,12,.25);transition:background .3s,border-color .3s,transform .45s var(--spring)}
+.sel .radio{background:#F1DDBA;border-color:#F1DDBA;transform:scale(1.1)}
+.radio path{stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .4s ease .1s}
+.sel .radio path{stroke-dashoffset:0}
+.gc{position:absolute;top:12px;left:12px;height:24px;padding:0 9px;display:inline-flex;align-items:center;border-radius:6px;background:#F1DDBA;color:#1A1611;font-size:10px;font-weight:800;letter-spacing:.08em;overflow:hidden}
+.gc::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.8) 50%,transparent 65%);transform:translateX(-140%);animation:sheen 3.4s ease-in-out infinite}
+@keyframes sheen{0%,55%{transform:translateX(-140%)}85%,100%{transform:translateX(140%)}}
+.pbox{position:absolute;right:12px;bottom:12px;display:inline-flex;align-items:baseline;gap:4px;height:40px;padding:0 12px;align-items:center;border-radius:12px;background:rgba(10,10,12,.55);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+
+/* amenities */
+.am{display:flex;align-items:center;gap:10px;height:52px;padding:0 12px;border-radius:14px;background:#141418;border:1px solid rgba(255,255,255,.07);font-size:12px;font-weight:600;color:#E6E0D6}
+.am svg{flex:0 0 auto;color:#F1A87A}
+.air{stroke-dasharray:2 3;animation:air 1s linear infinite}
+@keyframes air{to{stroke-dashoffset:-5}}
+.liq{transform-box:fill-box;transform-origin:50% 50%;animation:liq 2.2s ease-in-out infinite}
+@keyframes liq{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+.steam{animation:steam 2.4s ease-in-out infinite}
+@keyframes steam{0%{opacity:0;transform:translateY(2px)}40%{opacity:1}100%{opacity:0;transform:translateY(-3px)}}
+.w1,.w2,.w3{animation:wifi 1.8s ease-in-out infinite}
+.w2{animation-delay:.2s}.w3{animation-delay:.4s}
+@keyframes wifi{0%,100%{opacity:.25}40%{opacity:1}}
+
+/* nearby */
+/* bento amenities */
+.bento{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.bt{position:relative;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;gap:10px;min-height:118px;padding:14px;border-radius:22px;background:radial-gradient(circle at 85% 0%,rgba(241,168,122,.12),rgba(241,168,122,0) 60%),#141418;border:1px solid rgba(255,255,255,.07);overflow:hidden;color:#F4EFE6;transition:border-color .35s,box-shadow .35s,transform .45s var(--spring),background .4s}
+.bt:active{transform:scale(.96)}
+.bt.on{border-color:rgba(241,168,122,.65);box-shadow:0 0 0 4px rgba(241,168,122,.1),0 16px 34px rgba(0,0,0,.45);background:radial-gradient(circle at 85% 0%,rgba(241,168,122,.32),rgba(241,168,122,0) 65%),#1A171B}
+.bl b{font-size:13.5px;font-weight:700}
+.flow{stroke-dasharray:6 9;animation:flow 1.6s linear infinite}
+.f2{animation-delay:-.5s}.f3{animation-delay:-1s}
+.bt.on .flow{animation-duration:.6s}
+@keyframes flow{to{stroke-dashoffset:-30}}
+.flake{transform-box:fill-box;transform-origin:50% 50%;animation:spinf 6s linear infinite}
+.bt.on .flake{animation-duration:1.5s}
+@keyframes spinf{to{transform:rotate(360deg)}}
+.led{animation:ledb 2s ease-in-out infinite}
+@keyframes ledb{50%{opacity:.3}}
+.bt.on .w1,.bt.on .w2,.bt.on .w3{animation-duration:.8s}
+.bub{animation:bub 2.2s ease-in infinite}
+.b2{animation-delay:.7s}.b3{animation-delay:1.4s}
+@keyframes bub{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-10px);opacity:0}}
+.bt.on .liq{animation-duration:.9s}
+.spk{transform-box:fill-box;transform-origin:50% 50%;animation:twk 2.2s ease-in-out infinite}
+.spk.s2{animation-delay:1.1s}
+@keyframes twk{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+.bt.on .steam{animation-duration:1.2s}
+.bell{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(241,168,122,.4);color:#F1A87A}
+.bt.on .bell{animation:ring .9s ease-in-out}
+@keyframes ring{20%{transform:rotate(18deg)}40%{transform:rotate(-14deg)}60%{transform:rotate(9deg)}80%{transform:rotate(-4deg)}}
+
+/* good to know */
+.times{display:flex;align-items:center;gap:10px;padding:16px 18px;border-radius:22px;background:#141418;border:1px solid rgba(255,255,255,.07)}
+.tcol{display:flex;flex-direction:column;gap:4px}
+.ticon{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;margin-bottom:4px}
+.ticon.sun{background:rgba(242,184,92,.14);color:#F2B85C}
+.ticon.sun svg{animation:spinsun 12s linear infinite}
+@keyframes spinsun{to{transform:rotate(360deg)}}
+.ticon.moon{background:rgba(160,170,255,.12);color:#B8C0FF}
+.ticon.moon svg{animation:moonb 3.6s ease-in-out infinite}
+@keyframes moonb{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+.tlabel{font-size:11px;font-weight:600;letter-spacing:.06em;color:#ADA597;text-transform:uppercase}
+.tval{font-size:20px;font-weight:800;color:#fff;letter-spacing:-.01em}
+.tmid{flex:1;position:relative;height:30px;display:grid;place-items:center;align-self:flex-end;margin-bottom:6px}
+.tline{position:absolute;left:0;right:0;top:50%;border-top:1.5px dashed rgba(241,221,186,.25)}
+.tline::after{content:'';position:absolute;top:-4px;left:0;width:7px;height:7px;border-radius:50%;background:#F1DDBA;box-shadow:0 0 8px rgba(241,221,186,.8);animation:travel 3.2s ease-in-out infinite}
+@keyframes travel{0%{left:0;opacity:0}12%{opacity:1}88%{opacity:1}100%{left:calc(100% - 7px);opacity:0}}
+.tpill{position:relative;height:24px;padding:0 10px;display:inline-flex;align-items:center;border-radius:999px;background:#0A0A0C;border:1px solid rgba(241,221,186,.25);font-size:10.5px;font-weight:700;color:#F1DDBA}
+.policy{padding:16px 18px 6px;border-radius:22px;background:#141418;border:1px solid rgba(255,255,255,.07)}
+.pmain{display:flex;align-items:center;gap:14px;padding-bottom:14px}
+.pmain .ticon{width:44px;height:44px;border-radius:14px;margin:0;flex:0 0 auto}
+.ticon.shield{background:rgba(74,222,128,.12);color:#4ADE80}
+.pchk{stroke-dasharray:14;stroke-dashoffset:14;animation:pchk .7s cubic-bezier(.16,1,.3,1) .4s forwards}
+@keyframes pchk{to{stroke-dashoffset:0}}
+.ticon.shield svg{animation:shb 4s ease-in-out infinite}
+@keyframes shb{0%,82%,100%{transform:scale(1)}88%{transform:scale(1.12)}94%{transform:scale(.97)}}
+.pbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:14px}
+.readpol{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;padding:0 2px;border-top:1px solid rgba(255,255,255,.06);font-size:13px;font-weight:700;color:#F1DDBA;transition:color .2s}
+.readpol:hover{color:#FFF1D6}
+.rpa{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;border:1px solid rgba(241,221,186,.35);transition:transform .4s var(--spring),background .3s}
+.readpol:hover .rpa{transform:translateX(3px);background:rgba(241,221,186,.1)}
+.readpol:active .rpa{transform:scale(.85)}
+.pol{position:absolute;inset:0;z-index:55;background:#0A0A0C;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .6s cubic-bezier(.32,.72,0,1),visibility 0s .6s;visibility:hidden}
+.pol.show{transform:none;visibility:visible;transition:transform .6s cubic-bezier(.32,.72,0,1)}
+.pol-top{display:flex;align-items:center;gap:12px;padding:16px 16px 10px}
+.pol-body{flex:1;overflow-y:auto;scrollbar-width:none;padding:6px 20px 110px;display:flex;flex-direction:column;gap:14px}
+.pol-body::-webkit-scrollbar{display:none}
+.pol.show .pol-body>*{animation:polin .6s var(--out) both}
+.pol.show .pol-body>*:nth-child(2){animation-delay:.08s}.pol.show .pol-body>*:nth-child(3){animation-delay:.16s}.pol.show .pol-body>*:nth-child(4){animation-delay:.24s}.pol.show .pol-body>*:nth-child(5){animation-delay:.32s}
+@keyframes polin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.tl{padding:18px;border-radius:22px;background:#141418;border:1px solid rgba(255,255,255,.07)}
+.tl-bar{display:grid;grid-template-columns:3fr 1fr;gap:4px;margin:14px 0 8px}
+.tl-bar i{height:10px;border-radius:5px;transform-origin:left}
+.pol.show .tl-bar i{animation:segin .9s var(--out) .3s both}
+.pol.show .tl-bar i:nth-child(2){animation-delay:.6s}
+.tl-ticks{display:flex;justify-content:space-between;font-size:10.5px;color:#8E887F}
+.rule{display:flex;gap:14px;padding:16px;border-radius:20px;background:#141418;border:1px solid rgba(255,255,255,.07)}
+.ri{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;flex:0 0 auto}
+.pol-cta{position:absolute;left:16px;right:16px;bottom:16px;height:56px;border-radius:18px;background:#F1DDBA;color:#1A1611;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;transition:transform .4s var(--spring)}
+.pol-cta:active{transform:scale(.96)}
+.seg{height:24px;display:flex;align-items:center}
+.seg i{display:block;width:100%;height:8px;border-radius:4px;opacity:.35;transform-origin:left;transition:opacity .3s,height .4s var(--spring)}
+.seg.g i{background:#4ADE80}.seg.a i{background:#F2B85C}.seg.r i{background:#F87171}
+.seg.on i{opacity:1;height:12px}
+.pbar .seg:first-child i{animation:segin .8s var(--out) both}
+.pbar .seg:nth-child(2) i{animation:segin .8s var(--out) .15s both}
+.pbar .seg:nth-child(3) i{animation:segin .8s var(--out) .3s both}
+@keyframes segin{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.slbl{display:flex;flex-direction:column;gap:2px;font-size:10.5px;color:#8E887F;transition:color .3s}
+.slbl b{font-size:12px;font-weight:700;color:#CFC8BD;transition:color .3s}
+.slbl.on b{color:#fff}
+.slbl.on{color:#CFC8BD}
+.pnote{display:flex;align-items:center;gap:8px;margin:12px 0;padding:10px 12px;border-radius:12px;background:#1B1A1F;font-size:12.5px;color:#E6E0D6;line-height:1.4}
+.pnote.nA{animation:noteA .45s var(--spring)}.pnote.nB{animation:noteB .45s var(--spring)}
+@keyframes noteA{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes noteB{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.ndot{width:8px;height:8px;border-radius:50%;flex:0 0 auto}
+
+/* map */
+.map{position:relative;height:320px;border-radius:26px;overflow:hidden;background:radial-gradient(circle at 60% 50%,#18161C,#0F0E12 70%);border:1px solid rgba(255,255,255,.08)}
+.roads{position:absolute;inset:0}
+.route{stroke-dasharray:100;stroke-dashoffset:100;opacity:0;transition:stroke-dashoffset 1s var(--out),opacity .3s;filter:drop-shadow(0 0 6px rgba(241,168,122,.7))}
+.route.on{stroke-dashoffset:0;opacity:1}
+.car{position:absolute;left:0;top:0;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(241,168,122,.5),0 0 14px 4px rgba(241,168,122,.7);offset-rotate:0deg;animation:drive 2.8s ease-in-out .9s infinite;z-index:2}
+@keyframes drive{0%{offset-distance:0%;opacity:0}10%{opacity:1}85%{opacity:1}100%{offset-distance:100%;opacity:0}}
+.home{position:absolute;width:0;height:0;z-index:3}
+.home i{position:absolute;left:-22px;top:-22px;width:44px;height:44px;border-radius:50%;border:1.5px solid rgba(241,221,186,.6);animation:ripple2 2.4s ease-out infinite}
+.home i:nth-child(2){animation-delay:1.2s}
+@keyframes ripple2{from{transform:scale(.4);opacity:1}to{transform:scale(1.8);opacity:0}}
+.hcore{position:absolute;left:-15px;top:-15px;width:30px;height:30px;border-radius:50%;background:#F1DDBA;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.hlabel{position:absolute;left:20px;top:-10px;white-space:nowrap;font-size:10.5px;font-weight:700;color:#F1DDBA}
+.mpin{position:absolute;width:44px;height:52px;margin:-46px 0 0 -22px;display:flex;flex-direction:column;align-items:center;color:#6F6A63;z-index:4;transition:color .3s,transform .5s var(--spring)}
+.mpin svg{transform-origin:50% 100%;transition:transform .5s var(--spring)}
+.mpin.on{color:#F1A87A;z-index:5}
+.mpin.on svg{transform:scale(1.3);animation:pinhop .7s var(--spring)}
+@keyframes pinhop{0%{transform:scale(1) translateY(0)}40%{transform:scale(1.3) translateY(-8px)}100%{transform:scale(1.3) translateY(0)}}
+.plabel{position:absolute;top:-22px;white-space:nowrap;padding:3px 8px;border-radius:999px;background:#F1A87A;color:#1A1611;font-size:10px;font-weight:800;opacity:0;transform:translateY(6px);transition:opacity .3s,transform .45s var(--spring);pointer-events:none}
+.mpin.on .plabel{opacity:1;transform:none}
+.info{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:center;gap:12px;padding:8px 8px 8px 8px;border-radius:18px;background:rgba(20,19,23,.82);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);z-index:6}
+.info img{width:56px;height:56px;border-radius:12px;object-fit:cover;object-position:center top}
+.info.iA{animation:infoA .55s var(--spring)}.info.iB{animation:infoB .55s var(--spring)}
+@keyframes infoA{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes infoB{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+.dir{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:#F1DDBA;color:#1A1611;transition:transform .4s var(--spring)}
+.dir:hover{color:#1A1611}
+.dir:active{transform:scale(.88)}
+.pchip{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:52px;padding:8px 10px;border-radius:14px;background:#141418;border:1px solid rgba(255,255,255,.08);color:#E6E0D6;text-align:left;transition:background .3s,color .3s,transform .4s var(--spring)}
+.pchip:active{transform:scale(.94)}
+.pchip.on{background:#F1DDBA;color:#1A1611;border-color:transparent}
+
+/* bottom bar */
+.bar{position:absolute;left:14px;right:14px;bottom:14px;height:82px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 18px;border-radius:26px;background:rgba(20,19,23,.82);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(22px) saturate(1.5);-webkit-backdrop-filter:blur(22px) saturate(1.5);box-shadow:0 18px 40px rgba(0,0,0,.6);z-index:40}
+.num{display:inline-flex;align-items:flex-start;font-size:24px;font-weight:800;color:#fff;letter-spacing:-.01em;height:30px;line-height:30px}
+.num .col{display:inline-block;height:30px;overflow:hidden}
+.num .col .strip{display:flex;flex-direction:column;transition:transform .7s var(--spring)}
+.num .col .strip span{height:30px;line-height:30px}
+.rsv{position:relative;display:inline-flex;align-items:center;justify-content:center;gap:8px;width:148px;height:58px;border-radius:18px;background:#F1DDBA;color:#1A1611;font-size:16px;font-weight:800;overflow:hidden;transition:transform .45s var(--spring),background .35s,width .5s var(--spring)}
+.rsv:active{transform:scale(.94)}
+.rsv::after{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.7) 50%,transparent 65%);transform:translateX(-140%);animation:sheen 3.2s ease-in-out infinite}
+.rsv.loading{background:#E4CFA9}
+.rsv.loading::after,.rsv.done::after{display:none}
+.rsv.done{background:#E6F4EA;color:#14532D}
+.spin{width:18px;height:18px;border-radius:50%;border:2.5px solid rgba(26,22,17,.25);border-top-color:#1A1611;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.chk path{stroke-dasharray:22;stroke-dashoffset:22;animation:draw .45s ease forwards .05s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.sheet{position:absolute;left:14px;right:14px;bottom:108px;padding:16px;border-radius:24px;background:#F4EFE6;color:#1A1611;box-shadow:0 20px 50px rgba(0,0,0,.6);transform:translateY(40px) scale(.96);opacity:0;pointer-events:none;transition:transform .6s var(--spring),opacity .3s;z-index:39}
+.sheet.show{transform:none;opacity:1;pointer-events:auto}
+.pay{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:16px;background:#1A1611;color:#F1DDBA;font-size:14px;font-weight:700}
+.pay:hover{color:#F1DDBA}
+</style>
+</helmet>
+<div class="app">
+<div class="scroller">
+
+<div style="position: sticky; top: 0; height: 0; z-index: 30">
+<div class="mh">
+<a class="gbtn" href="Stays.dc.html" aria-label="Back to stays" style="width: 40px; height: 40px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"></path></svg></a>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<b style="font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Dreamscape Resort &amp; Private Villas</b>
+<span class="muted" style="font-size: 11px">{{suiteName}} · ₹{{totalLabel}}/night</span>
+</div>
+<button class="gbtn" onClick="{{share}}" aria-label="Share stay" style="width: 40px; height: 40px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="17.5" cy="5.5" r="2.5"></circle><circle cx="6.5" cy="12" r="2.5"></circle><circle cx="17.5" cy="18.5" r="2.5"></circle><path d="m8.7 10.8 6.6-4M8.7 13.2l6.6 4"></path></svg></button>
+</div>
+</div>
+
+<section class="hero">
+<div class="gal">
+<sc-for list="{{gallery}}" as="g" hint-placeholder-count="1">
+<img class="{{g.cls}}" src="{{g.img}}" alt="{{g.alt}}">
+</sc-for>
+</div>
+<div class="hshade"></div>
+<button class="tap" style="left: 0" onClick="{{prev}}" aria-label="Previous photo"></button>
+<button class="tap" style="right: 0" onClick="{{next}}" aria-label="Next photo"></button>
+<a class="gbtn" href="Stays.dc.html" aria-label="Back to stays" style="position: absolute; top: 20px; left: 20px; z-index: 3"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"></path></svg></a>
+<button class="gbtn" onClick="{{share}}" aria-label="Share stay" style="position: absolute; top: 20px; right: 20px; z-index: 3"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="17.5" cy="5.5" r="2.5"></circle><circle cx="6.5" cy="12" r="2.5"></circle><circle cx="17.5" cy="18.5" r="2.5"></circle><path d="m8.7 10.8 6.6-4M8.7 13.2l6.6 4"></path></svg></button>
+<div style="position: absolute; left: 20px; right: 20px; bottom: 16px; display: flex; align-items: center; justify-content: space-between; z-index: 3">
+<button class="gpill" aria-label="Play video tour, 45 seconds">
+<span style="position: relative; width: 26px; height: 26px; display: grid; place-items: center"><svg class="ring" width="26" height="26" viewBox="0 0 26 26" style="position: absolute; inset: 0" aria-hidden="true"><circle cx="13" cy="13" r="11" fill="none" stroke="rgba(255,255,255,.25)" stroke-width="2"></circle><circle class="prog" cx="13" cy="13" r="11" fill="none" stroke="#F1DDBA" stroke-width="2" stroke-linecap="round"></circle></svg><svg width="10" height="10" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"></path></svg></span>
+Video Tour (0:45)
+</button>
+<span class="gpill" style="padding: 0 12px; font-size: 12px; font-weight: 700"><span class="odo" style="height: 16px"><span class="strip" style="transform: translateY({{galY}})"><span style="height: 16px; line-height: 16px">1</span><span style="height: 16px; line-height: 16px">2</span><span style="height: 16px; line-height: 16px">3</span><span style="height: 16px; line-height: 16px">4</span><span style="height: 16px; line-height: 16px">5</span><span style="height: 16px; line-height: 16px">6</span></span></span>&nbsp;/ 6</span>
+</div>
+<span class="gdots" style="bottom: 70px"><sc-for list="{{gallery}}" as="g" hint-placeholder-count="6"><i class="{{g.dot}}"></i></sc-for></span>
+</section>
+
+<section style="position: relative; padding: 22px 20px 0; background: #0A0A0C">
+<div class="rv" style="display: flex; flex-direction: column; gap: 8px">
+<h1 style="font-size: 22px; font-weight: 700; letter-spacing: -.01em; color: #fff">Dreamscape Resort &amp; Private Villas</h1>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px"><svg width="15" height="15" viewBox="0 0 24 24" fill="#F1A23B" aria-hidden="true"><path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"></path></svg><b style="color: #fff">4.8</b><span class="muted">Road No. 12, Banjara Hills</span></span>
+</div>
+<div class="card rv" style="margin-top: 20px; padding: 18px">
+<h2 style="font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 8px">About the Dreamscape</h2>
+<p style="font-size: 13px; line-height: 1.65; color: #CFC8BD">Perched along the Banjara Hills, Dreamscape pairs modernist fractional architecture with private rooms and panoramic city views.</p>
+</div>
+
+<div class="rv" style="display: flex; align-items: flex-end; justify-content: space-between; margin: 28px 0 12px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h2 class="h2">Available Suites</h2><span class="muted" style="font-size: 12px">Select a suite configuration for this stay</span></div>
+<span style="font-size: 12px; font-weight: 700; color: #F1A87A">3 Options</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px" role="radiogroup" aria-label="Suite options">
+<sc-for list="{{suites}}" as="s" hint-placeholder-count="3">
+<div class="rv">
+<button class="{{s.cls}}" onClick="{{s.pick}}" role="radio" aria-checked="{{s.sel}}">
+<img src="{{s.img}}" alt="">
+<span class="sh"></span>
+<sc-if value="{{s.badge}}" hint-placeholder-val="{{ false }}"><span class="gc">{{s.badge}}</span></sc-if>
+<span class="radio"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1A1611" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+<span style="position: absolute; left: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 3px">
+<b style="font-size: 16px; font-weight: 700; color: #fff">{{s.name}}</b>
+<span style="font-size: 12px; color: #CFC8BD">{{s.spec}}</span>
+</span>
+<span class="pbox"><b style="font-size: 15px; font-weight: 800; color: #fff">{{s.priceLabel}}</b><span class="muted" style="font-size: 11px">/nt</span></span>
+</button>
+</div>
+</sc-for>
+</div>
+
+<div class="rv" style="display: flex; align-items: flex-end; justify-content: space-between; margin: 30px 0 12px">
+<h2 class="h2">Luxury Amenities</h2>
+<span class="muted" style="font-size: 12px">4 included · tap to explore</span>
+</div>
+<div class="bento rv">
+<button class="{{amAc}}" onClick="{{pickAc}}" aria-pressed="{{amAcOn}}" style="grid-row: span 2">
+<svg width="124" height="150" viewBox="0 0 124 150" fill="none" aria-hidden="true" style="align-self: center"><rect x="12" y="10" width="100" height="38" rx="12" fill="rgba(241,168,122,.12)" stroke="#F1A87A" stroke-width="2"></rect><path d="M26 36h72M26 42h72" stroke="#F1A87A" stroke-width="1.6" stroke-linecap="round" opacity=".6"></path><circle class="led" cx="98" cy="21" r="3" fill="#6EE7A0"></circle><path class="flow" d="M32 60c8 10-8 20 0 30s-8 20 0 30" stroke="#BFE3FF" stroke-width="2.4" stroke-linecap="round"></path><path class="flow f2" d="M62 60c8 10-8 20 0 30s-8 20 0 30s-8 14 0 22" stroke="#BFE3FF" stroke-width="2.4" stroke-linecap="round"></path><path class="flow f3" d="M92 60c8 10-8 20 0 30s-8 20 0 30" stroke="#BFE3FF" stroke-width="2.4" stroke-linecap="round"></path><g class="flake" stroke="#BFE3FF" stroke-width="1.6" stroke-linecap="round"><path d="M18 120v14M11 127h14M13 122l10 10M23 122l-10 10"></path></g></svg>
+<span class="bl"><b>Air Conditioner</b></span>
+</button>
+<button class="{{amWifi}}" onClick="{{pickWifi}}" aria-pressed="{{amWifiOn}}">
+<svg width="58" height="48" viewBox="0 0 58 48" fill="none" stroke="#F1A87A" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path class="w3" d="M4 18a35 35 0 0 1 50 0"></path><path class="w2" d="M12 26a23 23 0 0 1 34 0"></path><path class="w1" d="M20 34a11 11 0 0 1 18 0"></path><circle cx="29" cy="42" r="3" fill="#F1A87A" stroke="none"></circle></svg>
+<span class="bl"><b>Wi-Fi</b></span>
+</button>
+<button class="{{amBar}}" onClick="{{pickBar}}" aria-pressed="{{amBarOn}}">
+<svg width="48" height="54" viewBox="0 0 48 54" fill="none" aria-hidden="true"><path d="M10 4h28l-2.2 18a11.8 11.8 0 0 1-23.6 0z" stroke="#F1A87A" stroke-width="2.4" stroke-linejoin="round"></path><path class="liq" d="M12.3 14h23.4l-1.2 8.2a10.5 10.5 0 0 1-21 0z" fill="rgba(241,120,90,.55)"></path><circle class="bub" cx="20" cy="22" r="1.6" fill="#FFD3C2"></circle><circle class="bub b2" cx="27" cy="24" r="1.2" fill="#FFD3C2"></circle><circle class="bub b3" cx="24" cy="20" r="1" fill="#FFD3C2"></circle><path d="M24 34v13M16 49h16" stroke="#F1A87A" stroke-width="2.4" stroke-linecap="round"></path></svg>
+<span class="bl"><b>Mini Bar</b></span>
+</button>
+<button class="{{amHk}}" onClick="{{pickHk}}" aria-pressed="{{amHkOn}}" style="grid-column: span 2; flex-direction: row; align-items: center; min-height: 96px">
+<svg width="86" height="64" viewBox="0 0 86 64" fill="none" stroke-linecap="round" aria-hidden="true"><path class="steam" d="M34 16c-3-4 3-8 0-12M43 18c-3-4 3-8 0-12M52 16c-3-4 3-8 0-12" stroke="#E6E0D6" stroke-width="2"></path><path d="M14 52a29 29 0 0 1 58 0z" fill="rgba(241,168,122,.14)" stroke="#F1A87A" stroke-width="2.4" stroke-linejoin="round"></path><path d="M8 54h70" stroke="#F1A87A" stroke-width="3"></path><circle cx="43" cy="21" r="3" stroke="#F1A87A" stroke-width="2.4"></circle><path class="spk" d="M76 14l2 4.5 4.5 2-4.5 2-2 4.5-2-4.5-4.5-2 4.5-2z" fill="#F1DDBA"></path><path class="spk s2" d="M8 20l1.5 3 3 1.5-3 1.5-1.5 3-1.5-3-3-1.5 3-1.5z" fill="#F1DDBA"></path></svg>
+<span class="bl" style="flex: 1; padding-left: 8px"><b>House Keeping Service</b></span>
+<span class="bell"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 17h14M6 17a6 6 0 0 1 12 0M12 9V7.5"></path><circle cx="12" cy="6.5" r="1"></circle></svg></span>
+</button>
+</div>
+</section>
+
+<section style="position: relative; padding: 30px 20px 0; background: #0A0A0C; display: flex; flex-direction: column; gap: 12px">
+<h2 class="h2 rv">Good to know</h2>
+
+<div class="times rv">
+<div class="tcol">
+<span class="ticon sun"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"></path></svg></span>
+<span class="tlabel">Check-in</span>
+<b class="tval">[2:00 PM]</b>
+</div>
+<div class="tmid" aria-hidden="true"><span class="tline"></span><span class="tpill">1 night</span></div>
+<div class="tcol" style="align-items: flex-end; text-align: right">
+<span class="ticon moon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg></span>
+<span class="tlabel">Check-out</span>
+<b class="tval">[11:00 AM]</b>
+</div>
+</div>
+
+<div class="policy rv">
+<div class="pmain">
+<span class="ticon shield"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5 5 6v5.5c0 4.3 3 7.7 7 9 4-1.3 7-4.7 7-9V6z"></path><path class="pchk" d="m8.8 12.2 2.3 2.3 4.3-4.6"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<span class="tlabel">Cancellation</span>
+<b style="font-size: 16px; font-weight: 800; color: #fff; letter-spacing: -.01em">Free cancellation</b>
+<span class="muted" style="font-size: 12.5px">Up to 72 hrs before check-in</span>
+</span>
+</div>
+<button class="readpol" onClick="{{openPolicy}}">Read policy <span class="rpa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span></button>
+</div>
+</section>
+
+<section style="position: relative; padding: 30px 20px 150px; background: #0A0A0C">
+<div class="rv" style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 12px"><h2 class="h2">Nearby Places to Explore</h2><span class="muted" style="font-size: 12px">From Road No. 12</span></div>
+<div class="map rv">
+<svg class="roads" width="350" height="320" viewBox="0 0 350 320" fill="none" aria-hidden="true">
+<ellipse cx="112" cy="250" rx="46" ry="30" fill="rgba(90,170,110,.14)"></ellipse>
+<path d="M60 40c30 6 40 30 20 46s-46 0-40-20 8-26 20-26z" fill="rgba(241,168,122,.08)"></path>
+<path d="M-10 190C80 176 160 210 360 150" stroke="rgba(255,255,255,.07)" stroke-width="10"></path>
+<path d="M70 -10C96 100 112 210 140 330" stroke="rgba(255,255,255,.07)" stroke-width="8"></path>
+<path d="M-10 100C120 120 220 66 360 86" stroke="rgba(255,255,255,.06)" stroke-width="7"></path>
+<path d="M260 -10C246 120 284 210 262 330" stroke="rgba(255,255,255,.06)" stroke-width="8"></path>
+<path d="M-10 270C90 260 200 300 360 250M180 -10C190 80 170 200 200 330M-10 30C100 50 240 20 360 40" stroke="rgba(255,255,255,.04)" stroke-width="3"></path>
+<path d="M205 160C170 160 120 120 50 70" stroke="rgba(241,221,186,.18)" stroke-width="2" stroke-dasharray="3 5"></path>
+<path d="M205 160C195 200 160 232 118 240" stroke="rgba(241,221,186,.18)" stroke-width="2" stroke-dasharray="3 5"></path>
+<path d="M205 160C205 120 185 85 150 62" stroke="rgba(241,221,186,.18)" stroke-width="2" stroke-dasharray="3 5"></path>
+<path class="{{rGol}}" d="M205 160C170 160 120 120 50 70" pathLength="100" stroke="#F1A87A" stroke-width="3.5" stroke-linecap="round"></path>
+<path class="{{rKbr}}" d="M205 160C195 200 160 232 118 240" pathLength="100" stroke="#F1A87A" stroke-width="3.5" stroke-linecap="round"></path>
+<path class="{{rJub}}" d="M205 160C205 120 185 85 150 62" pathLength="100" stroke="#F1A87A" stroke-width="3.5" stroke-linecap="round"></path>
+</svg>
+<span class="car" style="offset-path: path('{{routeD}}')"></span>
+<span class="home" style="left: 205px; top: 160px"><i></i><i></i><span class="hcore"><svg width="14" height="14" viewBox="0 0 24 24" fill="#1A1611" aria-hidden="true"><path d="M4 11 12 4l8 7v9h-5v-6H9v6H4z"></path></svg></span><span class="hlabel">Dreamscape</span></span>
+<sc-for list="{{places}}" as="p" hint-placeholder-count="3">
+<button class="{{p.pinCls}}" style="left: {{p.px}}; top: {{p.py}}" onClick="{{p.pick}}" aria-label="{{p.name}}, {{p.dist}}" aria-pressed="{{p.on}}">
+<svg width="30" height="38" viewBox="0 0 30 38" aria-hidden="true"><path d="M15 37s-12-11-12-21a12 12 0 0 1 24 0c0 10-12 21-12 21z" fill="currentColor"></path><circle cx="15" cy="15" r="4.5" fill="#0A0A0C"></circle></svg>
+<span class="plabel">{{p.name}}</span>
+</button>
+</sc-for>
+<span style="position: absolute; top: 12px; right: 12px; display: flex; align-items: center; gap: 6px; font-size: 9.5px; color: #8E887F"><span style="width: 22px; height: 22px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18); display: grid; place-items: center; font-size: 9px; font-weight: 800; color: #E6E0D6">N</span>Stylised · not to scale</span>
+<div class="{{infoCls}}">
+<img src="{{cur.img}}" alt="">
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px">
+<b style="font-size: 14.5px; font-weight: 700; color: #fff">{{cur.name}}</b>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #F1A87A"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 16V11l2-5h10l2 5v5M5 16h14M5 16v2.5M19 16v2.5"></path><circle cx="8" cy="13" r="1"></circle><circle cx="16" cy="13" r="1"></circle></svg>{{cur.dist}}</span>
+</div>
+<a class="dir" href="#" aria-label="Directions to {{cur.name}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12 20 4l-8 16-2-6z"></path></svg></a>
+</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 12px">
+<sc-for list="{{places}}" as="p" hint-placeholder-count="3">
+<button class="{{p.chipCls}}" onClick="{{p.pick}}" aria-pressed="{{p.on}}"><b style="font-size: 12px; font-weight: 700">{{p.name}}</b><span style="font-size: 10.5px; opacity: .75">{{p.short}}</span></button>
+</sc-for>
+</div>
+</section>
+
+</div>
+
+<div class="{{sheetCls}}" role="dialog" aria-label="Reservation summary">
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .1em; color: #8A6A3A">ROOM HELD</span>
+<b style="font-size: 16px; font-weight: 800">{{suiteName}} · Dreamscape</b>
+<span style="font-size: 12.5px; color: #5A5247">15–16 Oct · 1 guest · ₹{{totalLabel}} incl. taxes</span>
+</div>
+<button onClick="{{closeSheet}}" aria-label="Close summary" style="width: 44px; height: 44px; margin: -8px -8px 0 0; border-radius: 50%; display: grid; place-items: center; color: #1A1611"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+</div>
+<a class="pay press" href="StayReview.dc.html" style="margin-top: 14px">Continue to payment <span>→</span></a>
+</div>
+
+<div class="bar">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: flex; align-items: baseline; gap: 6px">
+<span class="num" aria-label="₹{{totalLabel}} per night"><span>₹</span><sc-for list="{{digits}}" as="d" hint-placeholder-count="5"><sc-if value="{{d.isDigit}}" hint-placeholder-val="{{ true }}"><span class="col"><span class="strip" style="transform: translateY({{d.y}})"><span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></span></span></sc-if><sc-if value="{{d.isComma}}" hint-placeholder-val="{{ false }}"><span>,</span></sc-if></sc-for></span>
+<span class="muted" style="font-size: 12px">/ night</span>
+</div>
+<span class="muted" style="font-size: 11.5px">Taxes included</span>
+</div>
+<button class="{{rsvCls}}" onClick="{{reserve}}" aria-live="polite">
+<sc-if value="{{isIdle}}" hint-placeholder-val="{{ true }}">Reserve <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></sc-if>
+<sc-if value="{{isLoading}}" hint-placeholder-val="{{ false }}"><span class="spin"></span>Holding…</sc-if>
+<sc-if value="{{isDone}}" hint-placeholder-val="{{ false }}"><svg class="chk" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>Reserved</sc-if>
+</button>
+</div>
+
+<div class="{{polCls}}" role="dialog" aria-label="Cancellation and refund policy">
+<div class="pol-top">
+<button class="gbtn" onClick="{{closePolicy}}" aria-label="Close policy" style="background: #141418"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"></path></svg></button>
+<b style="font-size: 16px; font-weight: 700; color: #fff">Cancellation &amp; Refund Policy</b>
+</div>
+<div class="pol-body">
+<p class="muted" style="font-size: 13px; line-height: 1.55">Dreamscape Resort &amp; Private Villas · applies to all suites</p>
+
+<div class="tl">
+<b style="font-size: 14px; color: #fff">Your cancellation window</b>
+<div class="tl-bar"><i style="background: #4ADE80"></i><i style="background: #F87171"></i></div>
+<div class="tl-ticks" style="position: relative; height: 16px"><span style="position: absolute; left: 0">Booking</span><span style="position: absolute; left: 75%; transform: translateX(-50%); color: #E6E0D6; font-weight: 700; white-space: nowrap">72h before</span><span style="position: absolute; right: 0">Check-in</span></div>
+</div>
+
+<div class="rule">
+<span class="ri" style="background: rgba(74,222,128,.12); color: #4ADE80"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 4px"><b style="font-size: 15px; color: #fff">Free cancellation</b><span style="font-size: 13px; line-height: 1.5; color: #CFC8BD">Cancel up to 72 hours before check-in and get a full refund.</span></div>
+</div>
+
+<div class="rule">
+<span class="ri" style="background: rgba(248,113,113,.12); color: #F87171"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 4px"><b style="font-size: 15px; color: #fff">No refund after that</b><span style="font-size: 13px; line-height: 1.5; color: #CFC8BD">Cancellations made within 72 hours of check-in are not refunded.</span></div>
+</div>
+
+<div class="rule" style="background: #111014">
+<span class="ri" style="background: rgba(241,221,186,.1); color: #F1DDBA"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14.5" rx="2.5"></rect><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"></path></svg></span>
+<div style="display: flex; flex-direction: column; gap: 4px"><b style="font-size: 13px; color: #fff">Example</b><span style="font-size: 13px; line-height: 1.5; color: #CFC8BD">Check-in Saturday at [2:00 PM] → cancel free until Wednesday at [2:00 PM].</span></div>
+</div>
+</div>
+<button class="pol-cta" onClick="{{closePolicy}}">Got it</button>
+</div>
+
+<div class="{{toastCls}}" role="status"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg>Link copied</div>
+<svg class="grain" aria-hidden="true"><filter id="sdgrain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence></filter><rect width="100%" height="100%" filter="url(#sdgrain)"></rect></svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { img: 0, suite: 'lux', phase: 'idle', sheet: false, toast: false, amen: '', place: 'kbr', placeN: 0, stage: 0, stageN: 0, policy: false };
+  }
+  componentWillUnmount() { clearTimeout(this.t1); clearTimeout(this.t2); }
+  renderVals() {
+    const S = this.state;
+    const G = [
+      { img: '/_blob/787bb11e9637e6c86d1974b80247daed', alt: 'Balcony with city view' },
+      { img: '/_blob/e9fedbc7c3c9c2be5a95e833344b8711', alt: 'Deluxe room' },
+      { img: '/_blob/3e763567e62f80c0425a66c13191eb68', alt: 'Luxury room' },
+      { img: '/_blob/a8821f95ec27dedeee7e502ca6738644', alt: 'Suite room' },
+      { img: '/_blob/6edac136eec1cfb63404df16498db367', alt: 'Interior walkway' },
+      { img: '/_blob/8ae4250a612958500b7af52618f98ba1', alt: 'Hotel exterior at night' }
+    ];
+    const gallery = G.map((g, i) => Object.assign({}, g, { cls: i === S.img ? 'gi on' : 'gi', dot: i === S.img ? 'on' : '' }));
+    const suiteData = [
+      { id: 'dlx', name: 'Deluxe Room', spec: '450 sq ft · King Bed', price: 4999, img: '/_blob/e9fedbc7c3c9c2be5a95e833344b8711' },
+      { id: 'lux', name: 'Luxury Room', spec: '580 sq ft · King', price: 5999, img: '/_blob/3e763567e62f80c0425a66c13191eb68', badge: 'GUEST CHOICE' },
+      { id: 'ste', name: 'Suite Room', spec: '700 sq ft · 2 King', price: 11499, img: '/_blob/a8821f95ec27dedeee7e502ca6738644' }
+    ];
+    const suites = suiteData.map((s) => Object.assign({}, s, {
+      sel: s.id === S.suite,
+      cls: s.id === S.suite ? 'suite sel' : 'suite',
+      priceLabel: '₹' + s.price.toLocaleString('en-IN'),
+      pick: () => { clearTimeout(this.t1); this.setState({ suite: s.id, phase: 'idle', sheet: false }); }
+    }));
+    const cur = suiteData.find((s) => s.id === S.suite);
+    const total = Math.round(cur.price * 1.05);
+    const totalLabel = total.toLocaleString('en-IN');
+    const am = (k) => (S.amen === k ? 'bt on' : 'bt');
+    const pickAm = (k) => () => this.setState({ amen: this.state.amen === k ? '' : k });
+    const placeData = [
+      { id: 'gol', name: 'Golconda Fort', short: '4.2 km', dist: '4.2 km · 12m', x: 50, y: 70, tail: 'C170 160 120 120 50 70', img: '/_blob/120149adab4e63616ac4dcb5f28d5498' },
+      { id: 'kbr', name: 'KBR Park', short: '1.8 km', dist: '1.8 km · 5m', x: 118, y: 240, tail: 'C195 200 160 232 118 240', img: '/_blob/22071d6ceb6c21c85d126b55d1e1e7a5' },
+      { id: 'jub', name: 'Jubilee Hills', short: '2.1 km', dist: '2.1 km', x: 150, y: 62, tail: 'C205 120 185 85 150 62', img: '/_blob/6edac136eec1cfb63404df16498db367' }
+    ];
+    const places = placeData.map((p) => Object.assign({}, p, {
+      on: S.place === p.id,
+      px: p.x + 'px', py: p.y + 'px',
+      pinCls: S.place === p.id ? 'mpin on' : 'mpin',
+      chipCls: S.place === p.id ? 'pchip on' : 'pchip',
+      pick: () => { if (this.state.place !== p.id) this.setState({ place: p.id, placeN: this.state.placeN + 1 }); }
+    }));
+    const curPlace = placeData.find((p) => p.id === S.place);
+    const stageData = [
+      { k: 'g', title: 'Free cancellation', when: 'Up to 72 hrs before check-in', note: 'Cancel up to 72 hours before check-in and get a full refund.', color: '#4ADE80' },
+      { k: 'r', title: 'No refund', when: 'Within 72 hrs of check-in', note: 'Cancellations within 72 hours of check-in are not refunded.', color: '#F87171' }
+    ];
+    const stages = stageData.map((s, i) => ({
+      title: s.title, when: s.when, on: i === S.stage,
+      cls: 'seg ' + s.k + (i === S.stage ? ' on' : ''),
+      lblCls: i === S.stage ? 'slbl on' : 'slbl',
+      pick: () => { if (this.state.stage !== i) this.setState({ stage: i, stageN: this.state.stageN + 1 }); }
+    }));
+    const digits = totalLabel.split('').map((ch) => ({
+      isDigit: ch !== ',',
+      isComma: ch === ',',
+      y: ch === ',' ? '0px' : (-30 * Number(ch)) + 'px'
+    }));
+    return {
+      gallery,
+      galY: (-16 * S.img) + 'px',
+      prev: () => this.setState({ img: (this.state.img + G.length - 1) % G.length }),
+      next: () => this.setState({ img: (this.state.img + 1) % G.length }),
+      share: () => { clearTimeout(this.t2); this.setState({ toast: true }); this.t2 = setTimeout(() => this.setState({ toast: false }), 1800); },
+      toastCls: S.toast ? 'toast show' : 'toast',
+      suites,
+      suiteName: cur.name,
+      totalLabel,
+      digits,
+      isIdle: S.phase === 'idle',
+      isLoading: S.phase === 'loading',
+      isDone: S.phase === 'done',
+      rsvCls: 'rsv ' + S.phase,
+      reserve: () => {
+        if (this.state.phase === 'loading') return;
+        if (this.state.phase === 'done') { this.setState({ sheet: true }); return; }
+        this.setState({ phase: 'loading' });
+        this.t1 = setTimeout(() => this.setState({ phase: 'done', sheet: true }), 1200);
+      },
+      sheetCls: S.sheet ? 'sheet show' : 'sheet',
+      closeSheet: () => this.setState({ sheet: false }),
+      amAc: am('ac'), amWifi: am('wifi'), amBar: am('bar'), amHk: am('hk'),
+      amAcOn: S.amen === 'ac', amWifiOn: S.amen === 'wifi', amBarOn: S.amen === 'bar', amHkOn: S.amen === 'hk',
+      pickAc: pickAm('ac'), pickWifi: pickAm('wifi'), pickBar: pickAm('bar'), pickHk: pickAm('hk'),
+      stages,
+      polCls: S.policy ? 'pol show' : 'pol',
+      openPolicy: () => this.setState({ policy: true }),
+      closePolicy: () => this.setState({ policy: false }),
+      stageNote: stageData[S.stage].note,
+      stageColor: stageData[S.stage].color,
+      noteCls: 'pnote ' + (S.stageN % 2 ? 'nA' : 'nB'),
+      places,
+      cur: curPlace,
+      routeD: "M205 160" + curPlace.tail,
+      rGol: S.place === 'gol' ? 'route on' : 'route',
+      rKbr: S.place === 'kbr' ? 'route on' : 'route',
+      rJub: S.place === 'jub' ? 'route on' : 'route',
+      infoCls: 'info ' + (S.placeN % 2 ? 'iA' : 'iB')
+    };
+  }
+}
+</script>
+</body>
+</html>

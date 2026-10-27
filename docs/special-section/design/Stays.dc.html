@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stays Listing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Instrument+Serif:ital@0;1&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#050506}
+*{box-sizing:border-box}
+a{color:#F1DDBA;text-decoration:none}a:hover{color:#FFF1D6}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+h1,h2,h3,p{margin:0}
+.app{--spring:cubic-bezier(.34,1.56,.64,1);--out:cubic-bezier(.16,1,.3,1);position:relative;width:390px;height:844px;overflow:hidden;background:#0A0A0C;color:#F4EFE6;font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;-webkit-font-smoothing:antialiased}
+.scroller{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+.scroller::-webkit-scrollbar{display:none}
+.grain{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.07;mix-blend-mode:soft-light;z-index:40}
+.press{transition:transform .45s var(--spring)}
+.press:active{transform:scale(.96)}
+.rail{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.rail::-webkit-scrollbar{display:none}
+.muted{color:#A9A39A}
+.h2{font-size:19px;font-weight:700;letter-spacing:-.01em}
+.tag{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;border:1px solid rgba(241,221,186,.3);background:rgba(241,221,186,.08);font-size:10px;font-weight:700;letter-spacing:.1em;color:#F1DDBA}
+.stg>*{opacity:0;transform:translateY(14px);animation:rise .8s var(--out) forwards}
+.stg>*:nth-child(1){animation-delay:.05s}.stg>*:nth-child(2){animation-delay:.15s}.stg>*:nth-child(3){animation-delay:.25s}.stg>*:nth-child(4){animation-delay:.35s}.stg>*:nth-child(5){animation-delay:.45s}
+@keyframes rise{to{opacity:1;transform:none}}
+@supports (animation-timeline: view()){
+.rv{animation:rv linear both;animation-timeline:view();animation-range:entry 0% entry 55%}
+.rcard{animation:railfx linear both;animation-timeline:view(inline)}
+.rt-wrap{timeline-scope:--rt}
+.rt-rail{scroll-timeline:--rt x}
+.thumb{animation:thumb linear both;animation-timeline:--rt}
+.sticky-search{animation:shrink linear both;animation-timeline:scroll(nearest);animation-range:0 120px}
+}
+@keyframes rv{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
+@keyframes railfx{0%{transform:scale(.92);opacity:.55}40%,60%{transform:scale(1);opacity:1}100%{transform:scale(.92);opacity:.55}}
+@keyframes thumb{from{transform:translateX(0)}to{transform:translateX(36px)}}
+@keyframes shrink{to{background:rgba(10,10,12,.86);box-shadow:0 10px 30px rgba(0,0,0,.45)}}
+.gbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:#141418;border:1px solid rgba(255,255,255,.1);color:#fff;transition:transform .4s var(--spring)}
+.gbtn:hover{color:#fff}
+.gbtn:active{transform:scale(.88)}
+
+/* search */
+.sticky-search{position:sticky;top:0;z-index:20;padding:10px 20px;background:rgba(10,10,12,0);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.search{width:100%;height:66px;display:flex;align-items:center;gap:12px;padding:0 10px 0 12px;border-radius:33px;background:#141418;border:1px solid rgba(255,255,255,.1);text-align:left;transition:transform .45s var(--spring),border-color .3s}
+.search:hover{border-color:rgba(241,221,186,.3)}
+.search:active{transform:scale(.97)}
+.sic{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:rgba(241,221,186,.1);color:#F1DDBA}
+.sic svg{animation:seek 4s ease-in-out infinite}
+@keyframes seek{0%,70%,100%{transform:rotate(0)}78%{transform:rotate(-14deg)}86%{transform:rotate(10deg)}}
+.roll{height:20px;overflow:hidden}
+.roll .strip{display:flex;flex-direction:column;animation:roll 10s infinite}
+.roll .strip span{height:20px;line-height:20px;font-size:15px;font-weight:600;color:#fff;white-space:nowrap}
+@keyframes roll{0%,24%{transform:translateY(0);animation-timing-function:cubic-bezier(.7,0,.2,1)}30%,54%{transform:translateY(-20px);animation-timing-function:cubic-bezier(.7,0,.2,1)}60%,84%{transform:translateY(-40px);animation-timing-function:cubic-bezier(.7,0,.2,1)}90%,100%{transform:translateY(-60px)}}
+
+/* chips */
+.chip{flex:0 0 auto;height:42px;display:inline-flex;align-items:center;gap:8px;padding:0 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:#141418;color:#E6E0D6;font-size:13px;font-weight:600;transition:background .3s,color .3s,border-color .3s,transform .45s var(--spring)}
+.chip:active{transform:scale(.92)}
+.chip.on{background:#F1DDBA;color:#1A1611;border-color:transparent;animation:chippop .45s var(--spring)}
+@keyframes chippop{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+/* retreats */
+.rcard{flex:0 0 302px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px;position:relative}
+.rimg{position:relative;height:212px;border-radius:24px;overflow:hidden;background:#141418}
+.rimg img{width:100%;height:100%;object-fit:cover;transition:transform .9s var(--out)}
+.rcard:hover .rimg img{transform:scale(1.06)}
+.pill{position:absolute;top:14px;left:14px;height:30px;display:inline-flex;align-items:center;padding:0 12px;border-radius:999px;background:rgba(10,10,12,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:11.5px;font-weight:600;color:#fff;z-index:2}
+.stretch{position:absolute;inset:0;z-index:1}
+.heart{position:absolute;top:8px;right:8px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;z-index:3;transition:transform .4s var(--spring)}
+.heart:active{transform:scale(.85)}
+.heart path{fill:rgba(10,10,12,.25);stroke:#fff;transition:fill .2s,stroke .2s}
+.heart.liked svg{animation:pop .55s var(--spring)}
+.heart.liked path{fill:#FF5A6E;stroke:#FF5A6E}
+@keyframes pop{0%{transform:scale(1)}30%{transform:scale(.6)}65%{transform:scale(1.3)}100%{transform:scale(1)}}
+.burst{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+.burst span{position:absolute;left:-2.5px;top:-2.5px;width:5px;height:5px;border-radius:50%;background:#FF8A9A;animation:burst .65s ease-out forwards}
+.burst span:nth-child(even){background:#F1DDBA}
+@keyframes burst{0%{opacity:1;transform:rotate(var(--a)) translateY(-6px) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-28px) scale(.3)}}
+.idots{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:2}
+.idots i{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.5)}
+.idots i:first-child{width:16px;background:#fff}
+.track{position:relative;width:56px;height:4px;border-radius:2px;background:rgba(255,255,255,.14);overflow:hidden}
+.thumb{position:absolute;left:0;top:0;width:20px;height:4px;border-radius:2px;background:#F1DDBA}
+
+/* reels */
+.deck{position:relative;height:440px}
+.rc{position:absolute;left:0;top:0;width:300px;height:430px;border-radius:30px;overflow:hidden;background:#141418;border:1px solid rgba(255,255,255,.1);transform-origin:left center;transition:transform .75s var(--spring),filter .6s,opacity .6s;box-shadow:0 24px 50px rgba(0,0,0,.55)}
+.rc img{width:100%;height:100%;object-fit:cover}
+.rc.p0{z-index:3}
+.rc.p0 img{animation:zoom 9s ease-out both}
+.rc.p0.hold img{animation-play-state:paused}
+.rc.p1{z-index:2;transform:translateX(30px) scale(.93) rotate(3deg);filter:brightness(.5) saturate(.7)}
+.rc.p2{z-index:1;transform:translateX(54px) scale(.86) rotate(6deg);filter:brightness(.3) saturate(.5)}
+@keyframes zoom{from{transform:scale(1.02)}to{transform:scale(1.2)}}
+.rc-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.55),rgba(0,0,0,0) 26%,rgba(0,0,0,0) 55%,rgba(0,0,0,.85))}
+.rc-ui{position:absolute;left:0;top:0;width:300px;height:430px;z-index:4;border-radius:30px;overflow:hidden}
+.segs{position:absolute;top:12px;left:14px;right:14px;display:flex;gap:5px;z-index:3}
+.seg{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
+.seg i{display:block;height:100%;background:#fff;transition:width .12s linear}
+.tapz{position:absolute;top:70px;bottom:120px;width:50%;z-index:2}
+.rbtn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.25);transition:transform .35s var(--spring)}
+.rbtn:active{transform:scale(.85)}
+.bigplay{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;display:grid;place-items:center;background:rgba(10,10,12,.45);border:1px solid rgba(255,255,255,.4);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:3;opacity:0;transform:scale(.6);transition:opacity .3s,transform .45s var(--spring)}
+.bigplay.show,.rc-ui:hover .bigplay{opacity:1;transform:none}
+.bigplay::after{content:'';position:absolute;inset:-1px;border-radius:50%;border:1px solid rgba(255,255,255,.6);animation:ripple 2.2s ease-out infinite}
+@keyframes ripple{from{transform:scale(1);opacity:.8}to{transform:scale(1.7);opacity:0}}
+.cap{position:absolute;left:18px;right:18px;bottom:18px;display:flex;flex-direction:column;align-items:flex-start;gap:8px;z-index:3}
+.cap>*{animation:capin .7s var(--out) both}
+.cap>*:nth-child(2){animation-delay:.08s}.cap>*:nth-child(3){animation-delay:.16s}
+.cap.cB>*{animation-name:capin2}
+@keyframes capin{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes capin2{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.watch{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px;border-radius:999px;background:#F1DDBA;color:#1A1611;font-size:13px;font-weight:800;transition:transform .4s var(--spring)}
+.watch:hover{color:#1A1611}
+.watch:active{transform:scale(.92)}
+.thumb{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:6px;border-radius:16px;background:#141418;border:1.5px solid rgba(255,255,255,.08);transition:border-color .3s,transform .4s var(--spring),background .3s}
+.thumb:active{transform:scale(.94)}
+.thumb img{width:34px;height:44px;border-radius:10px;object-fit:cover;flex:0 0 auto}
+.thumb.on{border-color:#F1DDBA;background:#1C1B20}
+
+/* offers */
+.coupon{position:relative;flex:0 0 314px;height:216px;scroll-snap-align:start;border-radius:24px;overflow:hidden;border:1px solid rgba(241,221,186,.22)}
+.warm{background:radial-gradient(circle at 82% 30%,rgba(233,180,76,.38),rgba(233,180,76,0) 48%),linear-gradient(150deg,#3A2A18 0%,#1F1810 58%,#151214 100%)}
+.slate{background:radial-gradient(circle at 82% 30%,rgba(140,165,230,.26),rgba(140,165,230,0) 48%),linear-gradient(150deg,#1E2335 0%,#141625 60%,#111219 100%)}
+.cbadge{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px 0 6px;border-radius:999px;background:rgba(241,221,186,.14);border:1px solid rgba(241,221,186,.4);font-size:10.5px;font-weight:800;letter-spacing:.08em;color:#F1DDBA}
+.perf{position:absolute;left:18px;right:18px;top:152px;border-top:1.5px dashed rgba(241,221,186,.28)}
+.notch{position:absolute;top:142px;width:20px;height:20px;border-radius:50%;background:#0A0A0C;border:1px solid rgba(241,221,186,.22)}
+.crown{animation:hover 3.4s ease-in-out infinite}
+@keyframes hover{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-7px) rotate(3deg)}}
+.spark{transform-box:fill-box;transform-origin:50% 50%;animation:twinkle 2s ease-in-out infinite}
+.spark.s2{animation-delay:.7s}.spark.s3{animation-delay:1.3s}
+@keyframes twinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1) rotate(45deg)}}
+.code{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:10px;border:1.5px dashed rgba(241,221,186,.4);font-size:11.5px;font-weight:700;letter-spacing:.06em;color:#E6E0D6;transition:border-color .3s,background .3s,color .3s}
+.code.got{border-style:solid;border-color:#F1DDBA;background:rgba(241,221,186,.14);color:#F1DDBA}
+.claim{position:relative;display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 16px;border-radius:999px;background:#F1DDBA;color:#1A1611;font-size:13px;font-weight:800;transition:transform .45s var(--spring),background .3s}
+.claim:active{transform:scale(.9)}
+.claim.got{background:#E6F4EA;color:#14532D}
+.conf{position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none}
+.conf i{position:absolute;left:-4px;top:-2px;width:8px;height:4px;border-radius:1px;background:#F1DDBA;animation:conf .9s cubic-bezier(.2,.7,.3,1) forwards}
+.conf i:nth-child(3n){background:#FF8A9A}.conf i:nth-child(3n+1){background:#8FD3A8}
+@keyframes conf{0%{opacity:1;transform:rotate(var(--a)) translateY(0) rotate(0)}100%{opacity:0;transform:rotate(var(--a)) translateY(-70px) rotate(220deg)}}
+.swipe{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:12px;font-weight:600;color:#E6E0D6}
+.swipe svg{animation:swipe 1.8s ease-in-out infinite}
+@keyframes swipe{0%,100%{transform:translateX(0)}50%{transform:translateX(-6px)}}
+
+/* reviews */
+.review{position:relative;flex:0 0 300px;height:344px;scroll-snap-align:start;border-radius:26px;overflow:hidden;background:#141418;border:1px solid rgba(255,255,255,.08)}
+.review>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.qpanel{position:absolute;left:14px;right:14px;bottom:62px;padding:12px 14px;border-radius:18px;background:rgba(14,14,16,.68);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.star5{display:inline-flex;align-items:center;gap:5px;height:30px;padding:0 10px;border-radius:999px;background:rgba(10,10,12,.55);border:1px solid rgba(255,255,255,.18);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);font-size:12px;font-weight:700;color:#fff}
+.star5 svg{animation:spinstar 5s ease-in-out infinite}
+@keyframes spinstar{0%,80%,100%{transform:rotate(0) scale(1)}88%{transform:rotate(72deg) scale(1.25)}}
+
+/* concierge */
+.conc{display:flex;align-items:center;gap:14px;padding:18px;border-radius:24px;background:linear-gradient(160deg,#18171B,#111114);border:1px solid rgba(255,255,255,.08)}
+.hs{position:relative;flex:0 0 52px;height:52px;border-radius:50%;display:grid;place-items:center;background:rgba(241,221,186,.1);color:#F1DDBA}
+.hs::before,.hs::after{content:'';position:absolute;inset:0;border-radius:50%;border:1px solid rgba(241,221,186,.45);animation:ripple 2.6s ease-out infinite}
+.hs::after{animation-delay:1.3s}
+.chat{position:relative;display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border-radius:14px;border:1px solid rgba(241,221,186,.4);color:#F1DDBA;font-size:13px;font-weight:700;transition:transform .4s var(--spring),background .3s}
+.chat:active{transform:scale(.92)}
+.chat:hover{background:rgba(241,221,186,.08)}
+.online{position:relative;width:7px;height:7px;border-radius:50%;background:#4ADE80}
+.online::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:1.5px solid #4ADE80;animation:ripple 1.6s ease-out infinite}
+/* my bookings */
+.mtab{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:4px;border-radius:18px;background:#141418;border:1px solid rgba(255,255,255,.08)}
+.mpill{position:absolute;top:4px;left:4px;width:calc((100% - 8px) / 2);height:calc(100% - 8px);border-radius:14px;background:#F1DDBA;transition:transform .55s cubic-bezier(.34,1.56,.64,1)}
+.mt{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:8px;height:44px;font-size:13px;font-weight:700;color:#CFC8BD;transition:color .3s}
+.mt.on{color:#1A1611}
+.mbadge{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#F87171;color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;animation:mbp 2s ease-in-out infinite}
+@keyframes mbp{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+.subt{display:flex;gap:8px}
+.st{display:inline-flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:999px;border:1px solid rgba(255,255,255,.1);background:#141418;font-size:12.5px;font-weight:700;color:#CFC8BD;transition:background .3s,color .3s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+.st:active{transform:scale(.92)}
+.st.on{background:#F4EFE6;color:#1A1611;border-color:transparent}
+.cnt{min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:rgba(241,221,186,.18);font-size:10.5px;display:grid;place-items:center}
+.st.on .cnt{background:#1A1611;color:#F1DDBA}
+.bin{animation:bin .6s cubic-bezier(.16,1,.3,1) both}
+@keyframes bin{from{opacity:0;transform:translateY(18px) scale(.98)}to{opacity:1;transform:none}}
+.bcard{border-radius:24px;background:#141418;border:1px solid rgba(255,255,255,.08);overflow:hidden}
+.bimg{position:relative;height:160px}
+.bimg img{width:100%;height:100%;object-fit:cover}
+.bshade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(10,10,12,.35),rgba(10,10,12,0) 35%,rgba(10,10,12,.85))}
+.bstat{position:absolute;top:12px;left:12px;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;font-size:11px;font-weight:800}
+.bstat i{width:6px;height:6px;border-radius:50%}
+.bstat.ok{background:rgba(10,10,12,.6);color:#8FF0B8;border:1px solid rgba(110,231,160,.4);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.bstat.ok i{background:#4ADE80;box-shadow:0 0 0 0 rgba(74,222,128,.6);animation:okp 1.6s ease-out infinite}
+@keyframes okp{to{box-shadow:0 0 0 7px rgba(74,222,128,0)}}
+.bstat.done{background:rgba(241,221,186,.1);color:#F1DDBA;border:1px solid rgba(241,221,186,.3)}
+.bstat.done i{background:#F1DDBA}
+.bcount{position:absolute;top:12px;right:12px;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 10px;border-radius:999px;background:#F1DDBA;color:#1A1611;font-size:11px;font-weight:800}
+.bdates{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:14px 16px}
+.dcol2{display:flex;flex-direction:column;gap:2px}
+.dcol2 b{font-size:15px;font-weight:800;color:#fff}
+.bline{position:relative;display:grid;place-items:center;width:84px;height:24px}
+.bline i{position:absolute;left:0;right:0;top:50%;border-top:1.5px dashed rgba(241,221,186,.3)}
+.bline span{position:relative;padding:0 8px;height:22px;display:inline-flex;align-items:center;border-radius:999px;background:#141418;border:1px solid rgba(241,221,186,.3);font-size:10.5px;font-weight:700;color:#F1DDBA}
+.bmeta{display:flex;flex-wrap:wrap;gap:6px;padding:0 16px 12px;font-size:11.5px;color:#ADA597}
+.bmore{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s cubic-bezier(.16,1,.3,1)}
+.bmore.open{grid-template-rows:1fr}
+.bmore>div{overflow:hidden}
+.kv2{display:flex;justify-content:space-between;padding:10px 16px;border-top:1px solid rgba(255,255,255,.06);font-size:12.5px;color:#ADA597}
+.kv2 b{color:#fff;font-weight:700}
+.bact{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,.06)}
+.bbtn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 16px;border-radius:14px;background:#F1DDBA;color:#1A1611;font-size:13px;font-weight:800;transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.bbtn:hover{color:#1A1611}
+.bbtn:active{transform:scale(.95)}
+.chev{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.chev.up{transform:rotate(180deg)}
+.bic{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;border:1px solid rgba(241,221,186,.3);color:#F1DDBA;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.bic:active{transform:scale(.88)}
+.star{width:32px;height:32px;display:grid;place-items:center;transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.star path{fill:transparent;stroke:#6F6A63;transition:fill .2s,stroke .2s}
+.star.on path{fill:#F1B54A;stroke:#F1B54A}
+.star.on svg{animation:spop2 .45s cubic-bezier(.34,1.56,.64,1)}
+@keyframes spop2{0%{transform:scale(.6)}60%{transform:scale(1.25)}100%{transform:scale(1)}}
+.empty{display:flex;flex-direction:column;align-items:center;gap:6px;padding:40px 20px;border-radius:24px;background:#141418;border:1px dashed rgba(255,255,255,.12);text-align:center}
+.emptyart{animation:float3 3.2s ease-in-out infinite}
+@keyframes float3{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ex{stroke-dasharray:60;stroke-dashoffset:60;animation:exd .7s ease .3s forwards}
+@keyframes exd{to{stroke-dashoffset:0}}
+</style>
+</helmet>
+<div class="app">
+<div class="scroller">
+
+<div class="stg" style="display: flex; align-items: center; justify-content: space-between; padding: 18px 20px 4px">
+<a class="gbtn" href="Hub.dc.html" aria-label="Back to Special Section"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5 8 12l6.5 6.5"></path></svg></a>
+<div style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1">
+<span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 30px; color: #fff; letter-spacing: .01em">dreamscape</span>
+<span style="font-size: 7.5px; font-weight: 700; letter-spacing: .28em; color: #CFC8BD; margin-top: 2px">BANJARA HILLS</span>
+</div>
+</div>
+
+<div style="padding: 10px 20px 4px">
+<div class="mtab" role="tablist" aria-label="Stays sections">
+<span class="mpill" style="transform: translateX({{mpillX}})"></span>
+<button class="{{tabExpCls}}" role="tab" aria-selected="{{isExplore}}" onClick="{{goExplore}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>Explore stays</button>
+<button class="{{tabBkCls}}" role="tab" aria-selected="{{isBookings}}" onClick="{{goBookings}}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 8.5V6h17v2.5a3 3 0 0 0 0 6V17h-17v-2.5a3 3 0 0 0 0-6z"></path><path d="M14 6v11" stroke-dasharray="2 2"></path></svg>My bookings<span class="mbadge">1</span></button>
+</div>
+</div>
+
+<sc-if value="{{isExplore}}" hint-placeholder-val="{{ true }}">
+
+<div class="sticky-search">
+<button class="search" aria-label="Search stays by destination, dates and guests">
+<span class="sic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg></span>
+<span style="flex: 1; display: flex; flex-direction: column; gap: 2px">
+<span class="roll"><span class="strip"><span>Where to Next?</span><span>Try “Munnar”</span><span>Try “Banjara Hills”</span><span>Where to Next?</span></span></span>
+<span class="muted" style="font-size: 12px">Destination · Dates · Guests</span>
+</span>
+<span style="width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(255,255,255,.1); color: #E6E0D6"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></span>
+</button>
+</div>
+
+<div class="rail" style="gap: 8px; padding: 6px 20px 0; scroll-snap-type: none">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="5">
+<button class="{{c.cls}}" onClick="{{c.toggle}}" aria-pressed="{{c.on}}">
+<sc-if value="{{c.icon}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></sc-if>
+{{c.label}}
+</button>
+</sc-for>
+</div>
+
+<section class="rt-wrap" style="padding-top: 28px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 4px; padding: 0 20px; margin-bottom: 14px"><h2 class="h2">Curated Retreats</h2><span class="muted" style="font-size: 12.5px">Handpicked boutique stays · Swipe to explore</span></div>
+<div class="rail rt-rail" style="gap: 14px; padding: 0 20px; scroll-padding: 20px">
+<sc-for list="{{retreats}}" as="r" hint-placeholder-count="2">
+<article class="rcard">
+<div class="rimg">
+<img src="{{r.img}}" alt="{{r.name}}">
+<span class="pill">{{r.tag}}</span>
+<button class="{{r.heartCls}}" onClick="{{r.toggle}}" aria-label="Save {{r.name}}">
+<svg width="22" height="22" viewBox="0 0 24 24" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.2a4.3 4.3 0 0 1 7.5 2.6C19.5 15.4 12 20 12 20z"></path></svg>
+<sc-if value="{{r.liked}}" hint-placeholder-val="{{ false }}"><span class="burst"><span style="--a: 0deg"></span><span style="--a: 45deg"></span><span style="--a: 90deg"></span><span style="--a: 135deg"></span><span style="--a: 180deg"></span><span style="--a: 225deg"></span><span style="--a: 270deg"></span><span style="--a: 315deg"></span></span></sc-if>
+</button>
+<span class="idots"><i></i><i></i><i></i></span>
+</div>
+<a class="stretch" href="StayDetail.dc.html" aria-label="Open {{r.name}}"></a>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px">
+<h3 style="font-size: 16px; font-weight: 700; color: #fff">{{r.name}}</h3>
+<span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1DDBA" aria-hidden="true"><path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"></path></svg>{{r.rate}}</span>
+</div>
+<span class="muted" style="font-size: 13px">{{r.loc}}</span>
+<span style="font-size: 17px; font-weight: 800; color: #fff">{{r.price}} <span class="muted" style="font-size: 12.5px; font-weight: 500">/night</span></span>
+</article>
+</sc-for>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 22px 20px 0">
+<span class="track"><span class="thumb"></span></span>
+<span class="muted" style="font-size: 12px">Showing 7 of 7 destinations</span>
+</div>
+</section>
+
+<section style="padding-top: 34px">
+<div class="rv" style="display: flex; align-items: flex-end; justify-content: space-between; padding: 0 20px; margin-bottom: 16px">
+<div style="display: flex; flex-direction: column; gap: 4px"><h2 class="h2">See it before you stay</h2><span class="muted" style="font-size: 12.5px">Short video tours · tap a side to skip</span></div>
+<span class="tag">{{reelPos}}</span>
+</div>
+<div class="rv" style="padding: 0 20px">
+<div class="deck">
+<sc-for list="{{reels}}" as="v" hint-placeholder-count="3">
+<div class="{{v.cls}}">
+<img src="{{v.img}}" alt="{{v.title}} video tour">
+<span class="rc-shade"></span>
+</div>
+</sc-for>
+<div class="rc-ui">
+<div class="segs">
+<sc-for list="{{reels}}" as="v" hint-placeholder-count="3"><span class="seg"><i style="width: {{v.fill}}"></i></span></sc-for>
+</div>
+<div style="position: absolute; top: 26px; left: 14px; right: 10px; display: flex; align-items: center; gap: 10px; z-index: 3">
+<span style="width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(241,221,186,.16); border: 1.5px solid #F1DDBA; font-family: 'Instrument Serif', Georgia, serif; font-size: 18px; color: #F1DDBA">d</span>
+<span style="flex: 1; display: flex; flex-direction: column"><b style="font-size: 13px; font-weight: 700; color: #fff">Dreamscape Stays</b><span style="font-size: 11px; color: #E6E0D6">{{reelTime}}</span></span>
+<button class="rbtn" onClick="{{toggleMute}}" aria-label="{{muteLabel}}">
+<sc-if value="{{muted}}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"></path><path d="m16 9.5 5 5M21 9.5l-5 5"></path></svg></sc-if>
+<sc-if value="{{unmuted}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"></path><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"></path></svg></sc-if>
+</button>
+</div>
+<button class="tapz" style="left: 0" onClick="{{prevReel}}" aria-label="Previous video"></button>
+<button class="tapz" style="right: 0" onClick="{{nextReel}}" aria-label="Next video"></button>
+<button class="{{bigPlayCls}}" onClick="{{togglePlay}}" aria-label="{{playLabel}}">
+<sc-if value="{{reelPlaying}}" hint-placeholder-val="{{ true }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></sc-if>
+<sc-if value="{{reelPaused}}" hint-placeholder-val="{{ false }}"><svg width="24" height="24" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"></path></svg></sc-if>
+</button>
+<div class="{{capCls}}">
+<span style="font-size: 10.5px; font-weight: 800; letter-spacing: .14em; color: #F1DDBA">{{reelLoc}}</span>
+<b style="font-family: 'Instrument Serif', Georgia, serif; font-size: 34px; font-weight: 400; line-height: 1; color: #fff">{{reelTitle}}</b>
+<a class="watch" href="StayDetail.dc.html">Book this stay <span>→</span></a>
+</div>
+</div>
+</div>
+<div style="display: flex; gap: 10px; margin-top: 14px">
+<sc-for list="{{reels}}" as="v" hint-placeholder-count="3">
+<button class="{{v.thumbCls}}" onClick="{{v.go}}" aria-label="Play {{v.title}}">
+<img src="{{v.img}}" alt="">
+<span style="display: flex; flex-direction: column; gap: 2px; text-align: left; min-width: 0"><b style="font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{v.title}}</b><span class="muted" style="font-size: 10.5px">{{v.dur}}</span></span>
+</button>
+</sc-for>
+</div>
+</div>
+</section>
+
+<section style="padding-top: 34px">
+<div class="rv" style="display: flex; align-items: flex-end; justify-content: space-between; padding: 0 20px; margin-bottom: 14px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="display: flex; align-items: center; gap: 8px"><h2 class="h2">Exclusive Offers &amp; Perks</h2><span class="tag">3 ACTIVE</span></div>
+<span class="muted" style="font-size: 12.5px">Curated member rates &amp; bespoke privileges</span>
+</div>
+<span class="swipe"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"></path></svg>Swipe</span>
+</div>
+<div class="rail" style="gap: 12px; padding: 0 20px; scroll-padding: 20px">
+<sc-for list="{{offers}}" as="o" hint-placeholder-count="2">
+<article class="{{o.cls}}">
+<div style="position: absolute; left: 18px; top: 18px; right: 120px; display: flex; flex-direction: column; gap: 8px">
+<span class="cbadge" style="align-self: flex-start"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5l1.4 2.9 3.1.4-2.3 2.1.6 3.1-2.8-1.5-2.8 1.5.6-3.1-2.3-2.1 3.1-.4z" fill="currentColor" stroke="none"></path></svg>{{o.badge}}</span>
+<b style="font-size: 23px; font-weight: 800; letter-spacing: -.01em; color: #fff">{{o.title}}</b>
+<span style="font-size: 12.5px; line-height: 1.45; color: #E2DBD0; white-space: pre-line">{{o.desc}}</span>
+<sc-if value="{{o.perk}}" hint-placeholder-val="{{ true }}"><span style="font-size: 10.5px; font-weight: 600; color: #E9B44C">{{o.perk}}</span></sc-if>
+</div>
+<sc-if value="{{o.crown}}" hint-placeholder-val="{{ true }}">
+<svg class="crown" style="position: absolute; right: 18px; top: 38px" width="98" height="78" viewBox="0 0 100 80" aria-hidden="true"><defs><linearGradient id="stcg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE9AE"></stop><stop offset=".55" stop-color="#E9B44C"></stop><stop offset="1" stop-color="#A86A22"></stop></linearGradient></defs><g transform="rotate(-10 50 40)"><path d="M10 18h80v14a8 8 0 0 0 0 16v14H10V48a8 8 0 0 0 0-16z" fill="url(#stcg)"></path><path d="M38 22v38" stroke="#3A2A18" stroke-width="2" stroke-dasharray="4 4"></path><circle cx="56" cy="32" r="4" fill="none" stroke="#3A2A18" stroke-width="2.6"></circle><circle cx="72" cy="48" r="4" fill="none" stroke="#3A2A18" stroke-width="2.6"></circle><path d="M74 28 54 52" stroke="#3A2A18" stroke-width="2.8" stroke-linecap="round"></path></g><path class="spark" d="M88 4l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#FFF4D2"></path><path class="spark s2" d="M8 62l1.5 3.5 3.5 1.5-3.5 1.5L8 72l-1.5-3.5L3 67l3.5-1.5z" fill="#FFF4D2"></path><path class="spark s3" d="M96 60l1.4 3 3 1.4-3 1.4-1.4 3-1.4-3-3-1.4 3-1.4z" fill="#FFF4D2"></path></svg>
+</sc-if>
+<sc-if value="{{o.ticket}}" hint-placeholder-val="{{ false }}">
+<svg class="crown" style="position: absolute; right: 22px; top: 40px" width="92" height="72" viewBox="0 0 100 80" aria-hidden="true"><defs><linearGradient id="sttg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#C9D6FF"></stop><stop offset="1" stop-color="#5D74C8"></stop></linearGradient></defs><path d="M10 18h80v14a8 8 0 0 0 0 16v14H10V48a8 8 0 0 0 0-16z" fill="url(#sttg)" transform="rotate(-10 50 40)"></path><path d="M38 22v38" stroke="#1E2335" stroke-width="2" stroke-dasharray="4 4" transform="rotate(-10 50 40)"></path><path class="spark" d="M88 4l2 5 5 2-5 2-2 5-2-5-5-2 5-2z" fill="#E6ECFF"></path><path class="spark s2" d="M8 62l1.5 3.5 3.5 1.5-3.5 1.5L8 72l-1.5-3.5L3 67l3.5-1.5z" fill="#E6ECFF"></path></svg>
+</sc-if>
+<span class="perf"></span>
+<span class="notch" style="left: -11px"></span>
+<span class="notch" style="right: -11px"></span>
+<div style="position: absolute; left: 18px; right: 16px; bottom: 14px; display: flex; align-items: center; justify-content: space-between">
+<span class="{{o.codeCls}}">CODE <b style="color: #fff; font-weight: 800">{{o.code}}</b></span>
+<button class="{{o.btnCls}}" onClick="{{o.claim}}" aria-label="{{o.aria}}">
+<sc-if value="{{o.got}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"></path></svg></sc-if>
+{{o.btn}}
+<sc-if value="{{o.got}}" hint-placeholder-val="{{ false }}"><span class="conf"><i style="--a: 0deg"></i><i style="--a: 30deg"></i><i style="--a: 60deg"></i><i style="--a: 90deg"></i><i style="--a: 120deg"></i><i style="--a: 150deg"></i><i style="--a: 180deg"></i><i style="--a: 210deg"></i><i style="--a: 240deg"></i><i style="--a: 270deg"></i><i style="--a: 300deg"></i><i style="--a: 330deg"></i></span></sc-if>
+</button>
+</div>
+</article>
+</sc-for>
+</div>
+</section>
+
+<section style="padding-top: 34px">
+<div class="rv" style="display: flex; flex-direction: column; gap: 4px; padding: 0 20px; margin-bottom: 14px"><h2 class="h2">Guest Experiences</h2><span class="muted" style="font-size: 12.5px">Unfiltered impressions from verified members</span></div>
+<div class="rail" style="gap: 12px; padding: 0 20px; scroll-padding: 20px">
+<sc-for list="{{reviews}}" as="g" hint-placeholder-count="2">
+<article class="review">
+<img src="{{g.img}}" alt="">
+<span style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,12,.35), rgba(10,10,12,0) 25%, rgba(10,10,12,0) 50%, rgba(10,10,12,.95) 85%)"></span>
+<span class="pill">{{g.place}}</span>
+<span class="star5" style="position: absolute; top: 14px; right: 14px"><svg width="14" height="14" viewBox="0 0 24 24" fill="#F1DDBA" aria-hidden="true"><path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"></path></svg>{{g.rate}}</span>
+<div class="qpanel">
+<p style="font-size: 13px; line-height: 1.5; color: #fff; font-weight: 500">“{{g.quote}}”</p>
+<span class="muted" style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 11px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"></path><circle cx="12" cy="13" r="3.2"></circle></svg>{{g.photos}}</span>
+</div>
+<div style="position: absolute; left: 14px; right: 16px; bottom: 14px; display: flex; align-items: center; justify-content: space-between">
+<span style="display: flex; align-items: center; gap: 10px"><span style="width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; border: 1px solid rgba(241,221,186,.4); font-size: 11px; font-weight: 700; color: #F1DDBA">{{g.ini}}</span><b style="font-size: 13.5px; font-weight: 600; color: #fff">{{g.name}}</b></span>
+<span class="muted" style="font-size: 11px">{{g.date}}</span>
+</div>
+</article>
+</sc-for>
+</div>
+</section>
+
+<section class="rv" style="padding: 30px 20px 40px">
+<div class="conc">
+<span class="hs"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"></path><rect x="3.5" y="13.5" width="4" height="6" rx="1.5"></rect><rect x="16.5" y="13.5" width="4" height="6" rx="1.5"></rect><path d="M18.5 19.5c0 1.2-1.6 1.8-4 1.8"></path></svg></span>
+<div style="flex: 1; display: flex; flex-direction: column; gap: 4px">
+<b style="font-size: 15px; font-weight: 700; color: #fff">24/7 Bespoke Concierge</b>
+<span class="muted" style="font-size: 12px; line-height: 1.4">Private airport pickups &amp; custom bookings</span>
+</div>
+<button class="chat"><i class="online"></i>Chat</button>
+</div>
+</section>
+</sc-if>
+
+<sc-if value="{{isBookings}}" hint-placeholder-val="{{ false }}">
+<section class="bkv" style="padding: 14px 20px 40px; display: flex; flex-direction: column; gap: 14px">
+<div class="subt" role="tablist" aria-label="Booking status">
+<sc-for list="{{bkTabs}}" as="t" hint-placeholder-count="3">
+<button class="{{t.cls}}" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}<sc-if value="{{t.count}}" hint-placeholder-val="{{ false }}"><span class="cnt">{{t.count}}</span></sc-if></button>
+</sc-for>
+</div>
+
+<sc-if value="{{bkUp}}" hint-placeholder-val="{{ true }}">
+<article class="bcard bin">
+<div class="bimg">
+<img src="/_blob/787bb11e9637e6c86d1974b80247daed" alt="Dreamscape balcony">
+<span class="bshade"></span>
+<span class="bstat ok"><i></i>Confirmed</span>
+<span class="bcount"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7.5V12l3 2"></path></svg>{{countdown}}</span>
+<div style="position: absolute; left: 16px; right: 16px; bottom: 14px">
+<b style="display: block; font-size: 17px; font-weight: 800; color: #fff">Dreamscape Resort &amp; Private Villas</b>
+<span style="font-size: 12px; color: #E6E0D6">Luxury Room · Banjara Hills</span>
+</div>
+</div>
+<div class="bdates">
+<span class="dcol2"><span class="muted" style="font-size: 11px">Check-in</span><b>Thu, 15 Oct</b><span class="muted" style="font-size: 11px">from [2:00 PM]</span></span>
+<span class="bline"><i></i><span>1 night</span></span>
+<span class="dcol2" style="align-items: flex-end; text-align: right"><span class="muted" style="font-size: 11px">Check-out</span><b>Fri, 16 Oct</b><span class="muted" style="font-size: 11px">by [11:00 AM]</span></span>
+</div>
+<div class="bmeta"><span>1 guest</span><span>·</span><span>₹6,299 paid</span><span>·</span><span>ID [BOOKING-ID]</span></div>
+<div class="{{moreCls}}"><div>
+<div class="kv2"><span>Paid on</span><b>[Date, time]</b></div>
+<div class="kv2"><span>Payment method</span><b>[Method]</b></div>
+<div class="kv2"><span>Transaction ID</span><b>[TXN-ID]</b></div>
+<div class="kv2"><span>Cancellation</span><b style="color: #FCA5A5">Non-refundable (within 72h)</b></div>
+</div></div>
+<div class="bact">
+<button class="bbtn" onClick="{{toggleMore}}" aria-expanded="{{moreOpen}}">{{moreLabel}}<svg class="{{chevCls}}" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></button>
+<a class="bic" href="#" aria-label="Directions to Dreamscape"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12 20 4l-8 16-2-6z"></path></svg></a>
+<a class="bic" href="#" aria-label="Chat with concierge"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 14v-2a7.5 7.5 0 0 1 15 0v2"></path><rect x="3.5" y="13.5" width="4" height="6" rx="1.5"></rect><rect x="16.5" y="13.5" width="4" height="6" rx="1.5"></rect></svg></a>
+</div>
+</article>
+<p class="muted" style="font-size: 12px; text-align: center">Showing bookings made with this account</p>
+</sc-if>
+
+<sc-if value="{{bkPast}}" hint-placeholder-val="{{ false }}">
+<article class="bcard bin">
+<div style="display: flex; gap: 12px; padding: 12px">
+<img src="/_blob/f739be858e331e804c9079f98a5ea9ab" alt="Hilltop by Fracspace" style="width: 84px; height: 84px; border-radius: 16px; object-fit: cover; flex: 0 0 auto">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0">
+<span class="bstat done" style="position: static; align-self: flex-start"><i></i>Completed</span>
+<b style="font-size: 15px; color: #fff">Hilltop by Fracspace</b>
+<span class="muted" style="font-size: 12px">[Dates] · Munnar, Kerala</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.06)">
+<span style="font-size: 12.5px; color: #CFC8BD">{{rateLabel}}</span>
+<span style="display: flex; gap: 2px" role="radiogroup" aria-label="Rate your stay">
+<sc-for list="{{stars}}" as="s" hint-placeholder-count="5">
+<button class="{{s.cls}}" onClick="{{s.pick}}" role="radio" aria-checked="{{s.on}}" aria-label="{{s.label}}"><svg width="22" height="22" viewBox="0 0 24 24" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.6l2.5 5.3 5.8.7-4.3 4 1.1 5.7L12 16.5l-5.1 2.8 1.1-5.7-4.3-4 5.8-.7z"></path></svg></button>
+</sc-for>
+</span>
+</div>
+<div class="bact" style="border-top: 1px solid rgba(255,255,255,.06)">
+<a class="bbtn" href="StayDetail.dc.html" style="flex: 1; justify-content: center">Book again</a>
+<a class="bic" href="#" aria-label="Download invoice"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19.5h14"></path></svg></a>
+</div>
+</article>
+</sc-if>
+
+<sc-if value="{{bkCxl}}" hint-placeholder-val="{{ false }}">
+<div class="empty bin">
+<svg class="emptyart" width="96" height="96" viewBox="0 0 96 96" fill="none" aria-hidden="true"><rect x="16" y="22" width="64" height="58" rx="12" stroke="#F1DDBA" stroke-width="2.5"></rect><path d="M16 38h64M32 14v14M64 14v14" stroke="#F1DDBA" stroke-width="2.5" stroke-linecap="round"></path><path class="ex" d="M38 50l20 20M58 50 38 70" stroke="#F87171" stroke-width="3" stroke-linecap="round"></path></svg>
+<b style="font-size: 16px; color: #fff">No cancelled bookings</b>
+<span class="muted" style="font-size: 12.5px">Bookings you cancel will show up here.</span>
+<button class="bbtn" onClick="{{goExplore}}" style="margin-top: 6px">Explore stays</button>
+</div>
+</sc-if>
+</section>
+</sc-if>
+
+</div>
+<svg class="grain" aria-hidden="true"><filter id="stgrain"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"></feTurbulence></filter><rect width="100%" height="100%" filter="url(#stgrain)"></rect></svg>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { chips: { dates: true }, liked: {}, claimed: {}, reel: 0, t: 0, playing: true, muted: true, view: 'explore', bk: 'up', more: false, rating: 0, flipN: 0 };
+    this.DUR = [12, 7, 9];
+  }
+  componentDidMount() {
+    this.tick = setInterval(() => {
+      if (!this.state.playing) return;
+      const t = this.state.t + 0.1;
+      if (t >= this.DUR[this.state.reel]) this.goReel((this.state.reel + 1) % 3);
+      else this.setState({ t });
+    }, 100);
+  }
+  componentWillUnmount() { clearInterval(this.tick); }
+  goReel(i) { this.setState({ reel: i, t: 0, flipN: this.state.flipN + 1 }); }
+  flip(key, id) {
+    const next = Object.assign({}, this.state[key]);
+    next[id] = !next[id];
+    this.setState({ [key]: next });
+  }
+  renderVals() {
+    const S = this.state;
+    const chipData = [
+      { id: 'filters', label: 'Filters', icon: true },
+      { id: 'dates', label: '15–16 Oct' },
+      { id: 'guests', label: '1 guest' },
+      { id: 'price', label: 'Price' },
+      { id: 'rooms', label: 'Rooms' }
+    ];
+    const chips = chipData.map((c) => Object.assign({}, c, {
+      on: !!S.chips[c.id],
+      cls: S.chips[c.id] ? 'chip on' : 'chip',
+      toggle: () => this.flip('chips', c.id)
+    }));
+    const retreatData = [
+      { id: 'ht', name: 'Hilltop by Fracspace', loc: 'Munnar, Kerala', rate: '4.9', price: '₹5,999', tag: 'HillTop', img: '/_blob/f739be858e331e804c9079f98a5ea9ab' },
+      { id: 'ds', name: 'Dreamscape', loc: 'Banjara Hills, Hyderabad', rate: '4.8', price: '₹4,999', tag: 'Guest favourite', img: '/_blob/787bb11e9637e6c86d1974b80247daed' },
+      { id: 'ou', name: 'Dreamscape OU Colony', loc: 'Manikonda, Hyderabad', rate: '4.5', price: '₹4,500', tag: 'Boutique', img: '/_blob/3e763567e62f80c0425a66c13191eb68' }
+    ];
+    const retreats = retreatData.map((r) => Object.assign({}, r, {
+      liked: !!S.liked[r.id],
+      heartCls: S.liked[r.id] ? 'heart liked' : 'heart',
+      toggle: () => this.flip('liked', r.id)
+    }));
+    const reelData = [
+      { id: 'r1', title: 'Inside Dreamscape', dur: '0:12', secs: '12s', loc: 'Munnar', img: '/_blob/8ae4250a612958500b7af52618f98ba1' },
+      { id: 'r2', title: 'Elevated Living', dur: '0:07', secs: '7s', loc: 'Munnar', img: '/_blob/6edac136eec1cfb63404df16498db367' },
+      { id: 'r3', title: 'A misty escape', dur: '0:09', secs: '9s', loc: 'Munnar', img: '/_blob/1b27fedbafabc0ea096aa5cbc3ea47e7' }
+    ];
+    const n = reelData.length;
+    const reels = reelData.map((v, i) => {
+      const pos = (i - S.reel + n) % n;
+      const fill = i < S.reel ? 100 : (i === S.reel ? Math.min(100, S.t / this.DUR[i] * 100) : 0);
+      return Object.assign({}, v, {
+        cls: 'rc p' + pos + (pos === 0 && !S.playing ? ' hold' : ''),
+        fill: fill.toFixed(1) + '%',
+        thumbCls: i === S.reel ? 'thumb on' : 'thumb',
+        go: () => this.goReel(i)
+      });
+    });
+    const cur = reelData[S.reel];
+    const secs = Math.floor(S.t);
+    const offerData = [
+      { id: 'o1', theme: 'warm', badge: 'SUITE UPGRADE', title: '20% OFF SUITE', desc: 'City view & private\nairport transfer.', perk: 'Personal butler service included', code: 'FESTIVE20', crown: true },
+      { id: 'o2', theme: 'slate', badge: 'RETREATS', title: 'FLAT ₹[X] OFF', desc: 'On bookings at retreats.\nMin. 2 nights.', perk: '', code: '[CODE]', ticket: true }
+    ];
+    const offers = offerData.map((o) => {
+      const got = !!S.claimed[o.id];
+      return Object.assign({}, o, {
+        got,
+        cls: 'coupon ' + o.theme,
+        codeCls: got ? 'code got' : 'code',
+        btnCls: got ? 'claim got' : 'claim',
+        btn: got ? 'Copied' : 'Claim →',
+        aria: got ? 'Code ' + o.code + ' copied' : 'Claim code ' + o.code,
+        claim: () => { if (!this.state.claimed[o.id]) this.flip('claimed', o.id); }
+      });
+    });
+    const reviews = [
+      { place: 'Hilltop Munnar', rate: '5.0', quote: 'Rainy nights, breathtaking views, and delicious homemade Kerala food.', photos: '2 photos shared', ini: 'LC', name: 'Linson Chandy', date: 'Sep 2026', img: '/_blob/0ab6e745cb7c8c910dbd502c2dc0c95a' },
+      { place: 'Hilltop Munnar', rate: '[x.x]', quote: '[Guest review quote]', photos: '3 photos shared', ini: 'PP', name: '[Guest name]', date: '[Month]', img: '/_blob/1b27fedbafabc0ea096aa5cbc3ea47e7' }
+    ];
+    return {
+      chips, retreats, reels, offers, reviews,
+      isExplore: S.view === 'explore', isBookings: S.view === 'bookings',
+      mpillX: S.view === 'bookings' ? '100%' : '0%',
+      tabExpCls: 'mt' + (S.view === 'explore' ? ' on' : ''),
+      tabBkCls: 'mt' + (S.view === 'bookings' ? ' on' : ''),
+      goExplore: () => this.setState({ view: 'explore' }),
+      goBookings: () => this.setState({ view: 'bookings' }),
+      bkTabs: [['up', 'Upcoming', '1'], ['past', 'Completed', ''], ['cxl', 'Cancelled', '']].map((t) => ({ label: t[1], count: t[2], on: S.bk === t[0], cls: 'st' + (S.bk === t[0] ? ' on' : ''), pick: () => this.setState({ bk: t[0], more: false }) })),
+      bkUp: S.bk === 'up', bkPast: S.bk === 'past', bkCxl: S.bk === 'cxl',
+      countdown: (() => { const t0 = new Date(); t0.setHours(0, 0, 0, 0); const d = Math.round((new Date(2026, 9, 15) - t0) / 864e5); return d > 1 ? 'Check-in in ' + d + ' days' : (d === 1 ? 'Check-in tomorrow' : (d === 0 ? 'Check-in today' : 'Stay in progress')); })(),
+      moreOpen: S.more,
+      moreCls: 'bmore' + (S.more ? ' open' : ''),
+      moreLabel: S.more ? 'Hide details' : 'View details',
+      chevCls: 'chev' + (S.more ? ' up' : ''),
+      toggleMore: () => this.setState({ more: !this.state.more }),
+      stars: [1, 2, 3, 4, 5].map((n) => ({ on: n <= S.rating, cls: 'star' + (n <= S.rating ? ' on' : ''), label: n + (n === 1 ? ' star' : ' stars'), pick: () => this.setState({ rating: n }) })),
+      rateLabel: S.rating ? 'Thanks for rating!' : 'Rate your stay',
+      reelPos: (S.reel + 1) + ' / ' + n,
+      reelTitle: cur.title,
+      reelLoc: cur.loc.toUpperCase(),
+      reelTime: '0:' + String(secs).padStart(2, '0') + ' / ' + cur.dur,
+      capCls: 'cap' + (S.flipN % 2 ? ' cB' : ''),
+      prevReel: () => this.goReel((this.state.reel + n - 1) % n),
+      nextReel: () => this.goReel((this.state.reel + 1) % n),
+      reelPlaying: S.playing,
+      reelPaused: !S.playing,
+      playLabel: S.playing ? 'Pause video' : 'Play video',
+      bigPlayCls: S.playing ? 'bigplay' : 'bigplay show',
+      togglePlay: () => this.setState({ playing: !this.state.playing }),
+      muted: S.muted,
+      unmuted: !S.muted,
+      muteLabel: S.muted ? 'Unmute' : 'Mute',
+      toggleMute: () => this.setState({ muted: !this.state.muted })
+    };
+  }
+}
+</script>
+</body>
+</html>

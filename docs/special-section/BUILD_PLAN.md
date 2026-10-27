@@ -1,7 +1,7 @@
 # Special Section · Stays (dark) — build plan
 
 Source design: artifact **Fracspace Co-own Flow** — https://claude.ai/artifact/19LDo8V7tAH2Lz918HoM6X
-Row "Special Section · Stays (dark)". Each board is one interactive `.dc.html` file; fetch only the one
+Row "Special Section · Stays (dark)". **Local copies of the boards are in `docs/special-section/design/` — use those.** Each board is one interactive `.dc.html` file; fetch only the one
 your section needs with the Artifact tool (`action: "read"`, `url` above, `path: "project/<file>"`), then grep it
 for `@keyframes`, `transition`, `cubic-bezier`, and the `<script data-dc-script>` state — don't read the whole canvas.
 
