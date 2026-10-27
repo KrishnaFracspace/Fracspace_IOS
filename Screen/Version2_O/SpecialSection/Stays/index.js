@@ -1,6 +1,6 @@
 // Stays listing (Stays.dc.html): "Explore stays" / "My bookings" tabs.
 import React, {useRef, useState} from 'react';
-import {Image, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import {StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolateColor,
   useAnimatedScrollHandler,
@@ -11,13 +11,11 @@ import {useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fonts, ls} from '../theme';
 import {E, LoopGate, PressScale, RevealScope, enterUp, kf, useLoop, useToggle} from '../anim';
-import {BackIcon} from '../HubBits';
+import {BackIcon, Grain} from '../HubBits';
 import {navBottom} from '../HubNavBar';
 import {SearchIcon, TicketIcon} from './icons';
 import Explore from './Explore';
 import Bookings from './Bookings';
-
-const grain = require('../assets/grain.png');
 
 /** `.stg` header children: `rise .8s --out`, delays .05s / .15s. */
 const rise = i => enterUp(i, {step: 100, delay: 50, duration: 800, dy: 14});
@@ -125,7 +123,7 @@ export default function Stays({navigation}) {
             </View>
           </Animated.ScrollView>
         </RevealScope>
-        <Image source={grain} resizeMode="repeat" style={styles.grain} pointerEvents="none" />
+        <Grain />
       </LoopGate>
     </View>
   );
@@ -182,5 +180,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#F87171',
   },
   mbadgeText: {fontFamily: fonts.extrabold, fontSize: 10.5, color: '#fff'},
-  grain: {...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.05, zIndex: 40},
 });

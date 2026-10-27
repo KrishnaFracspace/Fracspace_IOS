@@ -1,10 +1,24 @@
 // Small pieces of the Hub (Hub.dc.html): pills, dots, glass buttons, icons.
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import Animated, {useAnimatedStyle} from 'react-native-reanimated';
 import Svg, {Path} from 'react-native-svg';
 import {colors, fonts, ls} from './theme';
 import {E, PressScale, useLoop} from './anim';
+
+const grain = require('./assets/grain.png');
+
+/**
+ * `.grain` overlay over the whole screen. Android's Image ignores
+ * `pointerEvents`, so the wrapper View is what lets taps through.
+ */
+export function Grain({opacity = 0.05}) {
+  return (
+    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.grain]}>
+      <Image source={grain} resizeMode="repeat" style={[styles.grainImg, {opacity}]} />
+    </View>
+  );
+}
 
 /** `.gdot`: gold dot with a fading pulse ring (gpulse 1.8s ease-out). */
 export function GlowDot() {
@@ -106,6 +120,8 @@ export function ArrowCircle() {
 }
 
 const styles = StyleSheet.create({
+  grain: {zIndex: 40},
+  grainImg: {width: '100%', height: '100%'},
   dotBox: {width: 6, height: 6},
   dot: {position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: colors.gold},
   dotRing: {backgroundColor: colors.gold},

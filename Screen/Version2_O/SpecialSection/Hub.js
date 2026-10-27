@@ -1,6 +1,6 @@
 // Special Section Hub (Hub.dc.html): the centre tab's landing screen.
 import React, {useCallback, useEffect, useRef, useState} from 'react';
-import {Image, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import {Platform, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolate,
   Extrapolation,
@@ -16,14 +16,12 @@ import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fonts} from './theme';
 import {E, LoopGate, RevealScope, useReducedMotion} from './anim';
-import {BackIcon, GlassButton, Tag} from './HubBits';
+import {BackIcon, GlassButton, Grain, Tag} from './HubBits';
 import HubHero, {SLIDE_MS} from './HubHero';
 import HubCategories from './HubCategories';
 import {CartBar, FeaturedStays, IvaEssentials} from './HubRails';
 import HubConcert from './HubConcert';
 import {navBottom} from './HubNavBar';
-
-const grain = require('./assets/grain.png');
 
 /**
  * `.app{animation:portal 1.1s cubic-bezier(.7,0,.2,1)}`: the screen opens as a
@@ -34,14 +32,17 @@ function usePortal(width, height) {
   const cx = width / 2;
   const cy = height * 0.94;
   const rMax = 1.5 * Math.sqrt((width * width + height * height) / 2);
+  // Android clips the rounded, 2000×-scaled layers on the CPU every frame,
+  // which makes the screen crawl, so the portal is iOS only.
+  const off = reduced || Platform.OS === 'android';
   const s = useSharedValue(1);
   const play = useCallback(() => {
-    if (reduced) {
+    if (off) {
       return;
     }
     s.value = 0;
     s.value = withTiming(1, {duration: 1100, easing: E.snap});
-  }, [reduced, s]);
+  }, [off, s]);
   const outer = useAnimatedStyle(() => {
     const k = Math.max(0.0005, s.value);
     return {
@@ -57,6 +58,9 @@ function usePortal(width, height) {
     outer: {position: 'absolute', left: cx - rMax, top: cy - rMax, width: rMax * 2, height: rMax * 2},
     inner: {position: 'absolute', left: rMax - cx, top: rMax - cy, width, height, transformOrigin: [cx, cy, 0]},
   };
+  if (off) {
+    return {play, outer: StyleSheet.absoluteFill, inner: StyleSheet.absoluteFill};
+  }
   return {play, outer: [layout.outer, outer], inner: [layout.inner, inner]};
 }
 
@@ -189,7 +193,7 @@ export default function Hub({navigation}) {
 
               <CartBar qty={qty} jig={jig} bottom={bottom + 88} onPress={() => go('IvaShop')} />
 
-              <Image source={grain} resizeMode="repeat" style={styles.grain} pointerEvents="none" />
+              <Grain />
             </View>
           </LoopGate>
         </Animated.View>
@@ -216,5 +220,4 @@ const styles = StyleSheet.create({
     zIndex: 30,
   },
   mhTitle: {flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.cream},
-  grain: {...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.05, zIndex: 40},
 });
