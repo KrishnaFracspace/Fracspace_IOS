@@ -4,10 +4,12 @@ import {View,Text,TouchableOpacity,Image,StyleSheet,Dimensions,} from 'react-nat
 import Svg, {Path} from 'react-native-svg';
 import { AppContext } from '../Context/AppContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { DarkNavBar, NavCore, navBottom } from '../Version2_O/SpecialSection/HubNavBar';
 // import { CoOwnContext } from './CoOwnContext';
 
 const {width} = Dimensions.get('window');
-const TAB_WIDTH = width / 4;
+const TAB_WIDTH = width / 5;
+const CENTRE = 2;
 
 
 
@@ -39,6 +41,12 @@ const BottomNavi = forwardRef(({state, navigation}, ref) => {
             nav: 'VerificationOrWallet',
         },
         {
+            centre: true,
+            label: 'Special',
+            navi: 'SpecialSectionStack',
+            nav: 'Hub',
+        },
+        {
             icon: 'https://duixj37yn5405.cloudfront.net/appImages/Portfolio.png',
             notActive:
             'https://duixj37yn5405.cloudfront.net/appImages/portfolio1.png',
@@ -65,6 +73,7 @@ const BottomNavi = forwardRef(({state, navigation}, ref) => {
     const TAB_ROUTE_MAP = {
         HomeStack: ['HomeStack', 'HomePage', 'Home'],
         DashboardStack: ['DashboardStack', 'Owned'],
+        SpecialSectionStack: ['SpecialSectionStack', 'Hub'],
         ProfileStack: ['ProfileStack', 'Profile'],
         VerificationOrWallet: [
             'VerificationOrWallet',
@@ -78,6 +87,21 @@ const BottomNavi = forwardRef(({state, navigation}, ref) => {
 
     if (allowedRoutes && !allowedRoutes.includes(routeName)) {
         return null;
+    }
+
+    const goTo = index => {
+        const tab = tabs[index];
+        setSelected(index);
+        if (tab.navi) {
+            navigation.navigate(tab.navi, {
+                screen: tab.nav,
+            });
+        }
+    };
+
+    // Special Section: the design's floating dark pill instead of the white bar.
+    if (currentRoute.name === 'SpecialSectionStack') {
+        return <DarkNavBar tabs={tabs} onPress={goTo} bottom={navBottom(insets)} />;
     }
 
     const getArcPath = index => {
@@ -103,38 +127,40 @@ const BottomNavi = forwardRef(({state, navigation}, ref) => {
     <View style={{height: 70, width: '100%', position: 'absolute', bottom: insets.bottom, shadowColor: '#000',elevation:10}}>
         {/* Arc background */}
         <Svg width={width} height={90} style={StyleSheet.absoluteFill}>
-            <Path d={getArcPath(selected)} fill="#FFFFFF" />
+            <Path d={selected === CENTRE ? getArcPath(-10) : getArcPath(selected)} fill="#FFFFFF" />
         </Svg>
 
         {/* Floating Circle */}
-        <View
-            style={[
-                styles.circle,
-                {left: selected * TAB_WIDTH + (TAB_WIDTH - 50) / 2},
-            ]}
-        >
-            <Image
-                resizeMode="contain"
-                source={{uri: tabs[selected].icon}}
-                style={{width: 28, height: 28}}
-            />
-        </View>
+        {selected !== CENTRE && (
+            <View
+                style={[
+                    styles.circle,
+                    {left: selected * TAB_WIDTH + (TAB_WIDTH - 50) / 2},
+                ]}
+            >
+                <Image
+                    resizeMode="contain"
+                    source={{uri: tabs[selected].icon}}
+                    style={{width: 28, height: 28}}
+                />
+            </View>
+        )}
 
         {/* Tab Bar */}
         <View style={styles.tabBar}>
             {tabs.map((tab, index) => {
                 const isActive = selected === index;
+                if (tab.centre) {
+                    return (
+                        <View key={index} style={styles.tab}>
+                            <NavCore onPress={() => goTo(index)} style={styles.core} />
+                        </View>
+                    );
+                }
                 return (
                     <TouchableOpacity
                         key={index}
-                        onPress={() => {
-                            setSelected(index);
-                            if (tab.navi) {
-                                navigation.navigate(tab.navi, {
-                                    screen: tab.nav,
-                                });
-                            }
-                        }}
+                        onPress={() => goTo(index)}
                         style={styles.tab}
                     >
                         {!isActive && (
@@ -246,6 +272,10 @@ const styles = StyleSheet.create({
     height: 70,
     width: '100%',
     justifyContent: 'space-between',
+  },
+  core: {
+    position: 'absolute',
+    top: -16,
   },
   tab: {
     width: TAB_WIDTH,

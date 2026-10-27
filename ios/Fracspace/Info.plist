@@ -125,6 +125,13 @@
 		<string>WorkSans-Medium.ttf</string>
 		<string>WorkSans-Regular.ttf</string>
 		<string>WorkSans-SemiBold.ttf</string>
+		<string>InstrumentSerif-Italic.ttf</string>
+		<string>PlusJakartaSans-Medium.ttf</string>
+		<string>PlusJakartaSans-SemiBold.ttf</string>
+		<string>InstrumentSerif-Regular.ttf</string>
+		<string>PlusJakartaSans-Regular.ttf</string>
+		<string>PlusJakartaSans-Bold.ttf</string>
+		<string>PlusJakartaSans-ExtraBold.ttf</string>
 	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>

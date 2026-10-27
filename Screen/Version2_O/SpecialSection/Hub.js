@@ -1,0 +1,220 @@
+// Special Section Hub (Hub.dc.html): the centre tab's landing screen.
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {Image, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import Animated, {
+  interpolate,
+  Extrapolation,
+  runOnJS,
+  useAnimatedReaction,
+  useAnimatedRef,
+  useAnimatedScrollHandler,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import {useFocusEffect, useIsFocused} from '@react-navigation/native';
+import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {colors, fonts} from './theme';
+import {E, LoopGate, RevealScope, useReducedMotion} from './anim';
+import {BackIcon, GlassButton, Tag} from './HubBits';
+import HubHero, {SLIDE_MS} from './HubHero';
+import HubCategories from './HubCategories';
+import {CartBar, FeaturedStays, IvaEssentials} from './HubRails';
+import HubConcert from './HubConcert';
+import {navBottom} from './HubNavBar';
+
+const grain = require('./assets/grain.png');
+
+/**
+ * `.app{animation:portal 1.1s cubic-bezier(.7,0,.2,1)}`: the screen opens as a
+ * circle growing from the centre tab (50% 94%) to 150% of the screen.
+ */
+function usePortal(width, height) {
+  const reduced = useReducedMotion();
+  const cx = width / 2;
+  const cy = height * 0.94;
+  const rMax = 1.5 * Math.sqrt((width * width + height * height) / 2);
+  const s = useSharedValue(1);
+  const play = useCallback(() => {
+    if (reduced) {
+      return;
+    }
+    s.value = 0;
+    s.value = withTiming(1, {duration: 1100, easing: E.snap});
+  }, [reduced, s]);
+  const outer = useAnimatedStyle(() => {
+    const k = Math.max(0.0005, s.value);
+    return {
+      borderRadius: s.value >= 1 ? 0 : rMax,
+      overflow: s.value >= 1 ? 'visible' : 'hidden',
+      transform: [{scale: k}],
+    };
+  });
+  const inner = useAnimatedStyle(() => ({
+    transform: [{scale: 1 / Math.max(0.0005, s.value)}],
+  }));
+  const layout = {
+    outer: {position: 'absolute', left: cx - rMax, top: cy - rMax, width: rMax * 2, height: rMax * 2},
+    inner: {position: 'absolute', left: rMax - cx, top: rMax - cy, width, height, transformOrigin: [cx, cy, 0]},
+  };
+  return {play, outer: [layout.outer, outer], inner: [layout.inner, inner]};
+}
+
+export default function Hub({navigation}) {
+  const {width, height} = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isFocused = useIsFocused();
+  const portal = usePortal(width, height);
+
+  const [slide, setSlide] = useState(0);
+  const [liked, setLiked] = useState({});
+  const [qty, setQtyState] = useState({});
+  const [jig, setJig] = useState(0);
+
+  const scrollRef = useAnimatedRef();
+  const contentRef = useRef(null);
+  const categoriesY = useRef(0);
+  const scrollY = useSharedValue(0);
+  const onScroll = useAnimatedScrollHandler(e => {
+    scrollY.value = e.contentOffset.y;
+  });
+
+  // Portal on first open and whenever the centre tab is selected again.
+  useEffect(() => {
+    portal.play();
+    const tabNav = navigation.getParent();
+    return tabNav?.addListener('focus', portal.play);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navigation]);
+
+  // Auto-advance every 5.2s while visible; tapping a segment restarts the timer.
+  const timer = useRef(null);
+  const startTimer = useCallback(() => {
+    clearInterval(timer.current);
+    timer.current = setInterval(() => setSlide(s => (s + 1) % 4), SLIDE_MS);
+  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      startTimer();
+      return () => clearInterval(timer.current);
+    }, [startTimer]),
+  );
+
+  const go = useCallback(
+    to => {
+      if (to === 'categories') {
+        scrollRef.current?.scrollTo({y: categoriesY.current, animated: true});
+      } else {
+        navigation.navigate(to);
+      }
+    },
+    [navigation, scrollRef],
+  );
+
+  const setQty = (id, n) => {
+    setQtyState(q => ({...q, [id]: Math.max(0, Math.min(9, n))}));
+    setJig(j => j + 1);
+  };
+
+  // .mh: compact header fades in between 300px and 380px of scroll
+  const mh = useAnimatedStyle(() => {
+    const t = interpolate(scrollY.value, [300, 380], [0, 1], Extrapolation.CLAMP);
+    return {opacity: t, transform: [{translateY: -8 * (1 - t)}]};
+  });
+  const [mhOn, setMhOn] = useState(false);
+  useAnimatedReaction(
+    () => scrollY.value > 300,
+    (on, was) => {
+      if (on !== was) {
+        runOnJS(setMhOn)(on);
+      }
+    },
+  );
+
+  const bottom = navBottom(insets);
+
+  return (
+    <View style={styles.page}>
+      <Animated.View style={portal.outer}>
+        <Animated.View style={portal.inner}>
+          <LoopGate active={isFocused}>
+            <View style={styles.app}>
+              <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
+                <Animated.ScrollView
+                  ref={scrollRef}
+                  onScroll={onScroll}
+                  scrollEventThrottle={16}
+                  showsVerticalScrollIndicator={false}
+>
+                  <View ref={contentRef} collapsable={false} style={{paddingBottom: 150}}>
+                    <HubHero
+                      slide={slide}
+                      scrollY={scrollY}
+                      topInset={insets.top + 4}
+                      onSeg={i => {
+                        setSlide(i);
+                        startTimer();
+                      }}
+                      onCta={s => go(s.to)}
+                      onBack={() => navigation.navigate('HomeStack', {screen: 'HomePage'})}
+                    />
+                    <View onLayout={e => (categoriesY.current = e.nativeEvent.layout.y)}>
+                      <HubCategories
+                        onStays={() => go('Stays')}
+                        onShop={() => go('IvaShop')}
+                        onConcerts={() => go('ConcertDetails')}
+                      />
+                    </View>
+                    <FeaturedStays
+                      liked={liked}
+                      onLike={id => setLiked(l => ({...l, [id]: !l[id]}))}
+                      onOpenStay={stay => navigation.navigate('StayDetail', {stayId: stay.id})}
+                      onViewAll={() => go('Stays')}
+                    />
+                    <IvaEssentials qty={qty} setQty={setQty} onOpenShop={() => go('IvaShop')} />
+                    <HubConcert onOpen={() => go('ConcertDetails')} onViewAll={() => go('ConcertDetails')} />
+                  </View>
+                </Animated.ScrollView>
+              </RevealScope>
+
+              <Animated.View
+                style={[styles.mh, {height: 60 + insets.top, paddingTop: insets.top}, mh]}
+                pointerEvents={mhOn ? 'box-none' : 'none'}>
+                <GlassButton size={40} label="Back to Fracspace home" onPress={() => navigation.navigate('HomeStack', {screen: 'HomePage'})}>
+                  <BackIcon />
+                </GlassButton>
+                <Text style={styles.mhTitle}>Special Section</Text>
+                <Tag>CURATED</Tag>
+              </Animated.View>
+
+              <CartBar qty={qty} jig={jig} bottom={bottom + 88} onPress={() => go('IvaShop')} />
+
+              <Image source={grain} resizeMode="repeat" style={styles.grain} pointerEvents="none" />
+            </View>
+          </LoopGate>
+        </Animated.View>
+      </Animated.View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: {flex: 1, backgroundColor: colors.page, overflow: 'hidden'},
+  app: {flex: 1, backgroundColor: colors.ground},
+  mh: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(10,10,12,0.92)',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+    zIndex: 30,
+  },
+  mhTitle: {flex: 1, fontFamily: fonts.bold, fontSize: 15, color: colors.cream},
+  grain: {...StyleSheet.absoluteFillObject, width: '100%', height: '100%', opacity: 0.05, zIndex: 40},
+});

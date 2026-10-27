@@ -42,6 +42,12 @@ const LIGHT_CONTENT_ROUTES = new Set([
   'ConcertBookingDetail',
   'ConcertBookingSuccess',
   'ConcertBookingFailed',
+  // Special Section (dark)
+  'Hub',
+  'Stays',
+  'StayDetail',
+  'StayReview',
+  'IvaShop',
 ]);
 
 // One entry in React Native's StatusBar stack, updated on every screen change.

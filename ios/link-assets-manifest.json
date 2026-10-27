@@ -6,6 +6,14 @@
       "sha1": "4591d390c34f173e79f71bf9eb682276b6d8bf28"
     },
     {
+      "path": "Screen/assets/fonts/InstrumentSerif-Italic.ttf",
+      "sha1": "cfeb4692b8c04348aa63861d0796024af37b85dc"
+    },
+    {
+      "path": "Screen/assets/fonts/InstrumentSerif-Regular.ttf",
+      "sha1": "760dce2e432fb3711579d4de1cf5319ecaf28c7f"
+    },
+    {
       "path": "Screen/assets/fonts/Montserrat-Bold.ttf",
       "sha1": "98c66622226025f539568865af96df5175e2979c"
     },
@@ -32,6 +40,26 @@
     {
       "path": "Screen/assets/fonts/OpenSans-SemiBold.ttf",
       "sha1": "9b1adfbc773bb8bd1e6c4ca85c34441a43c2bc54"
+    },
+    {
+      "path": "Screen/assets/fonts/PlusJakartaSans-Bold.ttf",
+      "sha1": "725f9514c93b5356230588f805f771d2c8381487"
+    },
+    {
+      "path": "Screen/assets/fonts/PlusJakartaSans-ExtraBold.ttf",
+      "sha1": "8cb31628fea4d444bdc278b04a28bebee5970ce1"
+    },
+    {
+      "path": "Screen/assets/fonts/PlusJakartaSans-Medium.ttf",
+      "sha1": "a76cf945a2ffeff98027dfd401b656c6273bff46"
+    },
+    {
+      "path": "Screen/assets/fonts/PlusJakartaSans-Regular.ttf",
+      "sha1": "39007600414c4de958463f14eb3f59d775621303"
+    },
+    {
+      "path": "Screen/assets/fonts/PlusJakartaSans-SemiBold.ttf",
+      "sha1": "24953bebc61acd5caa5be521dd319772444f8b24"
     },
     {
       "path": "Screen/assets/fonts/Poppins-Bold.ttf",
