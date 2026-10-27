@@ -1,5 +1,5 @@
 // Special Section Hub (Hub.dc.html): the centre tab's landing screen.
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Platform, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolate,
@@ -15,7 +15,7 @@ import Animated, {
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fonts} from './theme';
-import {E, LoopGate, RevealScope, useReducedMotion} from './anim';
+import {E, LoopGate, RevealScope, ViewportGate, useReducedMotion} from './anim';
 import {BackIcon, GlassButton, Grain, Tag} from './HubBits';
 import HubHero, {SLIDE_MS} from './HubHero';
 import HubCategories from './HubCategories';
@@ -115,10 +115,28 @@ export default function Hub({navigation}) {
     [navigation, scrollRef],
   );
 
-  const setQty = (id, n) => {
+  const setQty = useCallback((id, n) => {
     setQtyState(q => ({...q, [id]: Math.max(0, Math.min(9, n))}));
     setJig(j => j + 1);
-  };
+  }, []);
+
+  // Stable handlers so the memoised sections skip the 5.2s hero re-render.
+  const act = useMemo(
+    () => ({
+      stays: () => go('Stays'),
+      shop: () => go('IvaShop'),
+      concerts: () => go('ConcertDetails'),
+      like: id => setLiked(l => ({...l, [id]: !l[id]})),
+      openStay: stay => navigation.navigate('StayDetail', {stayId: stay.id}),
+      home: () => navigation.navigate('HomeStack', {screen: 'HomePage'}),
+      cta: s => go(s.to),
+      seg: i => {
+        setSlide(i);
+        startTimer();
+      },
+    }),
+    [go, navigation, startTimer],
+  );
 
   // .mh: compact header fades in between 300px and 380px of scroll
   const mh = useAnimatedStyle(() => {
@@ -150,33 +168,29 @@ export default function Hub({navigation}) {
                   scrollEventThrottle={16}
                   showsVerticalScrollIndicator={false}
 >
-                  <View ref={contentRef} collapsable={false} style={{paddingBottom: 150}}>
+                  <View ref={contentRef} collapsable={false} style={styles.content}>
                     <HubHero
                       slide={slide}
                       scrollY={scrollY}
                       topInset={insets.top + 4}
-                      onSeg={i => {
-                        setSlide(i);
-                        startTimer();
-                      }}
-                      onCta={s => go(s.to)}
-                      onBack={() => navigation.navigate('HomeStack', {screen: 'HomePage'})}
+                      onSeg={act.seg}
+                      onCta={act.cta}
+                      onBack={act.home}
                     />
                     <View onLayout={e => (categoriesY.current = e.nativeEvent.layout.y)}>
-                      <HubCategories
-                        onStays={() => go('Stays')}
-                        onShop={() => go('IvaShop')}
-                        onConcerts={() => go('ConcertDetails')}
-                      />
+                      <ViewportGate>
+                        <HubCategories onStays={act.stays} onShop={act.shop} onConcerts={act.concerts} />
+                      </ViewportGate>
                     </View>
-                    <FeaturedStays
-                      liked={liked}
-                      onLike={id => setLiked(l => ({...l, [id]: !l[id]}))}
-                      onOpenStay={stay => navigation.navigate('StayDetail', {stayId: stay.id})}
-                      onViewAll={() => go('Stays')}
-                    />
-                    <IvaEssentials qty={qty} setQty={setQty} onOpenShop={() => go('IvaShop')} />
-                    <HubConcert onOpen={() => go('ConcertDetails')} onViewAll={() => go('ConcertDetails')} />
+                    <ViewportGate>
+                      <FeaturedStays liked={liked} onLike={act.like} onOpenStay={act.openStay} onViewAll={act.stays} />
+                    </ViewportGate>
+                    <ViewportGate>
+                      <IvaEssentials qty={qty} setQty={setQty} onOpenShop={act.shop} />
+                    </ViewportGate>
+                    <ViewportGate>
+                      <HubConcert onOpen={act.concerts} onViewAll={act.concerts} />
+                    </ViewportGate>
                   </View>
                 </Animated.ScrollView>
               </RevealScope>
@@ -184,14 +198,14 @@ export default function Hub({navigation}) {
               <Animated.View
                 style={[styles.mh, {height: 60 + insets.top, paddingTop: insets.top}, mh]}
                 pointerEvents={mhOn ? 'box-none' : 'none'}>
-                <GlassButton size={40} label="Back to Fracspace home" onPress={() => navigation.navigate('HomeStack', {screen: 'HomePage'})}>
+                <GlassButton size={40} label="Back to Fracspace home" onPress={act.home}>
                   <BackIcon />
                 </GlassButton>
                 <Text style={styles.mhTitle}>Special Section</Text>
                 <Tag>CURATED</Tag>
               </Animated.View>
 
-              <CartBar qty={qty} jig={jig} bottom={bottom + 88} onPress={() => go('IvaShop')} />
+              <CartBar qty={qty} jig={jig} bottom={bottom + 88} onPress={act.shop} />
 
               <Grain />
             </View>
@@ -205,6 +219,7 @@ export default function Hub({navigation}) {
 const styles = StyleSheet.create({
   page: {flex: 1, backgroundColor: colors.page, overflow: 'hidden'},
   app: {flex: 1, backgroundColor: colors.ground},
+  content: {paddingBottom: 150},
   mh: {
     position: 'absolute',
     left: 0,

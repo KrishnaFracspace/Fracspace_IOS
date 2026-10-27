@@ -13,7 +13,7 @@ import Animated, {
 import Svg, {Defs, LinearGradient as SvgGradient, Path, Rect, Stop} from 'react-native-svg';
 import LinearGradient from 'react-native-linear-gradient';
 import {colors, fonts, ls} from '../theme';
-import {E, PressScale, Reveal, cssAngle, kf, useLoop, useToggle} from '../anim';
+import {E, PressScale, Reveal, ViewportGate, cssAngle, kf, useLoop, useToggle} from '../anim';
 import {Burst, Loop, Ripple, Tag, useShot} from './bits';
 import {CameraIcon, HEART_D, HeadsetIcon, LeftArrowIcon, SearchIcon, SlidersIcon, StarIcon} from './icons';
 import {chips as chipData, offers, retreats, reviews, searchHints} from './data';
@@ -342,7 +342,7 @@ export default function Explore({scrollY, onOpenStay}) {
 
       <Retreats liked={liked} onLike={flip(setLiked)} onOpen={onOpenStay} />
 
-      <View style={styles.section}>
+      <ViewportGate style={styles.section}>
         <Reveal style={[styles.secHead, styles.secHeadRow, styles.mb16]}>
           <View style={styles.headCol}>
             <Text style={styles.h2}>See it before you stay</Text>
@@ -353,9 +353,9 @@ export default function Explore({scrollY, onOpenStay}) {
         <Reveal>
           <Reels onPos={onPos} onBook={reel => onOpenStay(reel.stayId)} />
         </Reveal>
-      </View>
+      </ViewportGate>
 
-      <View style={styles.section}>
+      <ViewportGate style={styles.section}>
         <Reveal style={[styles.secHead, styles.secHeadRow]}>
           <View style={styles.headCol}>
             <View style={styles.titleRow}>
@@ -379,9 +379,9 @@ export default function Explore({scrollY, onOpenStay}) {
           contentContainerStyle={[styles.rail, styles.gap12]}>
           <Offers offers={offers} claimed={claimed} onClaim={id => setClaimed(s => ({...s, [id]: true}))} />
         </ScrollView>
-      </View>
+      </ViewportGate>
 
-      <View style={styles.section}>
+      <ViewportGate style={styles.section}>
         <Reveal style={styles.secHead}>
           <Text style={styles.h2}>Guest Experiences</Text>
           <Text style={styles.sub}>Unfiltered impressions from verified members</Text>
@@ -396,9 +396,11 @@ export default function Explore({scrollY, onOpenStay}) {
             <Review key={g.id} g={g} />
           ))}
         </ScrollView>
-      </View>
+      </ViewportGate>
 
-      <Concierge />
+      <ViewportGate>
+        <Concierge />
+      </ViewportGate>
     </>
   );
 }

@@ -139,7 +139,7 @@ function StayCard({stay, index, scrollX, width, liked, onLike, onOpen}) {
   );
 }
 
-export function FeaturedStays({liked, onLike, onOpenStay, onViewAll}) {
+export const FeaturedStays = React.memo(function FeaturedStays({liked, onLike, onOpenStay, onViewAll}) {
   const {width} = useWindowDimensions();
   const scrollX = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler(e => {
@@ -177,7 +177,7 @@ export function FeaturedStays({liked, onLike, onOpenStay, onViewAll}) {
       </Animated.ScrollView>
     </View>
   );
-}
+});
 
 function StepButton({label, onPress, style, a11y}) {
   return (
@@ -241,7 +241,7 @@ function IvaCard({product, qty, onInc, onDec, onOpen}) {
   );
 }
 
-export function IvaEssentials({qty, setQty, onOpenShop}) {
+export const IvaEssentials = React.memo(function IvaEssentials({qty, setQty, onOpenShop}) {
   return (
     <View style={{paddingTop: 38}}>
       <SectionHead
@@ -273,7 +273,7 @@ export function IvaEssentials({qty, setQty, onOpenShop}) {
       </Animated.ScrollView>
     </View>
   );
-}
+});
 
 /** Floating cart bar; slides up once something is in the bag, bag jiggles on change. */
 export function CartBar({qty, jig, bottom, onPress}) {

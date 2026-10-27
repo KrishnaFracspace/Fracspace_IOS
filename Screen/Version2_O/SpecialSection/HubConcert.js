@@ -66,7 +66,7 @@ function StagePhoto() {
   return <Animated.Image source={images.concert} resizeMode="cover" style={[StyleSheet.absoluteFill, styles.photo, a]} />;
 }
 
-export default function HubConcert({onOpen, onViewAll}) {
+export default React.memo(function HubConcert({onOpen, onViewAll}) {
   return (
     <View style={styles.sec}>
       <Reveal style={styles.head}>
@@ -128,7 +128,7 @@ export default function HubConcert({onOpen, onViewAll}) {
       </Reveal>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   sec: {paddingTop: 34, paddingHorizontal: 20},

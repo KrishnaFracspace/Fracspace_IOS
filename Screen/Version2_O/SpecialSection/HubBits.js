@@ -14,7 +14,7 @@ const grain = require('./assets/grain.png');
  */
 export function Grain({opacity = 0.05}) {
   return (
-    <View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.grain]}>
+    <View pointerEvents="none" renderToHardwareTextureAndroid shouldRasterizeIOS style={[StyleSheet.absoluteFill, styles.grain]}>
       <Image source={grain} resizeMode="repeat" style={[styles.grainImg, {opacity}]} />
     </View>
   );

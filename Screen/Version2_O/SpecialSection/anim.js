@@ -12,17 +12,20 @@
 //   RevealScope/Reveal  scroll-driven `.rv` reveal (fade + rise on entry)
 //   enterUp(i, opts)  staggered fade-up entering animation for mount
 //   LoopGate          pause every useLoop below it (e.g. while a tab is hidden)
+//   ViewportGate      pause the loops in a section while it is scrolled off-screen
 //
 // Mapping a CSS animation: `animation: name 2.4s ease-in-out -1.2s infinite alternate`
 //   const p = useLoop(2400, {delay: -1200, alternate: true});
 //   useAnimatedStyle(() => ({opacity: kf(p.value, [[0, 0], [0.25, 1], [1, 0]], E.easeInOut)}));
 // The easing is applied per keyframe segment, like CSS.
 
-import React, {createContext, useContext, useEffect, useRef} from 'react';
+import React, {createContext, useContext, useEffect, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View, Text} from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
+  runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
   useReducedMotion,
@@ -76,7 +79,8 @@ const LoopActive = createContext(true);
 
 /** Pauses (and resets) every useLoop below it while `active` is false. */
 export function LoopGate({active, children}) {
-  return <LoopActive.Provider value={active}>{children}</LoopActive.Provider>;
+  const parent = useContext(LoopActive);
+  return <LoopActive.Provider value={active && parent}>{children}</LoopActive.Provider>;
 }
 
 /**
@@ -309,4 +313,52 @@ export function enterUp(index = 0, {step = 80, delay = 0, duration = 600, dy = 3
       },
     };
   };
+}
+
+/**
+ * A View inside a <RevealScope> whose looping animations (useLoop) only run
+ * while it is on screen (with `margin` px of slack). Off-screen loops cost
+ * frames without being seen; they restart where CSS would when they return.
+ */
+export function ViewportGate({style, children, margin = 120}) {
+  const ctx = useContext(RevealCtx);
+  const ref = useRef(null);
+  const top = useSharedValue(0);
+  const height = useSharedValue(1e9);
+  const [visible, setVisible] = useState(true);
+  const vh = ctx?.viewportH ?? 800;
+  const scrollY = ctx?.scrollY;
+
+  const onLayout = () => {
+    const content = ctx?.contentRef?.current;
+    if (!ref.current || !content) {
+      return;
+    }
+    ref.current.measureLayout(content, (x, y, w, h) => {
+      top.value = y;
+      height.value = h;
+    });
+  };
+
+  useAnimatedReaction(
+    () => {
+      if (!scrollY) {
+        return true;
+      }
+      const y = scrollY.value;
+      return top.value + height.value > y - margin && top.value < y + vh + margin;
+    },
+    (on, was) => {
+      if (on !== was) {
+        runOnJS(setVisible)(on);
+      }
+    },
+    [vh, margin],
+  );
+
+  return (
+    <View ref={ref} collapsable={false} onLayout={onLayout} style={style}>
+      <LoopGate active={visible}>{children}</LoopGate>
+    </View>
+  );
 }

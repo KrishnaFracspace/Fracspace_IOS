@@ -173,7 +173,7 @@ function CatCard({style, sheenDelay, onPress, label, children}) {
   );
 }
 
-export default function HubCategories({onStays, onShop, onConcerts}) {
+export default React.memo(function HubCategories({onStays, onShop, onConcerts}) {
   return (
     <View style={styles.sec}>
       <Reveal style={styles.head}>
@@ -217,7 +217,7 @@ export default function HubCategories({onStays, onShop, onConcerts}) {
       </Reveal>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   sec: {paddingTop: 34, paddingHorizontal: 20},
