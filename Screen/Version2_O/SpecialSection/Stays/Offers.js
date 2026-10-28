@@ -5,7 +5,7 @@ import {StyleSheet, Text, View} from 'react-native';
 import Animated, {interpolateColor, useAnimatedStyle} from 'react-native-reanimated';
 import Svg, {Circle, Defs, G, Line, LinearGradient, Path, RadialGradient, Rect, Stop} from 'react-native-svg';
 import {colors, fonts, ls} from '../theme';
-import {E, PressScale, kf, useToggle} from '../anim';
+import {E, PressScale, RailGate, kf, useToggle} from '../anim';
 import {Confetti, Loop} from './bits';
 import {BadgeIcon, CheckIcon} from './icons';
 import {useRenderCount} from '../perf';
@@ -201,8 +201,13 @@ function Coupon({offer, got, onClaim}) {
   );
 }
 
-export default function Offers({offers, claimed, onClaim}) {
-  return offers.map(o => <Coupon key={o.id} offer={o} got={!!claimed[o.id]} onClaim={() => onClaim(o.id)} />);
+/** The coupons of the rail; `sx` / `viewportW` gate each coupon's loops to when it is in view. */
+export default function Offers({offers, claimed, onClaim, sx, viewportW}) {
+  return offers.map((o, i) => (
+    <RailGate key={o.id} sx={sx} left={20 + i * (COUPON_W + 12)} width={COUPON_W} viewportW={viewportW}>
+      <Coupon offer={o} got={!!claimed[o.id]} onClaim={() => onClaim(o.id)} />
+    </RailGate>
+  ));
 }
 
 const styles = StyleSheet.create({

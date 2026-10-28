@@ -45,8 +45,8 @@ export function useColor(on, off, onColor, duration = 300) {
  * `@keyframes ripple{from{scale(1);opacity:.8}to{scale(1.7);opacity:0}}` on a
  * ring that covers its parent (inset −`inset`).
  */
-export function Ripple({duration, delay = 0, color, width = 1, inset = 0, radius = 999}) {
-  const p = useLoop(duration, {delay});
+export function Ripple({duration, delay = 0, color, width = 1, inset = 0, radius = 999, active = true}) {
+  const p = useLoop(duration, {delay, active});
   const a = useAnimatedStyle(() => {
     const t = E.easeOut(p.value);
     return {opacity: 0.8 * (1 - t), transform: [{scale: 1 + 0.7 * t}]};

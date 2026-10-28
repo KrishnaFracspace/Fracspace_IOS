@@ -13,7 +13,7 @@ import Animated, {
 import Svg, {Defs, LinearGradient as SvgGradient, Path, Rect, Stop} from 'react-native-svg';
 import LinearGradient from 'react-native-linear-gradient';
 import {colors, fonts, ls} from '../theme';
-import {E, PressScale, Reveal, ViewportGate, cssAngle, kf, useLoop, useToggle} from '../anim';
+import {E, PressScale, RailGate, Reveal, ViewportGate, cssAngle, kf, useLoop, useToggle} from '../anim';
 import {Burst, Loop, Ripple, Tag, useShot} from './bits';
 import {CameraIcon, HEART_D, HeadsetIcon, LeftArrowIcon, SearchIcon, SlidersIcon, StarIcon} from './icons';
 import {chips as chipData, offers, retreats, reviews, searchHints} from './data';
@@ -23,6 +23,7 @@ import {useFirstFrame, useRenderCount} from '../perf';
 
 const RCARD_W = 302;
 const RCARD_GAP = 14;
+const REVIEW_W = 300;
 // Colour helpers are plain JS, so resolve them before they reach a worklet.
 const CHIP_BORDER = colors.whiteA(0.12);
 const GOLD_0 = colors.goldA(0);
@@ -372,6 +373,16 @@ function useStage() {
 
 export default function Explore({onSearchTop, onOpenStay}) {
   const stage = useStage();
+  const {width: vw} = useWindowDimensions();
+  // Scroll x of the Offers / Reviews rails, so each card loops only while in view.
+  const offerX = useSharedValue(0);
+  const reviewX = useSharedValue(0);
+  const onOfferScroll = useAnimatedScrollHandler(e => {
+    offerX.value = e.contentOffset.x;
+  });
+  const onReviewScroll = useAnimatedScrollHandler(e => {
+    reviewX.value = e.contentOffset.x;
+  });
   const [on, setOn] = useState({dates: true});
   const [liked, setLiked] = useState({});
   const [claimed, setClaimed] = useState({});
@@ -410,14 +421,22 @@ export default function Explore({onSearchTop, onOpenStay}) {
               <Text style={styles.swipeText}>Swipe</Text>
             </View>
           </Reveal>
-          <ScrollView
+          <Animated.ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
+            onScroll={onOfferScroll}
+            scrollEventThrottle={16}
             snapToInterval={COUPON_W + 12}
             decelerationRate="fast"
             contentContainerStyle={[styles.rail, styles.gap12]}>
-            <Offers offers={offers} claimed={claimed} onClaim={id => setClaimed(s => ({...s, [id]: true}))} />
-          </ScrollView>
+            <Offers
+              offers={offers}
+              claimed={claimed}
+              onClaim={id => setClaimed(s => ({...s, [id]: true}))}
+              sx={offerX}
+              viewportW={vw}
+            />
+          </Animated.ScrollView>
         </ViewportGate>
       ) : null}
 
@@ -427,16 +446,20 @@ export default function Explore({onSearchTop, onOpenStay}) {
             <Text style={styles.h2}>Guest Experiences</Text>
             <Text style={styles.sub}>Unfiltered impressions from verified members</Text>
           </Reveal>
-          <ScrollView
+          <Animated.ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            snapToInterval={300 + 12}
+            onScroll={onReviewScroll}
+            scrollEventThrottle={16}
+            snapToInterval={REVIEW_W + 12}
             decelerationRate="fast"
             contentContainerStyle={[styles.rail, styles.gap12]}>
-            {reviews.map(g => (
-              <Review key={g.id} g={g} />
+            {reviews.map((g, i) => (
+              <RailGate key={g.id} sx={reviewX} left={20 + i * (REVIEW_W + 12)} width={REVIEW_W} viewportW={vw}>
+                <Review g={g} />
+              </RailGate>
             ))}
-          </ScrollView>
+          </Animated.ScrollView>
         </ViewportGate>
       ) : null}
 
@@ -568,7 +591,7 @@ const styles = StyleSheet.create({
   swipeText: {fontFamily: fonts.semibold, fontSize: 12, color: '#E6E0D6'},
   // reviews
   review: {
-    width: 300,
+    width: REVIEW_W,
     height: 344,
     borderRadius: 26,
     overflow: 'hidden',

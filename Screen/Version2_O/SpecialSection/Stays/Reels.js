@@ -13,7 +13,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import {useIsFocused} from '@react-navigation/native';
 import {colors, fonts, ls} from '../theme';
-import {E, PressScale, enterUp, useReducedMotion, useToggle} from '../anim';
+import {E, PressScale, enterUp, useLinger, useReducedMotion, useToggle} from '../anim';
 import {Ripple} from './bits';
 import {MuteIcon, PlayPauseIcon} from './icons';
 import {reels} from './data';
@@ -112,6 +112,7 @@ const Seg = memo(function Seg({state, prog}) {
 function BigPlay({playing, onPress}) {
   const op = useToggle(!playing, {duration: 300, easing: E.ease});
   const sc = useToggle(!playing, {duration: 450, easing: E.spring});
+  const shown = useLinger(!playing, 300); // its ripple runs only while it can be seen
   const a = useAnimatedStyle(() => ({opacity: op.value, transform: [{scale: 0.6 + 0.4 * sc.value}]}));
   return (
     <Pressable
@@ -121,7 +122,7 @@ function BigPlay({playing, onPress}) {
       style={styles.bigplayHit}>
       <Animated.View style={[styles.bigplay, a]}>
         <PlayPauseIcon playing={playing} />
-        <Ripple duration={2200} color={colors.whiteA(0.6)} inset={1} />
+        <Ripple duration={2200} color={colors.whiteA(0.6)} inset={1} active={shown} />
       </Animated.View>
     </Pressable>
   );

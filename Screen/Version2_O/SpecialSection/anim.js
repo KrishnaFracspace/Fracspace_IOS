@@ -412,3 +412,21 @@ export function ViewportGate({style, children, margin = 120}) {
     </View>
   );
 }
+
+/**
+ * ViewportGate for one item of a horizontal rail: its loops run only while it
+ * is within the rail's viewport. `sx` is the rail's scroll x; `left` / `width`
+ * are the item's box in the rail content. Adds no view.
+ */
+export function RailGate({sx, left, width, viewportW, margin = 40, children}) {
+  const parent = useContext(LoopActive);
+  const own = useSharedValue(parent.value);
+  useAnimatedReaction(
+    () => parent.value && left + width > sx.value - margin && left < sx.value + viewportW + margin,
+    on => {
+      own.value = on;
+    },
+    [left, width, viewportW, margin],
+  );
+  return <LoopActive.Provider value={own}>{children}</LoopActive.Provider>;
+}
