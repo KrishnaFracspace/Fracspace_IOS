@@ -1,5 +1,5 @@
 // "Explore stays" view of the Stays listing (Stays.dc.html, `isExplore`).
-// Returned as siblings so the search bar can stick inside the page scroll.
+// Returned as siblings; the search bar floats over the page (index.js) above a fixed slot here.
 import React, {useCallback, useState} from 'react';
 import {Image, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
@@ -26,20 +26,25 @@ const RCARD_GAP = 14;
 const CHIP_BORDER = colors.whiteA(0.12);
 const GOLD_0 = colors.goldA(0);
 
-/** `.sticky-search`: sticks to the top and darkens over the first 120px of scroll. */
-function SearchBar({scrollY}) {
-  const [top, setTop] = useState(0);
+const SEARCH_H = 86; // `.search` 66 + `.sticky` padding 10 × 2
+
+/**
+ * `.sticky-search`: sticks below the status bar and darkens over the first 120px of scroll.
+ * It floats outside the ScrollView, so once stuck it stays still instead of chasing the scroll.
+ * `top` is its slot's y in the scroll content; `inset` pads it clear of the notch.
+ */
+export function SearchBar({scrollY, top, inset, style}) {
   const seek = useLoop(4000);
   const roll = useLoop(10000);
 
   const stick = useAnimatedStyle(() => {
     const t = interpolate(scrollY.value, [0, 120], [0, 1], Extrapolation.CLAMP);
     return {
-      transform: [{translateY: Math.max(0, scrollY.value - top)}],
+      transform: [{translateY: Math.max(0, top - inset - scrollY.value)}],
       backgroundColor: `rgba(10,10,12,${0.86 * t})`,
       shadowOpacity: 0.45 * t,
     };
-  }, [top]);
+  }, [top, inset]);
   const icon = useAnimatedStyle(() => ({
     transform: [
       {rotate: `${kf(seek.value, [[0, 0], [0.7, 0], [0.78, -14], [0.86, 10], [1, 0]], E.easeInOut)}deg`},
@@ -58,7 +63,7 @@ function SearchBar({scrollY}) {
   }));
 
   return (
-    <Animated.View style={[styles.sticky, stick]} onLayout={e => setTop(e.nativeEvent.layout.y)}>
+    <Animated.View pointerEvents="box-none" style={[styles.sticky, {paddingTop: inset + 10}, style, stick]}>
       <PressScale to={0.97} accessibilityLabel="Search stays by destination, dates and guests" style={styles.search}>
         <View style={styles.sic}>
           <Animated.View style={icon}>
@@ -322,7 +327,7 @@ function Concierge() {
   );
 }
 
-export default function Explore({scrollY, onOpenStay}) {
+export default function Explore({onSearchTop, onOpenStay}) {
   const [on, setOn] = useState({dates: true});
   const [liked, setLiked] = useState({});
   const [claimed, setClaimed] = useState({});
@@ -332,7 +337,7 @@ export default function Explore({scrollY, onOpenStay}) {
 
   return (
     <>
-      <SearchBar scrollY={scrollY} />
+      <View style={styles.searchSlot} onLayout={e => onSearchTop(e.nativeEvent.layout.y)} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {chipData.map(c => (
@@ -412,6 +417,7 @@ const glass = {backgroundColor: 'rgba(10,10,12,0.55)', borderWidth: 1, borderCol
 const styles = StyleSheet.create({
   fill: {width: '100%', height: '100%'},
   // search
+  searchSlot: {height: SEARCH_H},
   sticky: {
     zIndex: 20,
     paddingVertical: 10,

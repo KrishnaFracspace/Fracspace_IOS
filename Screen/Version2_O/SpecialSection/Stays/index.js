@@ -14,7 +14,7 @@ import {E, LoopGate, PressScale, RevealScope, enterUp, kf, useLoop, useToggle} f
 import {BackIcon, Grain} from '../HubBits';
 import {navBottom} from '../HubNavBar';
 import {SearchIcon, TicketIcon} from './icons';
-import Explore from './Explore';
+import Explore, {SearchBar} from './Explore';
 import Bookings from './Bookings';
 
 /** `.stg` header children: `rise .8s --out`, delays .05s / .15s. */
@@ -79,6 +79,7 @@ export default function Stays({navigation}) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
   const [view, setView] = useState('explore');
+  const [searchTop, setSearchTop] = useState(0);
 
   const contentRef = useRef(null);
   const scrollY = useSharedValue(0);
@@ -116,13 +117,16 @@ export default function Stays({navigation}) {
               <ViewTabs view={view} setView={setView} />
 
               {view === 'explore' ? (
-                <Explore scrollY={scrollY} onOpenStay={openStay} />
+                <Explore onSearchTop={setSearchTop} onOpenStay={openStay} />
               ) : (
                 <Bookings onExplore={() => setView('explore')} onOpenStay={openStay} />
               )}
             </View>
           </Animated.ScrollView>
         </RevealScope>
+        {view === 'explore' && searchTop > 0 ? (
+          <SearchBar scrollY={scrollY} top={searchTop} inset={insets.top} style={styles.searchFloat} />
+        ) : null}
         <Grain />
       </LoopGate>
     </View>
@@ -131,6 +135,7 @@ export default function Stays({navigation}) {
 
 const styles = StyleSheet.create({
   page: {flex: 1, backgroundColor: colors.ground},
+  searchFloat: {position: 'absolute', top: 0, left: 0, right: 0},
   head: {
     flexDirection: 'row',
     alignItems: 'center',
