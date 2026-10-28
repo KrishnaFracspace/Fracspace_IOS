@@ -125,3 +125,20 @@ Device: Android CPH2643 (dev build, Metro), iOS iPhone 16 Pro simulator (dev).
 
 Checked, no problem: slide timer, portal focus listener and every loop clean up on
 blur/unmount; Hub loops pause on blur; no leak across 10 cycles.
+
+### After fixes A–C (`be965b9`, `de57903`, `4bb47ba`), same devices, dev build
+| Metric | Before | After |
+|---|---|---|
+| Android idle frames p50 / p90, janky | 61 / 73 ms, 74 % | 48 / 61 ms, 49 % |
+| Android scroll frames p50 / p99, janky | 73 / 150 ms, 93 % | 61 / 250 ms, 74 % |
+| Android main-thread split (idle, median) | animation 25.2, GPU 13.6, total 62.4 ms | animation 21.7, GPU 10.1, total 50.3 ms |
+| Android slow bitmap uploads (idle 10 s) | 55 | 15 |
+| iOS sim main thread busy (15 s idle) | 6.2 s (42 %) | 2.5 s (17 %) |
+| Renders per slide change | Hub, HubHero, 7 Reveal, 4 ViewportGate, CartBar | Hub, HubHero, 5 ViewportGate, CartBar (Reveal 0) |
+| Re-enter Hub tap → frame | 1086 ms | 1033–1189 ms (unchanged) |
+| Memory, 10 leave/enter cycles (PSS / native heap) | 1004 → 974 / 202 → 194 MB | 961 → 980 / 238 → 239 MB |
+
+Notes: scroll p99 swings 150–300 ms between identical runs, so treat it as noise.
+PSS moves ±30 MB run to run while native heap holds steady: no leak. Re-entry is
+still ~1.1 s. Next to try: a Time Profiler capture of the tab switch (light → dark
+bar swap, Hub re-render and every loop restarting at once). Not done in this pass.
