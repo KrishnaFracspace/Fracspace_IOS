@@ -57,7 +57,9 @@ export function NavCore({onPress, style}) {
       accessibilityRole="button"
       accessibilityLabel="Stays, Music and Shop"
       style={[styles.core, style]}>
-      <Animated.View style={[styles.ring, ring]}>
+      {/* The 72-wedge ring never changes, only rotates: cache it as a texture
+          so each frame just turns the bitmap instead of redrawing the SVG. */}
+      <Animated.View style={[styles.ring, ring]} renderToHardwareTextureAndroid shouldRasterizeIOS>
         <Svg width={RING} height={RING}>
           {WEDGES.map(w => (
             <Path key={w.d} d={w.d} fill={w.fill} />
