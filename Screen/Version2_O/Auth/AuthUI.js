@@ -1,10 +1,11 @@
 // Login / Sign-up (dark) UI, from LoginV2.dc.html and SignupV2.dc.html in the
 // "Fracspace Co-own Flow" design artifact (local copies in docs/login-v2/design).
-// Only looks: NewLogin and NewSigin keep their own state, API calls and
+// Only looks: LoginPanel and SignupPanel keep their own state, API calls and
 // navigation and pass them in.
 import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -26,6 +27,7 @@ import Video from 'react-native-video';
 import {useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import Ic from 'react-native-vector-icons/AntDesign';
+import Ion from 'react-native-vector-icons/Ionicons';
 import {colors, fonts, ls} from '../SpecialSection/theme';
 import {E, PressScale, enterUp, useLoop, useReducedMotion, useToggle} from '../SpecialSection/anim';
 import {BackIcon, GlassButton, Grain} from '../SpecialSection/HubBits';
@@ -47,26 +49,47 @@ const logoIn = enterUp(0, {dy: 18, duration: 800, delay: 100});
  * The whole screen: intro video with its shade, logo, grain, and the bottom
  * panel (`.lpanel`) that holds the current pane and the legal line.
  */
+/** True while the keyboard is up (iOS: as it starts moving). */
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    const ios = Platform.OS === 'ios';
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setOpen(true));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setOpen(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+  return open;
+}
+
 export function AuthScreen({children, overlay}) {
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
   const [videoFailed, setVideoFailed] = useState(false);
+  const [muted, setMuted] = useState(true);
+  // With the keyboard up the panel rises over the bright part of the video:
+  // dim the video and put a dark scrim behind the panel so the text reads.
+  const kb = useToggle(useKeyboardOpen(), {duration: 250});
+  const dim = useAnimatedStyle(() => ({opacity: kb.value}));
 
   return (
     <View style={styles.app}>
-      {/* `.bgv`: muted looping cover video; #061040 shows while it loads. */}
+      {/* `.bgv`: looping cover video, muted until the user unmutes it;
+          #061040 shows while it loads. Muted, it leaves other audio alone. */}
       {!videoFailed && (
         <Video
           source={videoSource(INTRO_VIDEO)}
           style={StyleSheet.absoluteFill}
           resizeMode="cover"
-          muted
+          muted={muted}
           repeat
           paused={!focused}
           playInBackground={false}
-          disableFocus
-          mixWithOthers="mix"
-          ignoreSilentSwitch="obey"
+          disableFocus={muted}
+          mixWithOthers={muted ? 'mix' : 'inherit'}
+          ignoreSilentSwitch={muted ? 'obey' : 'ignore'}
           shutterColor="transparent"
           onError={() => setVideoFailed(true)}
         />
@@ -78,6 +101,7 @@ export function AuthScreen({children, overlay}) {
         colors={['rgba(6,10,40,0.35)', 'rgba(6,10,40,0)', 'rgba(10,10,12,0)', 'rgba(10,10,12,0.82)', colors.ground]}
         locations={[0, 0.22, 0.4, 0.62, 0.8]}
       />
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, styles.kbDim, dim]} />
       <Animated.View entering={logoIn} style={[styles.logo, {top: insets.top + 8}]}>
         <Image source={logo} style={styles.logoImg} resizeMode="contain" />
       </Animated.View>
@@ -91,10 +115,28 @@ export function AuthScreen({children, overlay}) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           bounces={false}>
-          {children}
-          <Text style={styles.legal}>By continuing you agree to our Terms & Privacy Policy</Text>
+          <View>
+            <Animated.View pointerEvents="none" style={[styles.scrim, {bottom: -(30 + insets.bottom)}, dim]}>
+              <LinearGradient
+                style={StyleSheet.absoluteFill}
+                colors={[colors.groundA(0), colors.groundA(0.85), colors.groundA(0.95)]}
+                locations={[0, 0.35, 1]}
+              />
+            </Animated.View>
+            {children}
+            <Text style={styles.legal}>By continuing you agree to our Terms & Privacy Policy</Text>
+          </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      {!videoFailed && (
+        <GlassButton
+          size={40}
+          onPress={() => setMuted(m => !m)}
+          label={muted ? 'Unmute video' : 'Mute video'}
+          style={[styles.glass, styles.mute, {top: insets.top}]}>
+          <Ion name={muted ? 'volume-mute' : 'volume-high'} size={18} color={colors.white} />
+        </GlassButton>
+      )}
       <Grain opacity={0.07} />
       {overlay}
     </View>
@@ -306,6 +348,10 @@ const styles = StyleSheet.create({
   flexShrink: {flexShrink: 1},
   logo: {position: 'absolute', left: 24, zIndex: 5},
   logoImg: {height: 24, width: 96, tintColor: colors.white},
+  mute: {position: 'absolute', right: 20, zIndex: 5},
+  kbDim: {backgroundColor: 'rgba(10,10,12,0.5)'},
+  // Behind the panel, from 140px above its first line down past the legal text.
+  scrim: {position: 'absolute', top: -140, left: -24, right: -24},
   panel: {flexGrow: 1, justifyContent: 'flex-end', paddingHorizontal: 24},
   legal: {
     marginTop: 16,

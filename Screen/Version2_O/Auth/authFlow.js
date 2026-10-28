@@ -1,4 +1,4 @@
-// Small pieces of logic shared by NewLogin and NewSigin: one request at a
+// Small pieces of logic shared by LoginPanel and SignupPanel: one request at a
 // time, the resend cooldown, input checks and request error alerts.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
