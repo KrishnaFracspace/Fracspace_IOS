@@ -13,7 +13,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Defs, RadialGradient, Rect, Stop} from 'react-native-svg';
 import {colors, fonts, ls} from './theme';
-import {E, Nudge, PressScale, kf, useLoop, useReducedMotion, useToggle} from './anim';
+import {E, LoopGate, Nudge, PressScale, kf, useLinger, useLoop, useReducedMotion, useToggle} from './anim';
 import {BackIcon, Eyebrow, GlassButton} from './HubBits';
 import {heroSlides, images} from './data';
 import {useRenderCount} from './perf';
@@ -125,24 +125,28 @@ function CopyItem({on, index, children}) {
 }
 
 function Copy({slide, on, onCta}) {
+  // Hidden copies sit at opacity 0: stop their dot/arrow loops once faded out.
+  const live = useLinger(on, 300);
   return (
-    <View style={styles.hc} pointerEvents={on ? 'box-none' : 'none'}>
-      <CopyItem on={on} index={0}>
-        <Eyebrow>{slide.eyebrow}</Eyebrow>
-      </CopyItem>
-      <CopyItem on={on} index={1}>
-        <Text style={styles.htitle}>{slide.title}</Text>
-      </CopyItem>
-      <CopyItem on={on} index={2}>
-        <Text style={styles.sub}>{slide.sub}</Text>
-      </CopyItem>
-      <CopyItem on={on} index={3}>
-        <PressScale to={0.94} onPress={onCta} style={styles.cta} accessibilityRole="button">
-          <Text style={styles.ctaText}>{slide.cta}</Text>
-          <Nudge style={styles.ctaText} />
-        </PressScale>
-      </CopyItem>
-    </View>
+    <LoopGate active={live}>
+      <View style={styles.hc} pointerEvents={on ? 'box-none' : 'none'}>
+        <CopyItem on={on} index={0}>
+          <Eyebrow>{slide.eyebrow}</Eyebrow>
+        </CopyItem>
+        <CopyItem on={on} index={1}>
+          <Text style={styles.htitle}>{slide.title}</Text>
+        </CopyItem>
+        <CopyItem on={on} index={2}>
+          <Text style={styles.sub}>{slide.sub}</Text>
+        </CopyItem>
+        <CopyItem on={on} index={3}>
+          <PressScale to={0.94} onPress={onCta} style={styles.cta} accessibilityRole="button">
+            <Text style={styles.ctaText}>{slide.cta}</Text>
+            <Nudge style={styles.ctaText} />
+          </PressScale>
+        </CopyItem>
+      </View>
+    </LoopGate>
   );
 }
 

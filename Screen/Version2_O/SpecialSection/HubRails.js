@@ -11,7 +11,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Path} from 'react-native-svg';
 import {colors, fonts, ls, type} from './theme';
-import {E, Nudge, PressScale, Reveal, Sheen, kf, useReducedMotion, useToggle} from './anim';
+import {E, LoopGate, Nudge, PressScale, Reveal, Sheen, kf, useLinger, useReducedMotion, useToggle} from './anim';
 import {useRenderCount} from './perf';
 import {ArrowIcon, Tag} from './HubBits';
 import {ivaProducts, stays} from './data';
@@ -291,6 +291,8 @@ export function CartBar({qty, jig, bottom, onPress}) {
   const show = count > 0;
   const slide = useToggle(show, {duration: 600, easing: E.spring});
   const fade = useToggle(show, {duration: 300, easing: E.ease});
+  // The arrow's loop runs only while the bar is on screen (incl. its exit).
+  const live = useLinger(show, 600);
   const reduced = useReducedMotion();
   const j = useSharedValue(1);
   useEffect(() => {
@@ -325,7 +327,9 @@ export function CartBar({qty, jig, bottom, onPress}) {
         </View>
         <View style={styles.cartBtn}>
           <Text style={styles.cartBtnText}>View cart</Text>
-          <Nudge style={styles.cartBtnText} />
+          <LoopGate active={live}>
+            <Nudge style={styles.cartBtnText} />
+          </LoopGate>
         </View>
       </Pressable>
     </Animated.View>

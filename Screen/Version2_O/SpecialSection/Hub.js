@@ -173,14 +173,16 @@ export default function Hub({navigation}) {
                   showsVerticalScrollIndicator={false}
 >
                   <View ref={contentRef} collapsable={false} style={styles.content}>
-                    <HubHero
-                      slide={slide}
-                      scrollY={scrollY}
-                      topInset={insets.top + 4}
-                      onSeg={act.seg}
-                      onCta={act.cta}
-                      onBack={act.home}
-                    />
+                    <ViewportGate>
+                      <HubHero
+                        slide={slide}
+                        scrollY={scrollY}
+                        topInset={insets.top + 4}
+                        onSeg={act.seg}
+                        onCta={act.cta}
+                        onBack={act.home}
+                      />
+                    </ViewportGate>
                     <View onLayout={e => (categoriesY.current = e.nativeEvent.layout.y)}>
                       <ViewportGate>
                         <HubCategories onStays={act.stays} onShop={act.shop} onConcerts={act.concerts} />

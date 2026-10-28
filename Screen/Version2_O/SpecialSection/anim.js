@@ -12,6 +12,7 @@
 //   RevealScope/Reveal  scroll-driven `.rv` reveal (fade + rise on entry)
 //   enterUp(i, opts)  staggered fade-up entering animation for mount
 //   LoopGate          pause every useLoop below it (e.g. while a tab is hidden)
+//   useLinger(on, ms) `on`, held true for `ms` after it turns off (fade-outs)
 //   ViewportGate      pause the loops in a section while it is scrolled off-screen
 //
 // Mapping a CSS animation: `animation: name 2.4s ease-in-out -1.2s infinite alternate`
@@ -82,6 +83,23 @@ const LoopActive = createContext(true);
 export function LoopGate({active, children}) {
   const parent = useContext(LoopActive);
   return <LoopActive.Provider value={active && parent}>{children}</LoopActive.Provider>;
+}
+
+/**
+ * `on`, but held true for `ms` after it turns off. Gate the loops of something
+ * that fades out with it so they stop only once it is invisible.
+ */
+export function useLinger(on, ms) {
+  const [held, setHeld] = useState(on);
+  useEffect(() => {
+    if (on) {
+      setHeld(true);
+      return;
+    }
+    const id = setTimeout(() => setHeld(false), ms);
+    return () => clearTimeout(id);
+  }, [on, ms]);
+  return on || held;
 }
 
 /**
