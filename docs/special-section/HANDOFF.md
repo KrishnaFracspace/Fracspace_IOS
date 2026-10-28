@@ -20,7 +20,7 @@ bottom navigation. Design, style, screen transitions and every micro-animation m
 |---|---------|-------|
 | 1 | Theme, shared animations, centre tab, `SpecialSectionStack`, Hub | **Done** — commit `0c2420c` on `feature/special-section` (not pushed) |
 | 2 | Stays Listing (`Stays.dc.html`) | **Built** — `SpecialSection/Stays/`, awaiting simulator test |
-| 3 | Stay Detail + booking sheet (`StayDetail.dc.html`) | Not started — placeholder route |
+| 3 | Stay Detail + booking sheet (`StayDetail.dc.html`) | **Built** — `SpecialSection/StayDetail/`, awaiting simulator test |
 | 4 | Review Booking + success (`StayReview.dc.html`) | Not started — placeholder route |
 | 5 | IVA Shop (`IvaShopV2.dc.html`) | Not started — placeholder route |
 
