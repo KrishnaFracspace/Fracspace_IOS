@@ -1,6 +1,6 @@
 // Hub hero carousel: 4 auto-advancing slides (Ken Burns photos / floating
 // product tiles), staggered copy, segmented pager with odometer, scroll parallax.
-import React, {useEffect} from 'react';
+import React, {useCallback, useEffect} from 'react';
 import {Image, Pressable, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   Extrapolation,
@@ -100,7 +100,7 @@ function ProductSlide({on, width}) {
   );
 }
 
-function Slide({slide, on, width}) {
+const Slide = React.memo(function Slide({slide, on, width}) {
   // .hs{transition:opacity 1.1s ease}
   const v = useToggle(on, {duration: 1100, easing: E.ease});
   const a = useAnimatedStyle(() => ({opacity: v.value}));
@@ -109,7 +109,7 @@ function Slide({slide, on, width}) {
       {slide.product ? <ProductSlide on={on} width={width} /> : <PhotoSlide img={slide.img} on={on} width={width} />}
     </Animated.View>
   );
-}
+});
 
 // .hc>* off: opacity .3s ease, transform .3s ease; on: opacity .6s ease,
 // transform .8s var(--out), delays .25/.35/.45/.55s.
@@ -124,7 +124,10 @@ function CopyItem({on, index, children}) {
   return <Animated.View style={a}>{children}</Animated.View>;
 }
 
-function Copy({slide, on, onCta}) {
+// Memoised (with onCta(slide) called here) so only the copies whose `on`
+// changes re-render on a slide change.
+const Copy = React.memo(function Copy({slide, on, onCta}) {
+  const cta = useCallback(() => onCta(slide), [onCta, slide]);
   // Hidden copies sit at opacity 0: stop their dot/arrow loops once faded out.
   const live = useLinger(on, 300);
   return (
@@ -140,7 +143,7 @@ function Copy({slide, on, onCta}) {
           <Text style={styles.sub}>{slide.sub}</Text>
         </CopyItem>
         <CopyItem on={on} index={3}>
-          <PressScale to={0.94} onPress={onCta} style={styles.cta} accessibilityRole="button">
+          <PressScale to={0.94} onPress={cta} style={styles.cta} accessibilityRole="button">
             <Text style={styles.ctaText}>{slide.cta}</Text>
             <Nudge style={styles.ctaText} />
           </PressScale>
@@ -148,7 +151,7 @@ function Copy({slide, on, onCta}) {
       </View>
     </LoopGate>
   );
-}
+});
 
 function Seg({state, onPress, index, slide}) {
   const on = state === 'on';
@@ -225,7 +228,7 @@ export default function HubHero({slide, onSeg, onCta, onBack, scrollY, topInset}
       </GlassButton>
       <View style={styles.hcopies} pointerEvents="box-none">
         {heroSlides.map((s, i) => (
-          <Copy key={s.eyebrow} slide={s} on={i === slide} onCta={() => onCta(s)} />
+          <Copy key={s.eyebrow} slide={s} on={i === slide} onCta={onCta} />
         ))}
       </View>
       <View style={styles.pager}>

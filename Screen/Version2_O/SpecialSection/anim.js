@@ -20,7 +20,7 @@
 //   useAnimatedStyle(() => ({opacity: kf(p.value, [[0, 0], [0.25, 1], [1, 0]], E.easeInOut)}));
 // The easing is applied per keyframe segment, like CSS.
 
-import React, {createContext, useContext, useEffect, useRef, useState} from 'react';
+import React, {createContext, useContext, useEffect, useMemo, useRef, useState} from 'react';
 import {Pressable, StyleSheet, View, Text} from 'react-native';
 import Animated, {
   Easing,
@@ -270,9 +270,9 @@ const RevealCtx = createContext(null);
  * ScrollView's content, `viewportH` the ScrollView's visible height.
  */
 export function RevealScope({scrollY, contentRef, viewportH, children}) {
-  return (
-    <RevealCtx.Provider value={{scrollY, contentRef, viewportH}}>{children}</RevealCtx.Provider>
-  );
+  // Memoised so a screen re-render doesn't re-render every Reveal/ViewportGate.
+  const value = useMemo(() => ({scrollY, contentRef, viewportH}), [scrollY, contentRef, viewportH]);
+  return <RevealCtx.Provider value={value}>{children}</RevealCtx.Provider>;
 }
 
 /**
