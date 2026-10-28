@@ -115,6 +115,9 @@ export function useLinger(on, ms) {
   return on || held;
 }
 
+// Cycles per linear run in useLoop (~1 day for a 1s loop); then it repeats.
+const CYCLES = 100000;
+
 /**
  * Clock for an infinite CSS animation. Returns a shared value 0..1 (already
  * ping-ponged when `alternate`). `delay` < 0 starts mid-cycle like CSS;
@@ -141,26 +144,27 @@ export function useLoop(duration, {delay = 0, alternate = false, active = true} 
       }
       const cycle = alternate ? duration * 2 : duration;
       const phase = delay < 0 ? ((-delay % cycle) + cycle) % cycle / cycle : 0;
+      // One linear run over CYCLES cycles; the clock is its fractional part.
+      // Progress is elapsed time / duration, so loops never drift apart and a
+      // late frame (app back from background) lands on the right phase. A
+      // repeat-per-cycle chain restarts on whatever frame the last cycle ended,
+      // which collapsed staggered loops (the nav words) onto each other.
       clock.value = phase;
-      const loop = withRepeat(
+      const timeline = withRepeat(
         withSequence(
-          withTiming(0, {duration: 0}),
-          withTiming(1, {duration: cycle, easing: Easing.linear}),
+          withTiming(phase, {duration: 0}),
+          withTiming(phase + CYCLES, {duration: CYCLES * cycle, easing: Easing.linear}),
         ),
         -1,
       );
-      const first = withSequence(
-        withTiming(1, {duration: (1 - phase) * cycle, easing: Easing.linear}),
-        loop,
-      );
-      clock.value = delay > 0 ? withDelay(delay, first) : first;
+      clock.value = delay > 0 ? withDelay(delay, timeline) : timeline;
     },
     [local, duration, delay, alternate],
   );
   useEffect(() => () => cancelAnimation(clock), [clock]);
 
   return useDerivedValue(() => {
-    const c = clock.value;
+    const c = clock.value - Math.floor(clock.value);
     if (!alternate) {
       return c;
     }
