@@ -76,6 +76,10 @@ swipes() {
 
 say "run $LABEL  $(date '+%F %T')  device $(adb shell getprop ro.product.model)"
 adb logcat -c
+# Stream the probes to a file: the ring buffer rotates them out during a long run.
+LOG=$(mktemp)
+adb logcat -s ReactNativeJS >"$LOG" &
+LOGPID=$!
 
 # 1. Idle on the screen: looping animations only.
 adb shell dumpsys gfxinfo $PKG reset >/dev/null
@@ -90,7 +94,7 @@ frames "scroll 6 swipes"
 # 3. Leak check: memory before/after N leave/enter cycles.
 sleep 5
 mem "before $CYCLES cycles"
-for i in $(seq "$CYCLES"); do
+for ((i = 1; i <= CYCLES; i++)); do
   if [ "$LEAVE" = BACK ]; then adb shell input keyevent 4; else tap "$LEAVE"; fi
   sleep 2
   tap "$ENTER"
@@ -100,5 +104,6 @@ sleep 10
 mem "after $CYCLES cycles (+10s settle)"
 
 say "--- [ssperf] log"
-adb logcat -d -s ReactNativeJS | grep ssperf | sed 's/^.*\[ssperf\]/[ssperf]/' | tee -a "$OUT" || true
+kill $LOGPID
+grep ssperf "$LOG" | sed 's/^.*\[ssperf\]/[ssperf]/' | tee -a "$OUT" || true
 echo "saved $OUT"

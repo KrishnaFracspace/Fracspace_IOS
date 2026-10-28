@@ -19,6 +19,7 @@ import {CameraIcon, HEART_D, HeadsetIcon, LeftArrowIcon, SearchIcon, SlidersIcon
 import {chips as chipData, offers, retreats, reviews, searchHints} from './data';
 import Reels from './Reels';
 import Offers, {COUPON_W} from './Offers';
+import {useFirstFrame, useRenderCount} from '../perf';
 
 const RCARD_W = 302;
 const RCARD_GAP = 14;
@@ -34,6 +35,7 @@ const SEARCH_H = 86; // `.search` 66 + `.sticky` padding 10 × 2
  * `top` is its slot's y in the scroll content; `inset` pads it clear of the notch.
  */
 export function SearchBar({scrollY, top, inset, style}) {
+  useRenderCount('SearchBar');
   const seek = useLoop(4000);
   const roll = useLoop(10000);
 
@@ -136,6 +138,7 @@ function Heart({liked, name, onPress}) {
 
 /** `.rcard` with `railfx`: scales/fades by its position in the rail viewport. */
 function RetreatCard({r, i, sx, vw, liked, onLike, onOpen}) {
+  useRenderCount('RetreatCard');
   const fx = useAnimatedStyle(() => {
     const left = 20 + i * (RCARD_W + RCARD_GAP) - sx.value;
     const p = (vw - left) / (vw + RCARD_W);
@@ -252,6 +255,7 @@ function SpinStar() {
 }
 
 function Review({g}) {
+  useRenderCount('Review');
   return (
     <View style={styles.review}>
       <Image source={g.img} style={StyleSheet.absoluteFill} resizeMode="cover" />
@@ -334,6 +338,8 @@ export default function Explore({onSearchTop, onOpenStay}) {
   const [reelPos, setReelPos] = useState('1 / 3');
   const flip = set => id => set(s => ({...s, [id]: !s[id]}));
   const onPos = useCallback(p => setReelPos(p), []);
+  useRenderCount('Explore');
+  useFirstFrame('Explore');
 
   return (
     <>

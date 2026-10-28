@@ -8,6 +8,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, PressScale, kf, useToggle} from '../anim';
 import {Confetti, Loop} from './bits';
 import {BadgeIcon, CheckIcon} from './icons';
+import {useRenderCount} from '../perf';
 
 // Colour helpers are plain JS, so resolve them before they reach a worklet.
 const CODE_BORDER = colors.goldA(0.4);
@@ -151,6 +152,7 @@ function Art({kind}) {
 }
 
 function Coupon({offer, got, onClaim}) {
+  useRenderCount('Coupon');
   const v = useToggle(got, {duration: 300, easing: E.ease});
   const code = useAnimatedStyle(() => ({
     borderColor: interpolateColor(v.value, [0, 1], [CODE_BORDER, colors.gold]),

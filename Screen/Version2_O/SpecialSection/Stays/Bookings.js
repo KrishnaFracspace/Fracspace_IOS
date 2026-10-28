@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Line, Path, Rect} from 'react-native-svg';
 import {colors, fonts} from '../theme';
 import {E, PressScale, kf, useLoop, useReducedMotion, useToggle} from '../anim';
+import {useFirstFrame} from '../perf';
 import {Loop, useShot} from './bits';
 import {
   ChevronIcon,
@@ -306,6 +307,7 @@ function Empty({onExplore}) {
 
 export default function Bookings({onExplore, onOpenStay}) {
   const [bk, setBk] = useState('up');
+  useFirstFrame('Bookings');
   return (
     <View style={styles.bkv}>
       <View style={styles.subt} accessibilityRole="tablist" accessibilityLabel="Booking status">

@@ -22,7 +22,7 @@ import HubCategories from './HubCategories';
 import {CartBar, FeaturedStays, IvaEssentials} from './HubRails';
 import HubConcert from './HubConcert';
 import {navBottom} from './HubNavBar';
-import {sinceTap, useFirstFrame, useJsFps, useRenderCount} from './perf';
+import {markTap, sinceTap, useFirstFrame, useJsFps, useRenderCount} from './perf';
 
 /**
  * `.app{animation:portal 1.1s cubic-bezier(.7,0,.2,1)}`: the screen opens as a
@@ -116,6 +116,7 @@ export default function Hub({navigation}) {
       if (to === 'categories') {
         scrollRef.current?.scrollTo({y: categoriesY.current, animated: true});
       } else {
+        markTap(to);
         navigation.navigate(to);
       }
     },

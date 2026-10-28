@@ -16,6 +16,7 @@ import {E, PressScale, enterUp, useReducedMotion, useToggle} from '../anim';
 import {Ripple} from './bits';
 import {MuteIcon, PlayPauseIcon} from './icons';
 import {reels} from './data';
+import {useRenderCount} from '../perf';
 
 const CARD_W = 300;
 const CARD_H = 430;
@@ -29,6 +30,7 @@ const ZOOM_MS = 9000;
 
 /** One card of the deck; transitions between stack positions with the spring. */
 function DeckCard({img, pos, hold}) {
+  useRenderCount('DeckCard');
   const reduced = useReducedMotion();
   const tx = useSharedValue(POS[pos].x);
   const sc = useSharedValue(POS[pos].s);
@@ -142,6 +144,7 @@ export default function Reels({onBook, onPos}) {
   const [muted, setMuted] = useState(true);
   const [flipN, setFlipN] = useState(0);
   const n = reels.length;
+  useRenderCount('Reels');
 
   const goReel = i => {
     setReel(i);

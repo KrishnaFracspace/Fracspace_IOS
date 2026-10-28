@@ -13,6 +13,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, LoopGate, PressScale, RevealScope, enterUp, kf, useLoop, useToggle} from '../anim';
 import {BackIcon, Grain} from '../HubBits';
 import {navBottom} from '../HubNavBar';
+import {useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {SearchIcon, TicketIcon} from './icons';
 import Explore, {SearchBar} from './Explore';
 import Bookings from './Bookings';
@@ -80,6 +81,9 @@ export default function Stays({navigation}) {
   const isFocused = useIsFocused();
   const [view, setView] = useState('explore');
   const [searchTop, setSearchTop] = useState(0);
+  useRenderCount('Stays');
+  useFirstFrame('Stays');
+  useJsFps('Stays', isFocused);
 
   const contentRef = useRef(null);
   const scrollY = useSharedValue(0);
