@@ -1,6 +1,6 @@
 // "Explore stays" view of the Stays listing (Stays.dc.html, `isExplore`).
 // Returned as siblings; the search bar floats over the page (index.js) above a fixed slot here.
-import React, {useCallback, useState} from 'react';
+import React, {memo, useState} from 'react';
 import {Image, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolate,
@@ -331,13 +331,33 @@ function Concierge() {
   );
 }
 
+/**
+ * "See it before you stay". Holds the reel counter itself so a reel change
+ * re-renders only this section, not the whole listing.
+ */
+const ReelsSection = memo(function ReelsSection({onOpenStay}) {
+  const [reelPos, setReelPos] = useState('1 / 3');
+  return (
+    <ViewportGate style={styles.section}>
+      <Reveal style={[styles.secHead, styles.secHeadRow, styles.mb16]}>
+        <View style={styles.headCol}>
+          <Text style={styles.h2}>See it before you stay</Text>
+          <Text style={styles.sub}>Short video tours · tap a side to skip</Text>
+        </View>
+        <Tag>{reelPos}</Tag>
+      </Reveal>
+      <Reveal>
+        <Reels onPos={setReelPos} onBook={reel => onOpenStay(reel.stayId)} />
+      </Reveal>
+    </ViewportGate>
+  );
+});
+
 export default function Explore({onSearchTop, onOpenStay}) {
   const [on, setOn] = useState({dates: true});
   const [liked, setLiked] = useState({});
   const [claimed, setClaimed] = useState({});
-  const [reelPos, setReelPos] = useState('1 / 3');
   const flip = set => id => set(s => ({...s, [id]: !s[id]}));
-  const onPos = useCallback(p => setReelPos(p), []);
   useRenderCount('Explore');
   useFirstFrame('Explore');
 
@@ -353,18 +373,7 @@ export default function Explore({onSearchTop, onOpenStay}) {
 
       <Retreats liked={liked} onLike={flip(setLiked)} onOpen={onOpenStay} />
 
-      <ViewportGate style={styles.section}>
-        <Reveal style={[styles.secHead, styles.secHeadRow, styles.mb16]}>
-          <View style={styles.headCol}>
-            <Text style={styles.h2}>See it before you stay</Text>
-            <Text style={styles.sub}>Short video tours · tap a side to skip</Text>
-          </View>
-          <Tag>{reelPos}</Tag>
-        </Reveal>
-        <Reveal>
-          <Reels onPos={onPos} onBook={reel => onOpenStay(reel.stayId)} />
-        </Reveal>
-      </ViewportGate>
+      <ReelsSection onOpenStay={onOpenStay} />
 
       <ViewportGate style={styles.section}>
         <Reveal style={[styles.secHead, styles.secHeadRow]}>

@@ -1,5 +1,5 @@
 // Stays listing (Stays.dc.html): "Explore stays" / "My bookings" tabs.
-import React, {useRef, useState} from 'react';
+import React, {useCallback, useRef, useState} from 'react';
 import {StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolateColor,
@@ -92,7 +92,7 @@ export default function Stays({navigation}) {
   });
 
   const back = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Hub'));
-  const openStay = stayId => navigation.navigate('StayDetail', {stayId});
+  const openStay = useCallback(stayId => navigation.navigate('StayDetail', {stayId}), [navigation]);
 
   return (
     <View style={styles.page}>
