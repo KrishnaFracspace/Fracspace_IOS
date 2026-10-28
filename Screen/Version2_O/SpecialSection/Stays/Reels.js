@@ -1,12 +1,13 @@
 // "See it before you stay": the stacked video-tour deck (`.deck`, `.rc`,
 // `.rc-ui`, `.thumb` in Stays.dc.html).
-import React, {useEffect, useState} from 'react';
+import React, {memo, useCallback, useEffect, useRef, useState} from 'react';
 import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
 import Animated, {
   cancelAnimation,
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
@@ -29,7 +30,7 @@ const POS = [
 const ZOOM_MS = 9000;
 
 /** One card of the deck; transitions between stack positions with the spring. */
-function DeckCard({img, pos, hold}) {
+const DeckCard = memo(function DeckCard({img, pos, hold}) {
   useRenderCount('DeckCard');
   const reduced = useReducedMotion();
   const tx = useSharedValue(POS[pos].x);
@@ -78,21 +79,34 @@ function DeckCard({img, pos, hold}) {
       </View>
     </Animated.View>
   );
-}
+});
 
-/** `.seg`: progress bar for one reel (width transition .12s linear). */
-function Seg({fill}) {
-  const v = useSharedValue(fill);
+const lin = duration => ({duration, easing: E.linear});
+
+/**
+ * `.seg`: progress bar for one reel (width transition .12s linear). The
+ * current reel's bar follows `prog`, which Reels animates on the UI thread.
+ */
+const Seg = memo(function Seg({state, prog}) {
+  const cur = state === 'cur';
+  const v = useSharedValue(state === 'done' ? 1 : 0);
   useEffect(() => {
-    v.value = withTiming(fill, {duration: 120, easing: E.linear});
-  }, [fill, v]);
-  const a = useAnimatedStyle(() => ({transform: [{scaleX: v.value}]}));
+    if (!cur) {
+      v.value = withTiming(state === 'done' ? 1 : 0, lin(120));
+      return;
+    }
+    // Leaving the current reel: carry on from where its bar got to.
+    return () => {
+      v.value = prog.value;
+    };
+  }, [cur, state, prog, v]);
+  const a = useAnimatedStyle(() => ({transform: [{scaleX: cur ? prog.value : v.value}]}), [cur]);
   return (
     <View style={styles.seg}>
       <Animated.View style={[styles.segFill, a]} />
     </View>
   );
-}
+});
 
 /** `.bigplay`: shown while paused (opacity .3s, transform .45s spring). */
 function BigPlay({playing, onPress}) {
@@ -114,14 +128,14 @@ function BigPlay({playing, onPress}) {
 }
 
 /** `.thumb` under the deck. */
-function Thumb({reel, on, onPress}) {
+const Thumb = memo(function Thumb({reel, i, on, onPick}) {
   const v = useToggle(on, {duration: 300, easing: E.ease});
   const a = useAnimatedStyle(() => ({
     borderColor: interpolateColor(v.value, [0, 1], [colors.borderStrong, colors.gold]),
     backgroundColor: interpolateColor(v.value, [0, 1], [colors.card, '#1C1B20']),
   }));
   return (
-    <PressScale to={0.94} duration={400} onPress={onPress} accessibilityLabel={`Play ${reel.title}`} style={styles.thumbWrap}>
+    <PressScale to={0.94} duration={400} onPress={() => onPick(i)} accessibilityLabel={`Play ${reel.title}`} style={styles.thumbWrap}>
       <Animated.View style={[styles.thumb, a]}>
         <Image source={reel.img} style={styles.thumbImg} />
         <View style={styles.thumbText}>
@@ -133,45 +147,69 @@ function Thumb({reel, on, onPress}) {
       </Animated.View>
     </PressScale>
   );
-}
+});
 
 /** The deck + thumbs. Reports the current position ("1 / 3") via onPos. */
 export default function Reels({onBook, onPos}) {
   const focused = useIsFocused();
   const [reel, setReel] = useState(0);
-  const [t, setT] = useState(0);
+  const [sec, setSec] = useState(0); // whole seconds played, for the time label
   const [playing, setPlaying] = useState(true);
   const [muted, setMuted] = useState(true);
   const [flipN, setFlipN] = useState(0);
   const n = reels.length;
   useRenderCount('Reels');
 
-  const goReel = i => {
+  const goReel = useCallback(i => {
     setReel(i);
-    setT(0);
+    setSec(0);
     setFlipN(f => f + 1);
-  };
+  }, []);
+  const togglePlay = useCallback(() => setPlaying(p => !p), []);
 
-  // 100ms tick like the design; advances to the next reel at its duration.
+  // The bar runs on the UI thread; JS only wakes once a second for the time
+  // label and at the end of the reel to advance (the design ticks every 100ms).
+  const prog = useSharedValue(0);
+  const played = useRef({reel: 0, ms: 0});
+  const run = playing && focused;
   useEffect(() => {
-    if (!playing || !focused) {
+    const p = played.current;
+    const total = reels[reel].secs * 1000;
+    if (p.reel !== reel) {
+      prog.value = p.reel > reel ? 1 : 0; // this bar was full if we went back
+      p.reel = reel;
+      p.ms = 0;
+    }
+    const to = withTiming(p.ms / total, lin(120));
+    if (!run) {
+      prog.value = to;
       return;
     }
-    const id = setInterval(() => setT(x => x + 0.1), 100);
-    return () => clearInterval(id);
-  }, [playing, focused]);
-  useEffect(() => {
-    if (t >= reels[reel].secs) {
-      goReel((reel + 1) % n);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [t]);
+    prog.value = withSequence(to, withTiming(1, lin(total - p.ms)));
+    const start = Date.now() - p.ms;
+    const next = ms => Math.min(total, (Math.floor(ms / 1000) + 1) * 1000) - ms;
+    let id;
+    const tick = () => {
+      const ms = Date.now() - start;
+      if (ms >= total) {
+        goReel((reel + 1) % n);
+        return;
+      }
+      setSec(Math.floor(ms / 1000));
+      id = setTimeout(tick, next(ms));
+    };
+    id = setTimeout(tick, next(p.ms));
+    return () => {
+      clearTimeout(id);
+      p.ms = Math.min(total, Date.now() - start);
+    };
+  }, [reel, run, n, prog, goReel]);
   useEffect(() => {
     onPos?.(`${reel + 1} / ${n}`);
   }, [reel, n, onPos]);
 
   const cur = reels[reel];
-  const time = `0:${String(Math.floor(t)).padStart(2, '0')} / ${cur.dur}`;
+  const time = `0:${String(sec).padStart(2, '0')} / ${cur.dur}`;
   const cap = i => enterUp(i, {step: 80, duration: 700, dy: 16});
 
   return (
@@ -183,7 +221,7 @@ export default function Reels({onBook, onPos}) {
         <View style={styles.ui}>
           <View style={styles.segs}>
             {reels.map((v, i) => (
-              <Seg key={v.id} fill={i < reel ? 1 : i === reel ? Math.min(1, t / v.secs) : 0} />
+              <Seg key={v.id} state={i < reel ? 'done' : i === reel ? 'cur' : 'todo'} prog={prog} />
             ))}
           </View>
           <View style={styles.head}>
@@ -213,7 +251,7 @@ export default function Reels({onBook, onPos}) {
             onPress={() => goReel((reel + 1) % n)}
             accessibilityLabel="Next video"
           />
-          <BigPlay playing={playing} onPress={() => setPlaying(p => !p)} />
+          <BigPlay playing={playing} onPress={togglePlay} />
           <View key={flipN} style={styles.cap} pointerEvents="box-none">
             <Animated.Text entering={cap(0)} style={styles.capLoc}>
               {cur.loc.toUpperCase()}
@@ -232,7 +270,7 @@ export default function Reels({onBook, onPos}) {
       </View>
       <View style={styles.thumbs}>
         {reels.map((v, i) => (
-          <Thumb key={v.id} reel={v} on={i === reel} onPress={() => goReel(i)} />
+          <Thumb key={v.id} reel={v} i={i} on={i === reel} onPick={goReel} />
         ))}
       </View>
     </View>
