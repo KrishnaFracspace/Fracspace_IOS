@@ -159,11 +159,21 @@ export function AuthScreen({children, overlay}) {
 /**
  * Holds one panel (Login or Sign-up). Both stay mounted so switching creates
  * no views; the one becoming active plays paneIn, the other hides at once.
+ * Hidden = transparent, out of the layout and untouchable: `display: 'none'`
+ * would drop its native views (New Architecture) and rebuild them on show.
  */
 export function PanelSlot({active, children}) {
   const p = useToggle(active, {duration: 550, easing: E.out}, {duration: 0});
   const anim = useAnimatedStyle(() => ({opacity: p.value, transform: [{translateY: (1 - p.value) * 18}]}));
-  return <Animated.View style={[anim, !active && styles.hidden]}>{children}</Animated.View>;
+  return (
+    <Animated.View
+      pointerEvents={active ? 'auto' : 'none'}
+      accessibilityElementsHidden={!active}
+      importantForAccessibility={active ? 'auto' : 'no-hide-descendants'}
+      style={[anim, !active && styles.hidden]}>
+      {children}
+    </Animated.View>
+  );
 }
 
 /** `.pane`: one step of the flow; remount it (new `key`) to replay paneIn. */
@@ -368,7 +378,7 @@ export function OtpBoxes({digits, inputRefs, maxLength, onChange, onKeyPress}) {
 const styles = StyleSheet.create({
   app: {flex: 1, backgroundColor: '#061040'},
   flex: {flex: 1},
-  hidden: {display: 'none'},
+  hidden: {position: 'absolute', left: 0, right: 0, bottom: 0},
   flexShrink: {flexShrink: 1},
   logo: {position: 'absolute', left: 24, zIndex: 5},
   logoImg: {height: 24, width: 96, tintColor: colors.white},
