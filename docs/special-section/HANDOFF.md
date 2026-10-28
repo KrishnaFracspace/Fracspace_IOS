@@ -22,7 +22,7 @@ bottom navigation. Design, style, screen transitions and every micro-animation m
 | 2 | Stays Listing (`Stays.dc.html`) | **Built** — `SpecialSection/Stays/`, awaiting simulator test |
 | 3 | Stay Detail + booking sheet (`StayDetail.dc.html`) | **Built** — `SpecialSection/StayDetail/`, awaiting simulator test |
 | 4 | Review Booking + success (`StayReview.dc.html`) | Not started — placeholder route |
-| 5 | IVA Shop (`IvaShopV2.dc.html`) | Not started — placeholder route |
+| 5 | IVA Shop (`IvaShopV2.dc.html`) | **Built** — `SpecialSection/IvaShop/` (list → product → review → success, mock order), awaiting simulator test |
 
 Empty worktrees from a stopped attempt exist under `.claude/worktrees/special-section-*` (branches
 `claude/special-section-*`, no changes). Safe to delete:
