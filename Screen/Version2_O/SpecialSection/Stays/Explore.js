@@ -1,6 +1,6 @@
 // "Explore stays" view of the Stays listing (Stays.dc.html, `isExplore`).
 // Returned as siblings; the search bar floats over the page (index.js) above a fixed slot here.
-import React, {memo, useState} from 'react';
+import React, {memo, useEffect, useState} from 'react';
 import {Image, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolate,
@@ -353,7 +353,25 @@ const ReelsSection = memo(function ReelsSection({onOpenStay}) {
   );
 });
 
+/**
+ * Mounts the sections below the fold one per frame after the first paint, so
+ * opening Stays (or switching back from My bookings) paints the top first.
+ */
+const DEFERRED = 4;
+function useStage() {
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (stage >= DEFERRED) {
+      return;
+    }
+    const id = requestAnimationFrame(() => setStage(stage + 1));
+    return () => cancelAnimationFrame(id);
+  }, [stage]);
+  return stage;
+}
+
 export default function Explore({onSearchTop, onOpenStay}) {
+  const stage = useStage();
   const [on, setOn] = useState({dates: true});
   const [liked, setLiked] = useState({});
   const [claimed, setClaimed] = useState({});
@@ -373,54 +391,60 @@ export default function Explore({onSearchTop, onOpenStay}) {
 
       <Retreats liked={liked} onLike={flip(setLiked)} onOpen={onOpenStay} />
 
-      <ReelsSection onOpenStay={onOpenStay} />
+      {stage > 0 ? <ReelsSection onOpenStay={onOpenStay} /> : null}
 
-      <ViewportGate style={styles.section}>
-        <Reveal style={[styles.secHead, styles.secHeadRow]}>
-          <View style={styles.headCol}>
-            <View style={styles.titleRow}>
-              <Text style={styles.h2}>Exclusive Offers & Perks</Text>
-              <Tag>3 ACTIVE</Tag>
+      {stage > 1 ? (
+        <ViewportGate style={styles.section}>
+          <Reveal style={[styles.secHead, styles.secHeadRow]}>
+            <View style={styles.headCol}>
+              <View style={styles.titleRow}>
+                <Text style={styles.h2}>Exclusive Offers & Perks</Text>
+                <Tag>3 ACTIVE</Tag>
+              </View>
+              <Text style={styles.sub}>Curated member rates & bespoke privileges</Text>
             </View>
-            <Text style={styles.sub}>Curated member rates & bespoke privileges</Text>
-          </View>
-          <View style={styles.swipe}>
-            <Loop duration={1800} track={swipe}>
-              <LeftArrowIcon />
-            </Loop>
-            <Text style={styles.swipeText}>Swipe</Text>
-          </View>
-        </Reveal>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={COUPON_W + 12}
-          decelerationRate="fast"
-          contentContainerStyle={[styles.rail, styles.gap12]}>
-          <Offers offers={offers} claimed={claimed} onClaim={id => setClaimed(s => ({...s, [id]: true}))} />
-        </ScrollView>
-      </ViewportGate>
+            <View style={styles.swipe}>
+              <Loop duration={1800} track={swipe}>
+                <LeftArrowIcon />
+              </Loop>
+              <Text style={styles.swipeText}>Swipe</Text>
+            </View>
+          </Reveal>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={COUPON_W + 12}
+            decelerationRate="fast"
+            contentContainerStyle={[styles.rail, styles.gap12]}>
+            <Offers offers={offers} claimed={claimed} onClaim={id => setClaimed(s => ({...s, [id]: true}))} />
+          </ScrollView>
+        </ViewportGate>
+      ) : null}
 
-      <ViewportGate style={styles.section}>
-        <Reveal style={styles.secHead}>
-          <Text style={styles.h2}>Guest Experiences</Text>
-          <Text style={styles.sub}>Unfiltered impressions from verified members</Text>
-        </Reveal>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          snapToInterval={300 + 12}
-          decelerationRate="fast"
-          contentContainerStyle={[styles.rail, styles.gap12]}>
-          {reviews.map(g => (
-            <Review key={g.id} g={g} />
-          ))}
-        </ScrollView>
-      </ViewportGate>
+      {stage > 2 ? (
+        <ViewportGate style={styles.section}>
+          <Reveal style={styles.secHead}>
+            <Text style={styles.h2}>Guest Experiences</Text>
+            <Text style={styles.sub}>Unfiltered impressions from verified members</Text>
+          </Reveal>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={300 + 12}
+            decelerationRate="fast"
+            contentContainerStyle={[styles.rail, styles.gap12]}>
+            {reviews.map(g => (
+              <Review key={g.id} g={g} />
+            ))}
+          </ScrollView>
+        </ViewportGate>
+      ) : null}
 
-      <ViewportGate>
-        <Concierge />
-      </ViewportGate>
+      {stage > 3 ? (
+        <ViewportGate>
+          <Concierge />
+        </ViewportGate>
+      ) : null}
     </>
   );
 }
