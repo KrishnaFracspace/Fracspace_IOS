@@ -25,7 +25,7 @@ import {Pressable, StyleSheet, View, Text} from 'react-native';
 import Animated, {
   Easing,
   cancelAnimation,
-  runOnJS,
+  makeMutable,
   useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
@@ -77,12 +77,25 @@ export function kf(p, stops, easing) {
   return stops[stops.length - 1][1];
 }
 
-const LoopActive = createContext(true);
+// The gate is a shared value (true = loops run), read on the UI thread, so
+// pausing or resuming loops never re-renders the components that use them.
+const LoopActive = createContext(makeMutable(true));
 
 /** Pauses (and resets) every useLoop below it while `active` is false. */
 export function LoopGate({active, children}) {
   const parent = useContext(LoopActive);
-  return <LoopActive.Provider value={active && parent}>{children}</LoopActive.Provider>;
+  const own = useSharedValue(active && parent.value);
+  const act = useSharedValue(active);
+  useEffect(() => {
+    act.value = active;
+  }, [active, act]);
+  useAnimatedReaction(
+    () => act.value && parent.value,
+    on => {
+      own.value = on;
+    },
+  );
+  return <LoopActive.Provider value={own}>{children}</LoopActive.Provider>;
 }
 
 /**
@@ -110,32 +123,41 @@ export function useLinger(on, ms) {
 export function useLoop(duration, {delay = 0, alternate = false, active = true} = {}) {
   const reduced = useReducedMotion();
   const gate = useContext(LoopActive);
-  const run = active && gate && !reduced;
+  const local = active && !reduced;
   const clock = useSharedValue(0);
 
-  useEffect(() => {
-    cancelAnimation(clock);
-    if (!run) {
-      clock.value = 0;
-      return;
-    }
-    const cycle = alternate ? duration * 2 : duration;
-    const phase = delay < 0 ? ((-delay % cycle) + cycle) % cycle / cycle : 0;
-    clock.value = phase;
-    const loop = withRepeat(
-      withSequence(
-        withTiming(0, {duration: 0}),
-        withTiming(1, {duration: cycle, easing: Easing.linear}),
-      ),
-      -1,
-    );
-    const first = withSequence(
-      withTiming(1, {duration: (1 - phase) * cycle, easing: Easing.linear}),
-      loop,
-    );
-    clock.value = delay > 0 ? withDelay(delay, first) : first;
-    return () => cancelAnimation(clock);
-  }, [run, duration, delay, alternate, clock]);
+  // Starts/stops on the UI thread when the gate flips; re-created (and so
+  // restarted) when the loop's own settings change.
+  useAnimatedReaction(
+    () => local && gate.value,
+    (run, was) => {
+      if (run === was) {
+        return;
+      }
+      cancelAnimation(clock);
+      if (!run) {
+        clock.value = 0;
+        return;
+      }
+      const cycle = alternate ? duration * 2 : duration;
+      const phase = delay < 0 ? ((-delay % cycle) + cycle) % cycle / cycle : 0;
+      clock.value = phase;
+      const loop = withRepeat(
+        withSequence(
+          withTiming(0, {duration: 0}),
+          withTiming(1, {duration: cycle, easing: Easing.linear}),
+        ),
+        -1,
+      );
+      const first = withSequence(
+        withTiming(1, {duration: (1 - phase) * cycle, easing: Easing.linear}),
+        loop,
+      );
+      clock.value = delay > 0 ? withDelay(delay, first) : first;
+    },
+    [local, duration, delay, alternate],
+  );
+  useEffect(() => () => cancelAnimation(clock), [clock]);
 
   return useDerivedValue(() => {
     const c = clock.value;
@@ -343,10 +365,11 @@ export function enterUp(index = 0, {step = 80, delay = 0, duration = 600, dy = 3
 export function ViewportGate({style, children, margin = 120}) {
   useRenderCount('ViewportGate');
   const ctx = useContext(RevealCtx);
+  const parent = useContext(LoopActive);
   const ref = useRef(null);
   const top = useSharedValue(0);
   const height = useSharedValue(1e9);
-  const [visible, setVisible] = useState(true);
+  const own = useSharedValue(parent.value);
   const vh = ctx?.viewportH ?? 800;
   const scrollY = ctx?.scrollY;
 
@@ -361,25 +384,27 @@ export function ViewportGate({style, children, margin = 120}) {
     });
   };
 
+  // Decided on the UI thread during scroll: no JS round trip, no re-render.
   useAnimatedReaction(
     () => {
+      if (!parent.value) {
+        return false;
+      }
       if (!scrollY) {
         return true;
       }
       const y = scrollY.value;
       return top.value + height.value > y - margin && top.value < y + vh + margin;
     },
-    (on, was) => {
-      if (on !== was) {
-        runOnJS(setVisible)(on);
-      }
+    on => {
+      own.value = on;
     },
     [vh, margin],
   );
 
   return (
     <View ref={ref} collapsable={false} onLayout={onLayout} style={style}>
-      <LoopGate active={visible}>{children}</LoopGate>
+      <LoopActive.Provider value={own}>{children}</LoopActive.Provider>
     </View>
   );
 }
