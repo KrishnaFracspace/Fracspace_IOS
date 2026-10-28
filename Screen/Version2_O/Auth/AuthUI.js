@@ -102,6 +102,8 @@ export function AuthScreen({children, overlay}) {
           mixWithOthers={muted ? 'mix' : 'inherit'}
           ignoreSilentSwitch={muted ? 'obey' : 'ignore'}
           shutterColor="transparent"
+          // Nothing reads progress: tick rarely instead of every 250 ms.
+          progressUpdateInterval={5000}
           onError={() => setVideoFailed(true)}
         />
       )}
@@ -152,6 +154,16 @@ export function AuthScreen({children, overlay}) {
       {overlay}
     </View>
   );
+}
+
+/**
+ * Holds one panel (Login or Sign-up). Both stay mounted so switching creates
+ * no views; the one becoming active plays paneIn, the other hides at once.
+ */
+export function PanelSlot({active, children}) {
+  const p = useToggle(active, {duration: 550, easing: E.out}, {duration: 0});
+  const anim = useAnimatedStyle(() => ({opacity: p.value, transform: [{translateY: (1 - p.value) * 18}]}));
+  return <Animated.View style={[anim, !active && styles.hidden]}>{children}</Animated.View>;
 }
 
 /** `.pane`: one step of the flow; remount it (new `key`) to replay paneIn. */
@@ -356,6 +368,7 @@ export function OtpBoxes({digits, inputRefs, maxLength, onChange, onKeyPress}) {
 const styles = StyleSheet.create({
   app: {flex: 1, backgroundColor: '#061040'},
   flex: {flex: 1},
+  hidden: {display: 'none'},
   flexShrink: {flexShrink: 1},
   logo: {position: 'absolute', left: 24, zIndex: 5},
   logoImg: {height: 24, width: 96, tintColor: colors.white},

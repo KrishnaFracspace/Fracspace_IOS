@@ -26,8 +26,9 @@ import { alertRequestError, formatSeconds, isValidEmail, isValidName, isValidPho
 /**
  * Sign-up steps (details → OTP), shown inside LoginSignup's screen next to
  * LoginPanel. `onSwitch('login')` swaps back; `showToast` shows LoginSignup's toast.
+ * Both panels stay mounted; only the `active` one listens for the SMS and back.
  */
-export default function SignupPanel({ onSwitch, showToast }) {
+export default function SignupPanel({ active, onSwitch, showToast }) {
   const navigation = useNavigation();
   const { setGlobalState } = useContext(AppContext);
   const [visible1, setVisible1] = useState(true);
@@ -43,7 +44,7 @@ export default function SignupPanel({ onSwitch, showToast }) {
   // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
   // submits as soon as all 6 digits are in.
   const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp, submitOtp, submitting } = useOtpAutofill({
-    listenForSms: visible2 && selectedCode.code === '+91',
+    listenForSms: active && visible2 && selectedCode.code === '+91',
     onComplete: () => handleOTPLogin(),
   });
 
@@ -123,6 +124,7 @@ export default function SignupPanel({ onSwitch, showToast }) {
   // Android back: OTP step → form → Login panel.
   useFocusEffect(
     React.useCallback(() => {
+      if (!active) return undefined;
       const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
         if (visible2) {
           backToForm();
@@ -132,7 +134,7 @@ export default function SignupPanel({ onSwitch, showToast }) {
         return true;
       });
       return () => subscription.remove();
-    }, [visible2, backToForm, onSwitch])
+    }, [active, visible2, backToForm, onSwitch])
   );
 
 const handleOTPLogin = async () => {

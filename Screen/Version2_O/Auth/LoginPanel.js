@@ -13,9 +13,10 @@ import { alertRequestError, formatSeconds, isValidEmail, isValidPhone, onlyDigit
 /**
  * Login steps (phone/email → OTP), shown inside LoginSignup's screen so the
  * intro video keeps playing when switching to Sign-up. `onSwitch('signup')`
- * swaps the panel; `showToast` shows LoginSignup's toast.
+ * swaps the panel; `showToast` shows LoginSignup's toast. Both panels stay
+ * mounted; only the `active` one listens for the SMS and the back button.
  */
-export default function LoginPanel({ onSwitch, showToast }) {
+export default function LoginPanel({ active, onSwitch, showToast }) {
   const navigation = useNavigation();
   const { globalState, setGlobalState } = useContext(AppContext);
   const [visible1, setVisible1] = useState(true);
@@ -34,7 +35,7 @@ export default function LoginPanel({ onSwitch, showToast }) {
   // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
   // submits as soon as all 6 digits are in; submitOtp sends one request at a time.
   const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp, submitOtp, submitting } = useOtpAutofill({
-    listenForSms: visible2 && selectedCode.code === '+91',
+    listenForSms: active && visible2 && selectedCode.code === '+91',
     onComplete: verifyOtp,
   });
 
@@ -186,6 +187,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
   // Login (e.g. a deep link needing login); only exit when Login is the root.
   useFocusEffect(
     React.useCallback(() => {
+      if (!active) return undefined;
       const onBackPress = () => {
         if (visible2) {
           backToPhoneStep();
@@ -200,7 +202,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
       // RN 0.77+ removed BackHandler.removeEventListener; remove via the subscription.
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, [visible2, backToPhoneStep, navigation])
+    }, [active, visible2, backToPhoneStep, navigation])
   );
 
   const isIndia = selectedCode.code === '+91';
