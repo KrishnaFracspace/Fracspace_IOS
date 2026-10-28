@@ -30,6 +30,7 @@ import {colors, fonts, ls} from '../SpecialSection/theme';
 import {E, PressScale, enterUp, useLoop, useReducedMotion, useToggle} from '../SpecialSection/anim';
 import {BackIcon, GlassButton, Grain} from '../SpecialSection/HubBits';
 import {videoSource} from '../../utils/videoSource';
+import {EDGE_TO_EDGE} from '../../utils/statusBar';
 
 const INTRO_VIDEO = 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/videos/FRACSPACE_Login_Intro.mp4';
 const logo = require('../assets/Fslogoapp.png');
@@ -81,7 +82,9 @@ export function AuthScreen({children}) {
         <Image source={logo} style={styles.logoImg} resizeMode="contain" />
       </Animated.View>
 
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      {/* Android 15+ (targetSdk 35+) is edge-to-edge, where adjustResize no
+          longer shrinks the window for the keyboard: pad it there like iOS. */}
+      <KeyboardAvoidingView style={styles.flex} behavior={EDGE_TO_EDGE ? 'padding' : undefined}>
         <ScrollView
           style={styles.flex}
           contentContainerStyle={[styles.panel, {paddingBottom: 30 + insets.bottom, paddingTop: insets.top + 60}]}
