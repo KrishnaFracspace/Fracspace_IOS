@@ -7,7 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../Context/AppContext'
 import { trackLogin } from '../utils/analytics';
 import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
-import { AuthScreen, BackButton, CountryCode, Field, GoldButton, Heading, OtpBoxes, Pane, Swap } from './Auth/AuthUI';
+import { AuthScreen, BackButton, CountryCode, Field, GoldButton, Heading, OtpBoxes, Pane, Swap, Toast, useToast } from './Auth/AuthUI';
+import { alertRequestError, formatSeconds, isValidEmail, isValidPhone, onlyDigits, phoneMaxLength, useCooldown, useSingleFlight } from './Auth/authFlow';
 
 export default function NewLogin() {
   const navigation = useNavigation();
@@ -19,6 +20,9 @@ export default function NewLogin() {
   const [showPicker, setShowPicker] = useState(false);
   const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India', flag: '🇮🇳' });
   const route = useRoute();
+  const [sending, run] = useSingleFlight();
+  const [cooldown, startCooldown] = useCooldown();
+  const [toast, showToast] = useToast();
 
   // Indian numbers get the OTP by SMS; other countries by email.
   const verifyOtp = () =>
@@ -116,108 +120,83 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
         // Standard Firebase "login" event; never send the email (GA terms).
         trackLogin('phone_otp');
         await handleLoginSuccess(res, selectedCode?.code + phone);
+      } else {
+        Alert.alert('Wrong code', res?.message || 'Please check the code and try again.');
       }
     } catch (error) {
-      if (error?.response) {
-        console.error('Response Error', `${error?.response?.data?.message}`);
-        Alert.alert('Response Error', `${error?.response?.data?.message}`);
-      } else if (error?.request) {
-        Alert.alert('Request error:', 'Please Check Your Internet Connection');
-      } else {
-        Alert.alert('Error:', `${error?.message}`);
-      }
+      alertRequestError(error, 'Couldn’t verify the code');
     }
   };
 
-  const handleLogin = async () => {
-    const payload = JSON.stringify({
-      phoneNumber: selectedCode?.code + phone,
-      smsCountry: true
-    });
+  // Sends the OTP (SMS for +91, email otherwise). Resolves to true when sent.
+  const requestOtp = async () => {
+    const isIndia = selectedCode.code === '+91';
+    const payload = isIndia
+      ? JSON.stringify({ phoneNumber: selectedCode?.code + phone, smsCountry: true })
+      : JSON.stringify({ email: email.trim() });
     try {
-      const { data: res } = await GetLogin(payload);
+      const { data: res } = isIndia ? await GetLogin(payload) : await OtpLoginWithEmail(payload);
       if (res?.success) {
         setVisible2(true);
         setVisible1(false);
+        startCooldown();
+        return true;
       }
+      Alert.alert('Couldn’t send the code', res?.message || 'Please try again.');
     } catch (error) {
-      if (error?.response) {
-        if (error.response.status == 401) {
-          Alert.alert('User not found!', "You're not registered yet. Sign up now.");
-          // You can show this in a toast, alert, etc.
-        } else {
-          console.error('API error:', error.response.data);
-        }
-        console.log('like', `${JSON.stringify(error?.response)}`);
-      } else if (error?.request) {
-        Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
+      if (error?.response?.status === 401) {
+        Alert.alert('User not found!', "You're not registered yet. Sign up now.");
       } else {
-        Alert.alert('Error:', `${error?.message}`);
+        alertRequestError(error, 'Couldn’t send the code');
       }
     }
+    return false;
   };
-
-  const handleLoginWithEmail = async () => {
-    let payload = JSON.stringify(
-      {
-        email: email
-      });
-    try {
-      let { data: res } = await OtpLoginWithEmail(payload);
-      if (res?.success) {
-        setVisible2(true);
-        setVisible1(false);
-      }
-    } catch (error) {
-      if (error?.response) {
-        if (error.response.status == 401) {
-          Alert.alert('User not found!', "You're not registered yet. Sign up now.");
-        } else {
-          console.error('API error:', error.response.data);
-        }
-        console.log('like', `${JSON.stringify(error?.response)}`);
-      } else if (error?.request) {
-        Alert.alert('Request error:', `${JSON.stringify(error?.request)}`);
-      } else {
-        Alert.alert('Error:', `${error?.message}`);
-      }
-    }
-  }
 
   const handleOtpLoginWithEmail = async () => {
     const otp = otpDigits.join('');
     let payload = JSON.stringify({
-      email: email,
+      email: email.trim(),
       otp: otp
     });
     try {
       let { data: res } = await verifyOtpLogin(payload);
-      //  console.log(res,"========data==67")
       if (res?.success) {
         trackLogin('email_otp');
         await handleLoginSuccess(res, selectedCode?.code + phone);
+      } else {
+        Alert.alert('Wrong code', res?.message || 'Please check the code and try again.');
       }
     } catch (error) {
-      if (error?.response) {
-        Alert.alert('Response Error', `${error?.response?.data?.message}`);
-      } else if (error?.request) {
-        Alert.alert('Request error:', 'Please Check Your Internet Connection');
-      } else {
-        Alert.alert('Error:', `${error?.message}`);
-      }
+      alertRequestError(error, 'Couldn’t verify the code');
     }
   }
 
+  const backToPhoneStep = React.useCallback(() => {
+    resetOtp();
+    setVisible1(true);
+    setVisible2(false);
+  }, [resetOtp]);
+
+  // Android back: OTP step → phone step; then back to the screen that opened
+  // Login (e.g. a deep link needing login); only exit when Login is the root.
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
+        if (visible2) {
+          backToPhoneStep();
+          return true;
+        }
+        if (navigation.canGoBack()) {
+          return false;
+        }
         BackHandler.exitApp();
         return true;
       };
       // RN 0.77+ removed BackHandler.removeEventListener; remove via the subscription.
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, [])
+    }, [visible2, backToPhoneStep, navigation])
   );
   const goToSignup = () => {
     const redirect = route.params?.redirectAfterLogin;
@@ -230,11 +209,34 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
     }
   };
 
-  const sendOtp = () =>
-    selectedCode.code === '+91' ? handleLogin() : handleLoginWithEmail();
+  const isIndia = selectedCode.code === '+91';
+  const phoneOk = isValidPhone(selectedCode.code, phone);
+  const emailOk = isIndia || isValidEmail(email);
+
+  const getOtp = () => {
+    if (!phoneOk) {
+      Alert.alert('Check your number', isIndia ? 'Enter your 10-digit mobile number.' : 'Enter a valid phone number.');
+      return;
+    }
+    if (!emailOk) {
+      Alert.alert('Check your email', 'Enter a valid email address.');
+      return;
+    }
+    run(requestOtp);
+  };
+
+  const resend = () => {
+    if (cooldown > 0) return;
+    run(async () => {
+      if (await requestOtp()) {
+        resetOtp();
+        showToast('A new code is on its way');
+      }
+    });
+  };
 
   return (
-    <AuthScreen>
+    <AuthScreen overlay={<Toast message={toast} />}>
       {visible1 &&
         <Pane key="login">
           <Heading eyebrow="WELCOME BACK" title={'Own extraordinary\nplaces, together.'} />
@@ -244,13 +246,13 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
             placeholder="Phone number"
             accessibilityLabel="Phone number"
             keyboardType="number-pad"
-            maxLength={10}
+            maxLength={phoneMaxLength(selectedCode.code)}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={t => setPhone(onlyDigits(t))}
             textContentType="telephoneNumber"
             autoComplete="tel"
           />
-          {selectedCode.code !== '+91' &&
+          {!isIndia &&
             <Field
               placeholder="Email address"
               accessibilityLabel="Email address"
@@ -263,15 +265,11 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
             />
           }
           <GoldButton
-            label="Get OTP"
-            off={phone === ''}
-            onPress={() => {
-              if (phone === '') {
-                Alert.alert('Oops! You missed the phone number.');
-                return;
-              }
-              sendOtp();
-            }}
+            label={sending ? 'Sending…' : 'Get OTP'}
+            busy={sending}
+            off={!phoneOk || !emailOk}
+            disabled={sending}
+            onPress={getOtp}
           />
           <Swap text="Don’t have an account?" action="Sign up" onPress={goToSignup} />
         </Pane>
@@ -280,19 +278,12 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
       {visible2 &&
         <Pane key="otp">
           <View style={styles.otpHead}>
-            <BackButton
-              label="Change number"
-              onPress={() => {
-                resetOtp();
-                setVisible1(true);
-                setVisible2(false);
-              }}
-            />
+            <BackButton label="Change number" onPress={backToPhoneStep} />
             <Heading
               eyebrow="VERIFY"
               title="Enter the code"
               titleTop={6}
-              sub={`Sent to ${selectedCode.code === '+91' ? `${selectedCode.code} ${phone}` : email}`}
+              sub={`Sent to ${isIndia ? `${selectedCode.code} ${phone}` : email.trim()}`}
             />
           </View>
           <OtpBoxes
@@ -311,11 +302,9 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
           />
           <Swap
             text="Didn’t get it?"
-            action="Resend code"
-            onPress={() => {
-              resetOtp();
-              sendOtp();
-            }}
+            action={sending ? 'Sending…' : cooldown > 0 ? `Resend in ${formatSeconds(cooldown)}` : 'Resend code'}
+            disabled={sending || cooldown > 0}
+            onPress={resend}
           />
         </Pane>
       }
@@ -324,6 +313,7 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
         show={showPicker}
         pickerButtonOnPress={(item) => {
           setSelectedCode({ code: item.dial_code, name: item.name, flag: item.flag });
+          setPhone(p => p.slice(0, phoneMaxLength(item.dial_code)));
           setShowPicker(false);
         }}
         onBackdropPress={() => setShowPicker(false)}

@@ -2,7 +2,7 @@
 // "Fracspace Co-own Flow" design artifact (local copies in docs/login-v2/design).
 // Only looks: NewLogin and NewSigin keep their own state, API calls and
 // navigation and pass them in.
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -47,7 +47,7 @@ const logoIn = enterUp(0, {dy: 18, duration: 800, delay: 100});
  * The whole screen: intro video with its shade, logo, grain, and the bottom
  * panel (`.lpanel`) that holds the current pane and the legal line.
  */
-export function AuthScreen({children}) {
+export function AuthScreen({children, overlay}) {
   const insets = useSafeAreaInsets();
   const focused = useIsFocused();
   const [videoFailed, setVideoFailed] = useState(false);
@@ -96,6 +96,7 @@ export function AuthScreen({children}) {
         </ScrollView>
       </KeyboardAvoidingView>
       <Grain opacity={0.07} />
+      {overlay}
     </View>
   );
 }
@@ -186,14 +187,57 @@ export function GoldButton({label, off, busy, onPress, disabled, style}) {
 }
 
 /** `.swap`: "Don't have an account? Sign up". */
-export function Swap({text, action, onPress}) {
+export function Swap({text, action, onPress, disabled}) {
   return (
     <Text style={styles.swap}>
       {text}{' '}
-      <Text style={styles.swapBtn} onPress={onPress} suppressHighlighting>
+      <Text
+        style={[styles.swapBtn, disabled && styles.swapBtnOff]}
+        onPress={disabled ? undefined : onPress}
+        accessibilityRole="button"
+        accessibilityState={{disabled: !!disabled}}
+        suppressHighlighting>
         {action}
       </Text>
     </Text>
+  );
+}
+
+/** Message for <Toast>: `show(text)` shows it for `ms`. Returns [message, show]. */
+export function useToast(ms = 1600) {
+  const [message, setMessage] = useState('');
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const show = useCallback(
+    text => {
+      clearTimeout(timer.current);
+      setMessage(text);
+      timer.current = setTimeout(() => setMessage(''), ms);
+    },
+    [ms],
+  );
+  return [message, show];
+}
+
+/** `.toast`: gold pill that drops in from the top (spring .5s, fade .25s). */
+export function Toast({message}) {
+  const insets = useSafeAreaInsets();
+  const last = useRef(message);
+  if (message) {
+    last.current = message;
+  }
+  const slide = useToggle(!!message, {duration: 500, easing: E.spring});
+  const fade = useToggle(!!message, {duration: 250});
+  const anim = useAnimatedStyle(() => ({
+    opacity: fade.value,
+    transform: [{translateY: (1 - slide.value) * -20}],
+  }));
+  return (
+    <View pointerEvents="none" style={[styles.toastWrap, {top: insets.top + 52}]}>
+      <Animated.View style={[styles.toast, anim]} accessibilityLiveRegion="polite">
+        <Text style={styles.toastText}>{last.current}</Text>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -322,6 +366,16 @@ const styles = StyleSheet.create({
   },
   swap: {fontFamily: fonts.regular, fontSize: 13, color: colors.muted, textAlign: 'center', paddingVertical: 8},
   swapBtn: {fontFamily: fonts.bold, color: colors.gold},
+  swapBtnOff: {color: colors.muted},
+  toastWrap: {position: 'absolute', left: 0, right: 0, alignItems: 'center', zIndex: 55},
+  toast: {
+    height: 40,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+    justifyContent: 'center',
+    backgroundColor: colors.gold,
+  },
+  toastText: {fontFamily: fonts.bold, fontSize: 13, color: colors.ink},
   glass: {backgroundColor: 'rgba(10,10,12,0.42)', borderColor: 'rgba(255,255,255,0.2)'},
   otp: {flexDirection: 'row', gap: 8},
   ob: {

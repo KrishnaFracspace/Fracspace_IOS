@@ -3,9 +3,10 @@ import {
   View,
   Alert,
   Keyboard,
+  BackHandler,
   StyleSheet,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { CountryPicker } from 'react-native-country-codes-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRoute } from '@react-navigation/native';
@@ -19,7 +20,8 @@ import {
 import { AppContext } from '../Context/AppContext';
 import { trackSignUp } from '../utils/analytics';
 import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
-import { AuthScreen, BackButton, CountryCode, Field, GoldButton, Heading, OtpBoxes, Pane, Swap } from './Auth/AuthUI';
+import { AuthScreen, BackButton, CountryCode, Field, GoldButton, Heading, OtpBoxes, Pane, Swap, Toast, useToast } from './Auth/AuthUI';
+import { alertRequestError, formatSeconds, isValidEmail, isValidName, isValidPhone, onlyDigits, phoneMaxLength, useCooldown, useSingleFlight } from './Auth/authFlow';
 
 export default function NewSigin() {
   const navigation = useNavigation();
@@ -32,6 +34,9 @@ export default function NewSigin() {
   const [showPicker, setShowPicker] = useState(false);
   const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India', flag: '🇮🇳' });
   const route = useRoute();
+  const [sending, run] = useSingleFlight();
+  const [cooldown, startCooldown] = useCooldown();
+  const [toast, showToast] = useToast();
   // Fills the code from the SMS (Android) / keyboard suggestion (iOS) and
   // submits as soon as all 6 digits are in.
   const { otpDigits, inputRefs, handleChange, handleKeyPress, resetOtp, submitOtp, submitting } = useOtpAutofill({
@@ -39,66 +44,91 @@ export default function NewSigin() {
     onComplete: () => handleOTPLogin(),
   });
 
+  const isIndia = selectedCode.code === '+91';
+  const nameOk = isValidName(name);
+  const phoneOk = isValidPhone(selectedCode.code, phone);
+  const emailOk = isValidEmail(email);
+
   const handleRegister = async () => {
-    if (!phone || !name || !email) {
-      Alert.alert('Oops!', 'You missed some details.');
+    if (!nameOk) {
+      Alert.alert('Check your name', 'Enter your full name.');
       return;
     }
-    try {
-      const payload = {
-        userName: name,
-        phoneNumber: selectedCode.code + phone,
-        email,
-        countryCode: selectedCode.code,
-      };
-      const { data: res } = await GetRegistration(payload);
-      if (res?.success) {
-        if (selectedCode.code === '+91') {
-          await handleLogin();
+    if (!phoneOk) {
+      Alert.alert('Check your number', isIndia ? 'Enter your 10-digit mobile number.' : 'Enter a valid phone number.');
+      return;
+    }
+    if (!emailOk) {
+      Alert.alert('Check your email', 'Enter a valid email address.');
+      return;
+    }
+    await run(async () => {
+      try {
+        const payload = {
+          userName: name.trim(),
+          phoneNumber: selectedCode.code + phone,
+          email: email.trim(),
+          countryCode: selectedCode.code,
+        };
+        const { data: res } = await GetRegistration(payload);
+        if (res?.success) {
+          await requestOtp();
         } else {
-          await handleLoginWithEmail();
+          Alert.alert('Couldn’t create your account', res?.message || 'Please try again.');
         }
+      } catch (error) {
+        alertRequestError(error, 'Couldn’t create your account');
       }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Something went wrong'
-      );
-    }
+    });
   };
 
-  const handleLogin = async () => {
+  // Sends the OTP (SMS for +91, email otherwise). Resolves to true when sent.
+  const requestOtp = async () => {
     try {
-      const { data: res } = await GetLogin({
-        phoneNumber: phone,
-        smsCountry: true,
+      const { data: res } = isIndia
+        ? await GetLogin({ phoneNumber: phone, smsCountry: true })
+        : await OtpLoginWithEmail({ email: email.trim() });
+      if (res?.success) {
+        setVisible1(false);
+        setVisible2(true);
+        startCooldown();
+        return true;
+      }
+      Alert.alert('Couldn’t send the code', res?.message || 'Please try again.');
+    } catch (error) {
+      alertRequestError(error, 'Couldn’t send the code');
+    }
+    return false;
+  };
+
+  const resend = () => {
+    if (cooldown > 0) return;
+    run(async () => {
+      if (await requestOtp()) {
+        resetOtp();
+        showToast('A new code is on its way');
+      }
+    });
+  };
+
+  const backToForm = React.useCallback(() => {
+    resetOtp();
+    setVisible2(false);
+    setVisible1(true);
+  }, [resetOtp]);
+
+  // Android back on the OTP step returns to the form instead of leaving.
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!visible2) return undefined;
+      const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+        backToForm();
+        return true;
       });
-      if (res?.success) {
-        setVisible1(false);
-        setVisible2(true);
-      }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Network error'
-      );
-    }
-  };
+      return () => subscription.remove();
+    }, [visible2, backToForm])
+  );
 
-  const handleLoginWithEmail = async () => {
-    try {
-      const { data: res } = await OtpLoginWithEmail({ email });
-      if (res?.success) {
-        setVisible1(false);
-        setVisible2(true);
-      }
-    } catch (error) {
-      Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Network error'
-      );
-    }
-  };
 const handleOTPLogin = async () => {
   const otp = otpDigits.join('');
 
@@ -118,7 +148,7 @@ const handleOTPLogin = async () => {
       });
     } else {
       response = await verifyOtpLogin({
-        email,
+        email: email.trim(),
         otp,
       });
     }
@@ -129,7 +159,7 @@ const handleOTPLogin = async () => {
 
       // Save auth data
       await AsyncStorage.setItem('mytoken', token);
-      await AsyncStorage.setItem('Email', email);
+      await AsyncStorage.setItem('Email', email.trim());
 
       // Standard Firebase "sign_up" event (never the email: GA terms). The
       // helper can't throw, so analytics can't fail a signup.
@@ -138,7 +168,7 @@ const handleOTPLogin = async () => {
       setGlobalState(prev => ({
         ...prev,
         token,
-        userEmail: email,
+        userEmail: email.trim(),
         userName: response.data.userName,
       }));
 
@@ -186,12 +216,11 @@ const handleOTPLogin = async () => {
         index: routes.length - 1,
         routes,
       });
+    } else {
+      Alert.alert('Wrong code', response?.data?.message || 'Please check the code and try again.');
     }
   } catch (error) {
-    Alert.alert(
-      'Error',
-      error?.response?.data?.message || 'Invalid OTP'
-    );
+    alertRequestError(error, 'Couldn’t verify the code');
   }
 };
 
@@ -207,7 +236,7 @@ const handleOTPLogin = async () => {
   };
 
   return (
-    <AuthScreen>
+    <AuthScreen overlay={<Toast message={toast} />}>
       {visible1 && (
         <Pane key="signup" gap={12}>
           <Heading eyebrow="CREATE ACCOUNT" title={'Start your\nco-ownership journey.'} />
@@ -234,9 +263,9 @@ const handleOTPLogin = async () => {
             placeholder="Phone number"
             accessibilityLabel="Phone number"
             keyboardType="number-pad"
-            maxLength={10}
+            maxLength={phoneMaxLength(selectedCode.code)}
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={t => setPhone(onlyDigits(t))}
             textContentType="telephoneNumber"
             autoComplete="tel"
           />
@@ -251,8 +280,10 @@ const handleOTPLogin = async () => {
             autoComplete="email"
           />
           <GoldButton
-            label="Register"
-            off={!phone || !name || !email}
+            label={sending ? 'Creating account…' : 'Register'}
+            busy={sending}
+            off={!nameOk || !phoneOk || !emailOk}
+            disabled={sending}
             onPress={handleRegister}
             style={styles.register}
           />
@@ -263,19 +294,12 @@ const handleOTPLogin = async () => {
       {visible2 && (
         <Pane key="otp">
           <View style={styles.otpHead}>
-            <BackButton
-              label="Change details"
-              onPress={() => {
-                resetOtp();
-                setVisible2(false);
-                setVisible1(true);
-              }}
-            />
+            <BackButton label="Change details" onPress={backToForm} />
             <Heading
               eyebrow="VERIFY"
               title="Enter the code"
               titleTop={6}
-              sub={`Sent to ${selectedCode.code === '+91' ? `${selectedCode.code} ${phone}` : email}`}
+              sub={`Sent to ${isIndia ? `${selectedCode.code} ${phone}` : email.trim()}`}
             />
           </View>
           <OtpBoxes
@@ -294,15 +318,9 @@ const handleOTPLogin = async () => {
           />
           <Swap
             text="Didn’t get it?"
-            action="Resend code"
-            onPress={() => {
-              resetOtp();
-              if (selectedCode.code === '+91') {
-                handleLogin();
-              } else {
-                handleLoginWithEmail();
-              }
-            }}
+            action={sending ? 'Sending…' : cooldown > 0 ? `Resend in ${formatSeconds(cooldown)}` : 'Resend code'}
+            disabled={sending || cooldown > 0}
+            onPress={resend}
           />
         </Pane>
       )}
@@ -326,6 +344,7 @@ const handleOTPLogin = async () => {
             name: item.name,
             flag: item.flag,
           });
+          setPhone(p => p.slice(0, phoneMaxLength(item.dial_code)));
           setShowPicker(false);
         }}
         onBackdropPress={() => setShowPicker(false)}
