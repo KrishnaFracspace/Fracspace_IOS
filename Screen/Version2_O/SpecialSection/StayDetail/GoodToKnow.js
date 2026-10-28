@@ -114,13 +114,13 @@ function GoodToKnow({onOpenPolicy}) {
         <View style={styles.tcol}>
           <Sun />
           <Text style={styles.tlabel}>CHECK-IN</Text>
-          <Text style={styles.tval}>[2:00 PM]</Text>
+          <Text style={styles.tval}>2:00 PM</Text>
         </View>
         <TravelLine />
         <View style={[styles.tcol, styles.tcolEnd]}>
           <Moon />
           <Text style={styles.tlabel}>CHECK-OUT</Text>
-          <Text style={[styles.tval, styles.right]}>[11:00 AM]</Text>
+          <Text style={[styles.tval, styles.right]}>11:00 AM</Text>
         </View>
       </Reveal>
 
