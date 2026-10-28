@@ -155,3 +155,18 @@ bar swap, Hub re-render and every loop restarting at once). Not done in this pas
 Proposed: R1 draw the static conic ring as one pre-rendered PNG instead of 72
 `<Path>`s; R2 gate loops with a shared value on the UI thread (no React
 re-render on focus/blur or when a ViewportGate flips during scroll).
+
+### After R1 + R2 (`81771b5`, `ed2e357`), Android, dev
+| Metric | After A–C | After R1 + R2 |
+|---|---|---|
+| Re-enter Hub tap → frame (median of 9) | ~790 ms | ~650 ms (560–820) |
+| tap → Hub focus render | ~510 ms | ~445 ms |
+| Hub focus render → effects | ~260 ms | ~150 ms |
+| Idle frames p50 / p90, janky | 48 / 61 ms, 49 % | 48 / 61 ms, 49 % |
+| Scroll frames p50 / p99, janky | 61 / 250 ms, 74 % | 73 / 150 ms, 80 % (noisy) |
+| Memory, 10 cycles (PSS / native) | 961 → 980 / 238 → 239 MB | 969 → 951 / 285 → 288 MB: no leak |
+
+R1's measured gain (~65 ms) is below the ~145 ms of the no-NavCore experiment:
+the light bar's NavCore still mounts and unmounts its 3 `Word` loops and SVG
+disc on every swap. What remains of re-entry is mostly React Navigation's
+tab switch and the screen attach (~445 ms in dev), not Hub code.
