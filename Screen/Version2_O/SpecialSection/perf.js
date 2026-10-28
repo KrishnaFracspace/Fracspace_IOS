@@ -24,6 +24,14 @@ export function markTap(name) {
   }
 }
 
+/** Logs ms since the last markTap at a named step (no-op without a tap). */
+export function sinceTap(step) {
+  const tap = ON && global.__ssperfTap;
+  if (tap) {
+    console.log(`[ssperf] ${tap.name} ${step} +${Math.round(now() - tap.at)}ms`);
+  }
+}
+
 /** Logs first render → first painted frame, and tap → frame if markTap ran. */
 export function useFirstFrame(name) {
   const t0 = useRef(ON ? now() : 0);
@@ -64,6 +72,7 @@ export function useJsFps(name, active, every = 5000) {
     const tap = first.current ? null : global.__ssperfTap;
     first.current = false;
     if (tap) {
+      sinceTap('focus effects start');
       // Re-entry: the screen is already mounted, so time tap → next frame.
       requestAnimationFrame(() => {
         console.log(`[ssperf] ${name} focus tap→frame=${Math.round(now() - tap.at)}ms`);

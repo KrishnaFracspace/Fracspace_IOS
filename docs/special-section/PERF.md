@@ -142,3 +142,16 @@ Notes: scroll p99 swings 150–300 ms between identical runs, so treat it as noi
 PSS moves ±30 MB run to run while native heap holds steady: no leak. Re-entry is
 still ~1.1 s. Next to try: a Time Profiler capture of the tab switch (light → dark
 bar swap, Hub re-render and every loop restarting at once). Not done in this pass.
+
+### Re-entry breakdown (Home → centre tab, Android, dev, `sinceTap` probes)
+| Step | ms since tap |
+|---|---|
+| tab bar renders dark bar | 35 |
+| dark bar mounted (bar swap + screen switch committed) | ~330 (~185 without `NavCore`: its 72-path SVG costs ~145) |
+| Hub re-renders with `isFocused` (navigation focus event) | ~510 |
+| Hub focus effects start (LoopGate flip re-rendered every `useLoop` user) | ~770 |
+| first frame | ~790 |
+
+Proposed: R1 draw the static conic ring as one pre-rendered PNG instead of 72
+`<Path>`s; R2 gate loops with a shared value on the UI thread (no React
+re-render on focus/blur or when a ViewportGate flips during scroll).

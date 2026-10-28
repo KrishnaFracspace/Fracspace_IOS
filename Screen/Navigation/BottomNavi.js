@@ -5,7 +5,7 @@ import Svg, {Path} from 'react-native-svg';
 import { AppContext } from '../Context/AppContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkNavBar, NavCore, navBottom } from '../Version2_O/SpecialSection/HubNavBar';
-import { markTap } from '../Version2_O/SpecialSection/perf';
+import { markTap, sinceTap } from '../Version2_O/SpecialSection/perf';
 // import { CoOwnContext } from './CoOwnContext';
 
 const {width} = Dimensions.get('window');
@@ -105,6 +105,7 @@ const BottomNavi = forwardRef(({state, navigation}, ref) => {
 
     // Special Section: the design's floating dark pill instead of the white bar.
     if (currentRoute.name === 'SpecialSectionStack') {
+        sinceTap('tab bar render');
         return <DarkNavBar tabs={tabs} onPress={goTo} bottom={navBottom(insets)} />;
     }
 
