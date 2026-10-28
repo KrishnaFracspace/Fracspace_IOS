@@ -29,13 +29,20 @@ function Enter({duration, delay = 0, easing = E.out, frame, style, children, ...
   );
 }
 
-const riseFrame = (dy, axis = 'translateY') => v => {
+// Each frame is its own worklet: Reanimated's plugin doesn't capture closure
+// variables used only as computed keys (`{[axis]: ...}`).
+const RISE = v => {
   'worklet';
-  return {opacity: Math.min(1, v), transform: [{[axis]: dy * (1 - v)}]};
+  return {opacity: Math.min(1, v), transform: [{translateY: 14 * (1 - v)}]};
 };
-const RISE = riseFrame(14);
-const SV_IN = riseFrame(30, 'translateX');
-const SV_BACK = riseFrame(-30, 'translateX');
+const SV_IN = v => {
+  'worklet';
+  return {opacity: Math.min(1, v), transform: [{translateX: 30 * (1 - v)}]};
+};
+const SV_BACK = v => {
+  'worklet';
+  return {opacity: Math.min(1, v), transform: [{translateX: -30 * (1 - v)}]};
+};
 const FADE = v => {
   'worklet';
   return {opacity: v};
