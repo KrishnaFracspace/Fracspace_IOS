@@ -48,6 +48,9 @@ const LIGHT_CONTENT_ROUTES = new Set([
   'StayDetail',
   'StayReview',
   'IvaShop',
+  // Login / Sign-up (dark video backdrop)
+  'NewLogin',
+  'NewSigin',
 ]);
 
 // One entry in React Native's StatusBar stack, updated on every screen change.

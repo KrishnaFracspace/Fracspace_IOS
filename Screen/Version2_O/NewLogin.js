@@ -1,20 +1,13 @@
-import { View, Text, TextInput, Image, TouchableOpacity, Alert, BackHandler, Platform } from 'react-native'
-
-// Android TextInput adds its own vertical/font padding on top of ours; strip it
-// so inputs match the iOS size.
-const androidInputReset = Platform.OS === 'android' ? { includeFontPadding: false, textAlignVertical: 'center' } : null;
+import { View, Alert, BackHandler, StyleSheet } from 'react-native'
 import React, { useContext, useState } from 'react'
-import Icon from 'react-native-vector-icons/Entypo'
-import Ico from 'react-native-vector-icons/Ionicons'
-import Ic from 'react-native-vector-icons/AntDesign'
-import { CommonActions, useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { CountryPicker } from 'react-native-country-codes-picker';
 import { GetLogin, GetOtpForLoginWithNumber, OtpLoginWithEmail, verifyOtpLogin } from '../Services/UserApi'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppContext } from '../Context/AppContext'
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { trackLogin } from '../utils/analytics';
 import useOtpAutofill, { OTP_LENGTH } from '../utils/useOtpAutofill';
+import { AuthScreen, BackButton, CountryCode, Field, GoldButton, Heading, OtpBoxes, Pane, Swap } from './Auth/AuthUI';
 
 export default function NewLogin() {
   const navigation = useNavigation();
@@ -24,7 +17,7 @@ export default function NewLogin() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [showPicker, setShowPicker] = useState(false);
-  const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India' });
+  const [selectedCode, setSelectedCode] = useState({ code: '+91', name: 'India', flag: '🇮🇳' });
   const route = useRoute();
 
   // Indian numbers get the OTP by SMS; other countries by email.
@@ -226,214 +219,127 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
       return () => subscription.remove();
     }, [])
   );
-  return (
-    <SafeAreaView style={{ flex: 1, }}>
-      <View style={{ backgroundColor: '#E8E8E8', paddingTop: '20%', flex: 1 }}>
-        <View style={{ backgroundColor: '#FFFFFF', borderTopLeftRadius: 30, flex: 1, borderTopRightRadius: 30 }}>
-          <View style={{ padding: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 23, color: '#160D1F' }}>Sign in</Text>
-            <TouchableOpacity
-           
-              onPress={() => {
+  const goToSignup = () => {
     const redirect = route.params?.redirectAfterLogin;
     if (redirect) {
       navigation.navigate('NewSigin', {
-        redirectAfterLogin: redirect,   // Pass deep link data to Login too
+        redirectAfterLogin: redirect,   // Pass deep link data to Sign-up too
       });
     } else {
       navigation.navigate('NewSigin');
     }
-  }}
-               style={{ backgroundColor: '#EFF3F9', padding: 5, borderRadius: 5 }}>
-              <Icon name={'cross'} size={20} color={'#160D1F'} />
-            </TouchableOpacity>
+  };
+
+  const sendOtp = () =>
+    selectedCode.code === '+91' ? handleLogin() : handleLoginWithEmail();
+
+  return (
+    <AuthScreen>
+      {visible1 &&
+        <Pane key="login">
+          <Heading eyebrow="WELCOME BACK" title={'Own extraordinary\nplaces, together.'} />
+          <Field
+            style={styles.firstField}
+            leading={<CountryCode flag={selectedCode.flag} code={selectedCode.code} onPress={() => setShowPicker(true)} />}
+            placeholder="Phone number"
+            accessibilityLabel="Phone number"
+            keyboardType="number-pad"
+            maxLength={10}
+            value={phone}
+            onChangeText={setPhone}
+            textContentType="telephoneNumber"
+            autoComplete="tel"
+          />
+          {selectedCode.code !== '+91' &&
+            <Field
+              placeholder="Email address"
+              accessibilityLabel="Email address"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              value={email}
+              onChangeText={setEmail}
+            />
+          }
+          <GoldButton
+            label="Get OTP"
+            off={phone === ''}
+            onPress={() => {
+              if (phone === '') {
+                Alert.alert('Oops! You missed the phone number.');
+                return;
+              }
+              sendOtp();
+            }}
+          />
+          <Swap text="Don’t have an account?" action="Sign up" onPress={goToSignup} />
+        </Pane>
+      }
+
+      {visible2 &&
+        <Pane key="otp">
+          <View style={styles.otpHead}>
+            <BackButton
+              label="Change number"
+              onPress={() => {
+                resetOtp();
+                setVisible1(true);
+                setVisible2(false);
+              }}
+            />
+            <Heading
+              eyebrow="VERIFY"
+              title="Enter the code"
+              titleTop={6}
+              sub={`Sent to ${selectedCode.code === '+91' ? `${selectedCode.code} ${phone}` : email}`}
+            />
           </View>
-          <View style={{ padding: 20 }}>
-            {visible1 &&
-              <View>
-                <View>
-                  <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#160D1F' }}>Phone Number</Text>
-                  <View style={{ borderColor: '#E1E6EB', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <TouchableOpacity
-                      onPress={() => setShowPicker(true)}
-                      style={{ flexDirection: 'row', alignItems: 'center' }}
-                    >
-                      <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 14, color: '#000000' }}>
-                        {selectedCode.code}
-                      </Text>
-                      <Ic name={'caretdown'} size={10} color={'#000000'} style={{ marginLeft: 5 }} />
-                    </TouchableOpacity>
-                    <View style={{ flex: 1, marginLeft: 10 }}>
-                      <TextInput
-                        placeholder='Enter your Number'
-                        placeholderTextColor={'#B2B8BD'}
-                        style={[{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#160D1F', paddingVertical: Platform.OS === 'android' ? 12 : 15 }, androidInputReset]}
-                        keyboardType='number-pad'
-                        maxLength={10}
-                        value={phone}
-                        onChangeText={setPhone}
-                      />
-                    </View>
-                  </View>
-                </View>
+          <OtpBoxes
+            digits={otpDigits}
+            inputRefs={inputRefs}
+            maxLength={OTP_LENGTH}
+            onChange={handleChange}
+            onKeyPress={handleKeyPress}
+          />
+          <GoldButton
+            label={submitting ? 'Verifying…' : 'Verify & continue'}
+            busy={submitting}
+            off={otpDigits.join('').length < OTP_LENGTH}
+            disabled={submitting}
+            onPress={submitOtp}
+          />
+          <Swap
+            text="Didn’t get it?"
+            action="Resend code"
+            onPress={() => {
+              resetOtp();
+              sendOtp();
+            }}
+          />
+        </Pane>
+      }
 
-                {selectedCode.code !== '+91' &&
-                  <View style={{ marginTop: 15 }}>
-                    <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#160D1F' }}>Email</Text>
-                    <View style={{ borderColor: '#E1E8EB', borderWidth: 1, borderRadius: 10, paddingHorizontal: 10, marginTop: 10 }}>
-                      <TextInput
-                        placeholder='Enter your email'
-                        placeholderTextColor={'#B2B8BD'}
-                        style={[{ fontFamily: 'Montserrat-Regular', fontSize: 14, color: '#160D1F', paddingVertical: Platform.OS === 'android' ? 12 : 15 }, androidInputReset]}
-                        value={email}
-                        onChangeText={setEmail}
-                      />
-                    </View>
-                  </View>
-                }
-
-                <CountryPicker
-                  show={showPicker}
-                  pickerButtonOnPress={(item) => {
-                    setSelectedCode({ code: item.dial_code, name: item.name });
-                    setShowPicker(false);
-                  }}
-                  onBackdropPress={() => setShowPicker(false)}
-                  style={{
-                    modal: { height: 400 },
-                    countryName: { color: '#000000' },
-                    dialCode: { color: '#000000' },
-                    flag: { color: '#000000' },
-                    textInput: { color: '#000000' }
-                  }}
-                />
-
-                <TouchableOpacity onPress={() => {
-                  if (phone === '') {
-                    Alert.alert('Oops! You missed the phone number.');
-                    return;
-                  }
-
-                  if (selectedCode.code === '+91') {
-                    handleLogin();
-                  } else {
-                    handleLoginWithEmail();
-                  }
-                }} style={{ backgroundColor: '#EFF3F9', padding: 13, borderRadius: 11, alignItems: 'center', marginTop: 20 }}>
-                  <Text style={{ fontFamily: 'Montserrat-Bold', fontSize: 15, color: '#160D1F' }}>Get OTP</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity onPress={() => {
-                  const redirect = route.params?.redirectAfterLogin;
-                  console.log(redirect, "=====redi-====")
-                  if (redirect) {
-                    navigation.navigate('NewSigin', {
-                      redirectAfterLogin: route?.params?.redirectAfterLogin,
-                    });
-                  } else {
-                    navigation.navigate('NewSigin');
-                  }
-
-                }} style={{ alignSelf: 'center', marginTop: 40 }}>
-                  <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#8E9398' }}>
-                    Don't have an account yet? <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 16, color: '#000000' }}> Sign up</Text>
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            }
-
-            {visible2 &&
-              <>
-                <View style={{ alignSelf: 'flex-start' }}>
-                  <TouchableOpacity onPress={() => {
-                    resetOtp();
-                    setVisible1(true);
-                    setVisible2(false);
-                  }} style={{ backgroundColor: '#EFF3F9', padding: 7, borderRadius: 5 }}>
-                    <Ic name={'arrowleft'} size={20} color={'#160D1F'} />
-                  </TouchableOpacity>
-                </View>
-                <View style={{ paddingHorizontal: 10 }}>
-                  <View style={{ marginTop: 20 }}>
-                    <Text style={{ fontFamily: 'Montserrat-Regular', fontSize: 18, color: '#8E9398' }}>
-                      Please enter the code we sent to {' '}
-                      <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 18, color: '#272A2B' }}>
-                        {selectedCode.code === '+91' ?
-                          `${phone}` : `${email}`
-                        }
-                      </Text>
-                    </Text>
-                  </View>
-
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', alignSelf: 'center', marginTop: 40, width: '100%' }}>
-                    {[0, 1, 2, 3, 4, 5].map((index) => (
-                      <View
-                        key={index}
-                        style={[
-                          { borderColor: '#E1E6EB', borderWidth: 1, borderRadius: 8, paddingHorizontal: 8 },
-                          // Android: fixed, equal box size (empty and filled boxes otherwise differ in width)
-                          Platform.OS === 'android' && { width: 46, paddingHorizontal: 0, alignItems: 'center' },
-                        ]}
-                      >
-                        {/* <TextInput
-                          ref={(ref) => (inputRefs.current[index] = ref)}
-                          style={{ fontFamily: 'WorkSans-Medium', fontSize: 20, color: '#000000', textAlign: 'center', padding: 10 }}
-                          keyboardType="number-pad"
-                          maxLength={1}
-                          value={otpDigits[index]}
-                          textContentType="oneTimeCode"
-                          autoComplete="sms-otp"
-                          importantForAutofill="yes"
-                          onChangeText={(text) => handleChange(text, index)}
-                          onKeyPress={(e) => handleKeyPress(e, index)}
-                        /> */}
-                        <TextInput
-                          ref={(ref) => (inputRefs.current[index] = ref)}
-                          style={[
-                            {
-                              fontFamily: 'WorkSans-Medium',
-                              fontSize: 20,
-                              color: '#000000',
-                              textAlign: 'center',
-                              padding: 10,
-                            },
-                            Platform.OS === 'android' && { width: 46, height: 44, padding: 0 },
-                            androidInputReset,
-                          ]}
-                          keyboardType="number-pad"
-                          maxLength={OTP_LENGTH}
-                          value={otpDigits[index]}
-                          textContentType="oneTimeCode"
-                          autoComplete="sms-otp"
-                          onChangeText={(text) => handleChange(text, index)}
-                          onKeyPress={(e) => handleKeyPress(e, index)}
-                      />
-                        <View style={{ borderTopColor: '#8E9398', borderTopWidth: 1, marginBottom: 10 }}></View>
-                      </View>
-                    ))}
-                  </View>
-
-                  <TouchableOpacity onPress={submitOtp} disabled={submitting} style={{ backgroundColor: '#0F1130', padding: 12, alignItems: 'center', borderRadius: 10, marginTop: 40, opacity: submitting ? 0.6 : 1 }}>
-                    <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 20, color: '#FFFFFF' }}>Continue</Text>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity onPress={() => {
-                    resetOtp();
-                    if (selectedCode.code === '+91') {
-                      handleLogin();
-                    } else {
-                      handleLoginWithEmail();
-                    }
-                  }} style={{ alignItems: 'center', marginTop: 30 }}>
-                    <Text style={{ fontFamily: 'Montserrat-Medium', fontSize: 14, color: '#8E9398' }}>Didn’t get ?{' '}
-                      <Text style={{ fontFamily: 'Montserrat-SemiBold', fontSize: 15, color: '#272A2B', textDecorationLine: 'underline' }}>Send me a new OTP</Text></Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            }
-          </View>
-        </View>
-      </View>
-    </SafeAreaView>
+      <CountryPicker
+        show={showPicker}
+        pickerButtonOnPress={(item) => {
+          setSelectedCode({ code: item.dial_code, name: item.name, flag: item.flag });
+          setShowPicker(false);
+        }}
+        onBackdropPress={() => setShowPicker(false)}
+        style={{
+          modal: { height: 400 },
+          countryName: { color: '#000000' },
+          dialCode: { color: '#000000' },
+          flag: { color: '#000000' },
+          textInput: { color: '#000000' }
+        }}
+      />
+    </AuthScreen>
   )
 }
+
+const styles = StyleSheet.create({
+  firstField: { marginTop: 6 },
+  otpHead: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+});
