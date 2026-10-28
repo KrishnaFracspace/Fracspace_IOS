@@ -36,6 +36,8 @@ import {EDGE_TO_EDGE} from '../../utils/statusBar';
 
 const INTRO_VIDEO = 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/videos/FRACSPACE_Login_Intro.mp4';
 const logo = require('../assets/Fslogoapp.png');
+const AUDIO_OFF = {type: 'disabled'};
+const AUDIO_ON = {type: 'system'};
 
 // Android TextInput adds its own vertical/font padding; strip it so the text
 // sits in the middle of the 56px field like on iOS.
@@ -49,19 +51,26 @@ const logoIn = enterUp(0, {dy: 18, duration: 800, delay: 100});
  * The whole screen: intro video with its shade, logo, grain, and the bottom
  * panel (`.lpanel`) that holds the current pane and the legal line.
  */
-/** True while the keyboard is up (iOS: as it starts moving). */
-function useKeyboardOpen() {
-  const [open, setOpen] = useState(false);
+/**
+ * 0 → 1 as the keyboard comes up (and back), in step with it. Set straight
+ * from the keyboard events on a shared value: no React re-render.
+ */
+function useKeyboardProgress() {
+  const reduced = useReducedMotion();
+  const v = useSharedValue(0);
   useEffect(() => {
     const ios = Platform.OS === 'ios';
-    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setOpen(true));
-    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setOpen(false));
+    const to = target => e => {
+      v.value = reduced ? target : withTiming(target, {duration: e?.duration || 250, easing: E.out});
+    };
+    const show = Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', to(1));
+    const hide = Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', to(0));
     return () => {
       show.remove();
       hide.remove();
     };
-  }, []);
-  return open;
+  }, [reduced, v]);
+  return v;
 }
 
 export function AuthScreen({children, overlay}) {
@@ -71,7 +80,7 @@ export function AuthScreen({children, overlay}) {
   const [muted, setMuted] = useState(true);
   // With the keyboard up the panel rises over the bright part of the video:
   // dim the video and put a dark scrim behind the panel so the text reads.
-  const kb = useToggle(useKeyboardOpen(), {duration: 250});
+  const kb = useKeyboardProgress();
   const dim = useAnimatedStyle(() => ({opacity: kb.value}));
 
   return (
@@ -87,6 +96,8 @@ export function AuthScreen({children, overlay}) {
           repeat
           paused={!focused}
           playInBackground={false}
+          // Muted: no audio track at all, so the audio decoder doesn't run.
+          selectedAudioTrack={muted ? AUDIO_OFF : AUDIO_ON}
           disableFocus={muted}
           mixWithOthers={muted ? 'mix' : 'inherit'}
           ignoreSilentSwitch={muted ? 'obey' : 'ignore'}

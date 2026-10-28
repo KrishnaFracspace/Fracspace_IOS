@@ -303,22 +303,26 @@ const handleLoginSuccess = async (resData, fallbackPhone) => {
         </Pane>
       }
 
-      <CountryPicker
-        show={showPicker}
-        pickerButtonOnPress={(item) => {
-          setSelectedCode({ code: item.dial_code, name: item.name, flag: item.flag });
-          setPhone(p => p.slice(0, phoneMaxLength(item.dial_code)));
-          setShowPicker(false);
-        }}
-        onBackdropPress={() => setShowPicker(false)}
-        style={{
-          modal: { height: 400 },
-          countryName: { color: '#000000' },
-          dialCode: { color: '#000000' },
-          flag: { color: '#000000' },
-          textInput: { color: '#000000' }
-        }}
-      />
+      {/* Mounted only while open: hidden, it still listens to the keyboard
+          and re-renders on every keyboard show/hide and panel switch. */}
+      {showPicker && (
+        <CountryPicker
+          show={showPicker}
+          pickerButtonOnPress={(item) => {
+            setSelectedCode({ code: item.dial_code, name: item.name, flag: item.flag });
+            setPhone(p => p.slice(0, phoneMaxLength(item.dial_code)));
+            setShowPicker(false);
+          }}
+          onBackdropPress={() => setShowPicker(false)}
+          style={{
+            modal: { height: 400 },
+            countryName: { color: '#000000' },
+            dialCode: { color: '#000000' },
+            flag: { color: '#000000' },
+            textInput: { color: '#000000' }
+          }}
+        />
+      )}
     </>
   )
 }

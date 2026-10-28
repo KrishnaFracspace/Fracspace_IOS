@@ -321,30 +321,34 @@ const handleOTPLogin = async () => {
         </Pane>
       )}
 
-      <CountryPicker
-        enableModalAvoiding={false}
-        disableBackdrop={false}
-        style={{
-          modal: {
-            borderTopLeftRadius: 20,
-            borderTopRightRadius: 20,
-            paddingTop: 10,
-            maxHeight: '70%',
-          },
-          itemsList: { maxHeight: 400 },
-        }}
-        show={showPicker}
-        pickerButtonOnPress={(item) => {
-          setSelectedCode({
-            code: item.dial_code,
-            name: item.name,
-            flag: item.flag,
-          });
-          setPhone(p => p.slice(0, phoneMaxLength(item.dial_code)));
-          setShowPicker(false);
-        }}
-        onBackdropPress={() => setShowPicker(false)}
-      />
+      {/* Mounted only while open: hidden, it still listens to the keyboard
+          and re-renders on every keyboard show/hide and panel switch. */}
+      {showPicker && (
+        <CountryPicker
+          enableModalAvoiding={false}
+          disableBackdrop={false}
+          style={{
+            modal: {
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingTop: 10,
+              maxHeight: '70%',
+            },
+            itemsList: { maxHeight: 400 },
+          }}
+          show={showPicker}
+          pickerButtonOnPress={(item) => {
+            setSelectedCode({
+              code: item.dial_code,
+              name: item.name,
+              flag: item.flag,
+            });
+            setPhone(p => p.slice(0, phoneMaxLength(item.dial_code)));
+            setShowPicker(false);
+          }}
+          onBackdropPress={() => setShowPicker(false)}
+        />
+      )}
     </>
   );
 }
