@@ -34,7 +34,7 @@ import {BackIcon, GlassButton, Grain} from '../SpecialSection/HubBits';
 import {videoSource} from '../../utils/videoSource';
 import {EDGE_TO_EDGE} from '../../utils/statusBar';
 
-const INTRO_VIDEO = 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/videos/FRACSPACE_Login_Intro.mp4';
+const INTRO_VIDEO = 'https://fracspace-updates.s3.ap-south-1.amazonaws.com/videos/FRACSPACE_Introo.mp4';
 const logo = require('../assets/Fslogoapp.png');
 const AUDIO_OFF = {type: 'disabled'};
 const AUDIO_ON = {type: 'system'};
