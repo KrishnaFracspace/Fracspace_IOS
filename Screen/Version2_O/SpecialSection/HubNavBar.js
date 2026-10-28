@@ -2,30 +2,17 @@
 //   NavCore     the raised centre button (spinning gold ring, rotating words)
 //   DarkNavBar  the floating glass pill shown while the Special Section tab is open
 import React from 'react';
-import {StyleSheet, Text, View} from 'react-native';
+import {Image, StyleSheet, Text, View} from 'react-native';
 import Animated, {useAnimatedStyle} from 'react-native-reanimated';
 import Svg, {Circle, Defs, LinearGradient as SvgLinear, Path, RadialGradient, Rect, Stop} from 'react-native-svg';
 import {colors, fonts} from './theme';
 import {E, PressScale, kf, useLoop, useReducedMotion} from './anim';
 
-// conic-gradient(from 0deg,#F1DDBA,#7A5A2E,#1A1611,#D9B26F,#F1DDBA) as 5° wedges
-const CONIC = ['#F1DDBA', '#7A5A2E', '#1A1611', '#D9B26F', '#F1DDBA'];
-const hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
-function conicColor(t) {
-  const seg = Math.min(3, Math.floor(t * 4));
-  const f = t * 4 - seg;
-  const a = hex(CONIC[seg]);
-  const b = hex(CONIC[seg + 1]);
-  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * f)).join(',')})`;
-}
+// conic-gradient(from 0deg,#F1DDBA,#7A5A2E,#1A1611,#D9B26F,#F1DDBA) as 72 five-degree
+// wedges, pre-rendered at 3x by docs/special-section/tools/make-nav-ring.py: one
+// image mounts far faster than 72 SVG paths (this button remounts on tab switches).
+const RING_IMG = require('./assets/nav-ring.png');
 const RING = 70;
-const WEDGES = Array.from({length: 72}, (_, i) => {
-  const r = RING / 2;
-  const a0 = ((i * 5 - 90) * Math.PI) / 180;
-  const a1 = (((i + 1) * 5 - 90 + 0.6) * Math.PI) / 180; // slight overlap hides seams
-  const p = a => `${r + r * Math.cos(a)} ${r + r * Math.sin(a)}`;
-  return {d: `M${r} ${r}L${p(a0)}A${r} ${r} 0 0 1 ${p(a1)}Z`, fill: conicColor((i + 0.5) / 72)};
-});
 
 function Word({children, delay}) {
   // rotw 7.5s cubic-bezier(.4,0,.2,1) infinite (blur not available in RN)
@@ -57,14 +44,10 @@ export function NavCore({onPress, style}) {
       accessibilityRole="button"
       accessibilityLabel="Stays, Music and Shop"
       style={[styles.core, style]}>
-      {/* The 72-wedge ring never changes, only rotates: cache it as a texture
+      {/* The ring never changes, only rotates: cache it as a texture
           so each frame just turns the bitmap instead of redrawing the SVG. */}
       <Animated.View style={[styles.ring, ring]} renderToHardwareTextureAndroid shouldRasterizeIOS>
-        <Svg width={RING} height={RING}>
-          {WEDGES.map(w => (
-            <Path key={w.d} d={w.d} fill={w.fill} />
-          ))}
-        </Svg>
+        <Image source={RING_IMG} style={styles.ringImg} />
       </Animated.View>
       <View style={styles.disc}>
         <Svg width={58} height={58} style={StyleSheet.absoluteFill}>
@@ -169,6 +152,7 @@ const styles = StyleSheet.create({
   center: {alignItems: 'center', justifyContent: 'center'},
   core: {width: 64, height: 64, alignItems: 'center', justifyContent: 'center'},
   ring: {position: 'absolute', left: -3, top: -3, width: RING, height: RING, borderRadius: RING / 2, overflow: 'hidden'},
+  ringImg: {width: RING, height: RING},
   disc: {width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', overflow: 'hidden'},
   rot: {width: 56, height: 18},
   word: {fontFamily: fonts.extrabold, fontSize: 13, color: colors.terracotta},
