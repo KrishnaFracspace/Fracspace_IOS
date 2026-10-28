@@ -20,12 +20,19 @@ re-measures. Animations and design must stay identical.
   blurred tab (`LoopGate active={isFocused}`).
 - **Cleanup**: every `setInterval`/`setTimeout`/`addListener`/`requestAnimationFrame`
   returns its cleanup.
+- **JS timers driving state** (`setInterval` → `setState` for progress bars,
+  clocks): move the motion to a shared value on the UI thread and wake JS only
+  when visible text changes. A 100 ms tick held Stays' JS thread at 6–10 fps.
 - **Re-renders**: context values built inline (new object each render), inline
   handlers into memoised children, state that lives higher than it is used.
 - **Images**: pixel size vs displayed size × 3 (decoded = w × h × 4 bytes).
 - **Lists**: horizontal rails are `ScrollView`s of a few items (fine); anything
   long should be a `FlatList`.
 - **Mount**: work done before the first frame (big SVGs, many loops starting).
+  Quick test: temporarily render `null` for the sections below the fold and
+  compare the mount time; if it drops a lot, mount them a frame after first paint.
+- **Horizontal rails**: cards scrolled out of a rail still loop; `RailGate`
+  (anim.js) is ViewportGate for a rail item.
 - **Android**: `overflow:hidden` + `borderRadius` on animated views (clip cost),
   `elevation` on moving views, full-screen layers (`renderToHardwareTextureAndroid`).
 - **iOS**: shadows on views without an opaque background (no automatic shadow
@@ -48,6 +55,11 @@ commit for transform/opacity); that is an app-wide upgrade, not a per-screen fix
 - `markTap(name)` where the user taps to open the screen (Hub: `BottomNavi.goTo`).
 - Output: `adb logcat | grep ssperf`. iOS: console goes to Metro / React Native
   DevTools only (not the simulator's os_log), so use Time Profiler there.
+- Which thread is the bottleneck: Hub was main-thread bound (25 ms animation
+  phase); Stays was JS bound (9 ms animation phase but 6–10 JS fps). Check both
+  before choosing fixes.
+- Fast Refresh can stop the probe logs until the screen is re-entered: after an
+  edit, reload (`r` in Metro) and re-enter before measuring.
 - JS fps follows the main thread (rAF is driven by the UI frame clock), so a low
   JS fps with few renders means the main thread is the bottleneck.
 
@@ -63,6 +75,21 @@ content-desc, `x,y` px, or `BACK`. **uiautomator cannot dump a screen whose
 animations never stop** (every Special Section screen, and any tab showing the
 spinning centre button), so use `x,y`. On the test phone (CPH2643, 1080×2412,
 density 3): centre tab `540,2190` from the light bar, Home `146,2253` on the dark pill.
+The script streams logcat to a file (the ring buffer rotates probe lines out
+during a long run).
+
+Finding a tap position without a screen dump: record the touch panel while the
+user taps the target once, then divide by the panel/screen ratio (8 on CPH2643):
+
+```bash
+adb shell getevent -pl | grep -B8 POSITION_X     # which /dev/input/eventN is the touch panel
+adb shell getevent -lt /dev/input/event2 > touch.log   # run in background; stop with adb shell pkill getevent
+```
+
+A pushed screen's entry tap depends on the Hub's scroll: record it again after
+every reload, and make sure a missed tap can't turn the next `BACK` into leaving
+the app (check `dumpsys activity activities | grep ResumedActivity`).
+
 It records `gfxinfo` idle 10 s, `gfxinfo` over 6 swipes, and `meminfo` before and
 after the cycles. Output: `docs/special-section/runs/<label>-android.txt` (not committed).
 
@@ -170,3 +197,54 @@ R1's measured gain (~65 ms) is below the ~145 ms of the no-NavCore experiment:
 the light bar's NavCore still mounts and unmounts its 3 `Word` loops and SVG
 disc on every swap. What remains of re-entry is mostly React Navigation's
 tab switch and the screen attach (~445 ms in dev), not Hub code.
+
+## 2 · Stays results
+
+Device: Android CPH2643 (dev build, Metro), iOS iPhone 16 Pro simulator (dev).
+Entry: Hub "Stays" category card (`x,y` recorded per run), leave = `BACK`.
+
+### Baseline (before fixes)
+| Metric | Android | iOS sim |
+|---|---|---|
+| Idle frames p50 / p90, janky | 38–65 / 150–250 ms, 61–68 % | — |
+| Scroll frames p50 / p99, janky | 69–125 / 250–500 ms, 78–88 % | — |
+| Main-thread split (idle, median) | animation 9.0, layout 0.2, draw 0.8, GPU 8.7, total 32.9 ms | main 5.8 s of 15 s (38 %); 4.4 s `ShadowTree::commit` |
+| JS thread | 6–10 fps | 4.1 s of 15 s, mostly Hermes |
+| Renders per 5 s idle | Reels 23–32, DeckCard 69–96 | — |
+| Enter Stays tap → frame | 1.7–2.3 s (median ~1.9 s); Explore mount ~1.4 s | not measured (probes log to Metro only) |
+| Explore ↔ Bookings | Explore mount 1.3–1.5 s, Bookings ~520 ms | — |
+| Memory, 30 leave/enter cycles | views 2169–2469, no trend; PSS ~1.15–1.25 GB; native heap down: **no leak** | — |
+
+Experiment: rendering `null` for the sections below the fold took the Explore
+mount from ~1.4 s to ~0.58 s and JS from 6–10 to ~50 fps.
+
+### Findings
+| # | Problem | Platform | Where | Sev | Effect | Fix (design unchanged) |
+|---|---|---|---|---|---|---|
+| A | Reels' 100 ms `setInterval` → `setState` re-rendered the deck ~10×/s, even off-screen | both | `Reels.js` | High | JS 6–10 fps; ~4 s JS per 15 s on iOS | bars animate on the UI thread; JS wakes once a second for the label; memo DeckCard/Seg/Thumb |
+| B | Reel counter lived in Explore: each reel change re-rendered the listing | both | `Explore.js` | Med | ~20 renders per reel change | memoised `ReelsSection` owns the counter; stable `openStay` |
+| C | Explore mounted everything below the fold before its first frame | both | `Explore.js` | High | ~850 ms of the ~1.4 s mount | `useStage`: mount one below-fold section per frame after first paint |
+| D | Hidden BigPlay ripple looped during playback; off-screen coupons / review cards looped | both | `Reels.js`, `Offers.js`, `Explore.js` | Low | part of the 9 ms animation phase | ripple gated by `useLinger(!playing, 300)`; `RailGate` per rail card |
+
+Not fixed: the same 1200 px photos as Hub #7; the sticky search bar animates a
+shadow over a translucent background on iOS (cost not measured).
+
+### After fixes A–D (`4ebc865`, `77a126f`, `e247509`, `e91e315`), same devices, dev build
+| Metric | Before | After |
+|---|---|---|
+| Android idle frames p50 / p90, janky | 38–65 / 150–250 ms, 61–68 % | 15–21 / 21–40 ms, 6–9 % |
+| Android scroll frames p50 / p90, janky | 69–125 / 150–250 ms, 78–88 % | 32–48 / 105–109 ms, 18–47 % |
+| Android slow bitmap uploads (idle 10 s) | 12–17 | 0 |
+| Android JS fps (idle) | 6–10 | 35–47 |
+| Renders per 5 s idle | Reels ~28, DeckCard ~80 | Reels 5, DeckCard 0 |
+| Explore mount (tab switch) | 1.3–1.5 s | 0.38–0.53 s (median ~0.42 s) |
+| Stays mount render → frame (entry) | 1.6–2.2 s | 0.9–1.7 s (noisy; one 4.5 s outlier) |
+| iOS sim JS thread busy (15 s idle) | 4.1 s | 0.58 s (−86 %) |
+| iOS sim main thread busy (15 s idle) | 5.8 s (38 %) | 4.2 s (28 %) |
+| Memory, 10 cycles (PSS / views) | — | 1087 → 1077 MB / 2518 → 2531: no leak |
+
+Notes: entry timing is noisy because Hub's own focus work runs on the same JS
+thread and several taps missed; the tab switch is the cleaner measure of the same
+mount. Not measured: iOS entry and tab-switch timings (no Metro log access from
+the session). Absolute numbers need a release build (see §6).
+
