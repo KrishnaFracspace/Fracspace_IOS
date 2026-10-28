@@ -1,4 +1,4 @@
-// Shared pieces of the IVA Shop views (IvaShopV2.dc.html): entering
+// Shared pieces of the IVA Shop views (IvaShopV2.dc.html): entrance
 // animations, cart button + count badge, quantity box, CTA, feature card,
 // bottom bar, toast and spinner.
 import React from 'react';
@@ -7,54 +7,58 @@ import Animated, {useAnimatedStyle, useSharedValue, withDelay, withTiming} from 
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {colors, fonts, ls} from '../theme';
-import {E, Nudge, PressScale, cssAngle, enterUp, kf, useLoop} from '../anim';
+import {E, Nudge, PressScale, cssAngle, kf, useLoop} from '../anim';
 import {GlassButton} from '../HubBits';
 import {useShot, useTo} from '../StayDetail/bits';
 
 export const MUTED = '#ADA597';
 export const GREEN = '#6EE7A0';
 
+// Entrances are driven by a shared value that plays once on mount, not by
+// Reanimated layout animations (`entering`): swapping whole views that hold
+// nested `entering` children crashes natively on Android (New Architecture).
+
+/** Plays a CSS `animation: <name> <duration> <easing> <delay> both` once on mount. */
+function Enter({duration, delay = 0, easing = E.out, frame, style, children, ...rest}) {
+  const p = useOnce(duration, delay, easing);
+  const a = useAnimatedStyle(() => frame(p.value));
+  return (
+    <Animated.View {...rest} style={[style, a]}>
+      {children}
+    </Animated.View>
+  );
+}
+
+const riseFrame = (dy, axis = 'translateY') => v => {
+  'worklet';
+  return {opacity: Math.min(1, v), transform: [{[axis]: dy * (1 - v)}]};
+};
+const RISE = riseFrame(14);
+const SV_IN = riseFrame(30, 'translateX');
+const SV_BACK = riseFrame(-30, 'translateX');
+const FADE = v => {
+  'worklet';
+  return {opacity: v};
+};
+const VC = v => {
+  'worklet';
+  return {opacity: Math.min(1, 0.4 + 0.6 * v), transform: [{scale: 0.9 + 0.1 * v}]};
+};
+
 /** `.stg > *`: rise (.8s --out, 14px) at 50 / 150 / 250 / 350ms. */
-export const rise = i => enterUp(i, {step: 100, delay: 50, duration: 800, dy: 14});
+export const Rise = ({i, ...rest}) => <Enter duration={800} delay={50 + 100 * i} frame={RISE} {...rest} />;
 
 /** `up` (.5s --out, 14px) after `delay` ms. */
-export const up = delay => enterUp(0, {delay, duration: 500, dy: 14});
+export const Up = props => <Enter duration={500} frame={RISE} {...props} />;
 
 /** `.sv` (`svin`) / `.sv.back` (`svback`): fade in from 30px right / left, .5s --out. */
-export function svIn(back) {
-  const dx = back ? -30 : 30;
-  return () => {
-    'worklet';
-    return {
-      initialValues: {opacity: 0, transform: [{translateX: dx}]},
-      animations: {
-        opacity: withTiming(1, {duration: 500, easing: E.out}),
-        transform: [{translateX: withTiming(0, {duration: 500, easing: E.out})}],
-      },
-    };
-  };
-}
+export const SlideIn = ({back, ...rest}) => <Enter duration={500} frame={back ? SV_BACK : SV_IN} {...rest} />;
 
 /** `fadeIn` .3s ease. */
-export function fadeIn() {
-  'worklet';
-  return {
-    initialValues: {opacity: 0},
-    animations: {opacity: withTiming(1, {duration: 300, easing: E.ease})},
-  };
-}
+export const FadeIn = props => <Enter duration={300} easing={E.ease} frame={FADE} {...props} />;
 
 /** `.vc`: vcIn (scale .9 → 1, opacity .4 → 1, .45s --spring). */
-export function vcIn() {
-  'worklet';
-  return {
-    initialValues: {opacity: 0.4, transform: [{scale: 0.9}]},
-    animations: {
-      opacity: withTiming(1, {duration: 450, easing: E.spring}),
-      transform: [{scale: withTiming(1, {duration: 450, easing: E.spring})}],
-    },
-  };
-}
+export const PopIn = props => <Enter duration={450} easing={E.spring} frame={VC} {...props} />;
 
 function Icon({size = 18, strokeWidth = 1.8, color = colors.gold, children}) {
   return (
@@ -240,9 +244,9 @@ export function Ph({size = 26}) {
 /** `.ibar`: floating bottom bar, `up` .5s --out after .2s. */
 export function IBar({bottom, children}) {
   return (
-    <Animated.View entering={up(200)} style={[styles.ibar, {bottom}]}>
+    <Up delay={200} style={[styles.ibar, {bottom}]}>
       {children}
-    </Animated.View>
+    </Up>
   );
 }
 

@@ -16,7 +16,7 @@ import List from './List';
 import Product from './Product';
 import Review from './Review';
 import Done from './Done';
-import {CartIcon, Cta, CtaNudge, IBar, Ph, Spinner, Toast, styles as s, svIn, useOnce, vcIn} from './bits';
+import {CartIcon, Cta, CtaNudge, IBar, Ph, PopIn, SlideIn, Spinner, Toast, styles as s, useOnce} from './bits';
 import {address, byId, etaLabel, inr} from './data';
 
 const FLY = Easing.bezierFn(0.55, 0, 0.35, 1);
@@ -224,9 +224,9 @@ export default function IvaShop({navigation}) {
     <View style={styles.page}>
       <LoopGate active={isFocused}>
         {view ? (
-          <Animated.View key={v} entering={svIn(back)} style={styles.flex}>
+          <SlideIn key={v} back={back} style={styles.flex}>
             {view}
-          </Animated.View>
+          </SlideIn>
         ) : null}
 
         {v === 'prod' && !cur.soldOut ? (
@@ -238,9 +238,9 @@ export default function IvaShop({navigation}) {
               <Text style={[s.tval, styles.barVal]}>{inr(pq * cur.price)}</Text>
             </View>
             {inCart ? (
-              <Animated.View key="view" entering={vcIn}>
+              <PopIn key="view">
                 <Cta label="View cart" onPress={goCart} style={styles.barCta} after={<CtaNudge />} />
-              </Animated.View>
+              </PopIn>
             ) : (
               <Cta key="add" label="Add to cart" onPress={addToCart} style={styles.barCta}>
                 <CartIcon color={colors.ink} />

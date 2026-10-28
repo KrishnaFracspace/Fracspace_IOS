@@ -6,10 +6,10 @@ import Animated, {useAnimatedScrollHandler, useAnimatedStyle, useSharedValue} fr
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Circle, Defs, Line, Path, RadialGradient, Stop} from 'react-native-svg';
 import {colors, fonts, ls} from '../theme';
-import {E, PressScale, Reveal, RevealScope, kf, useLoop} from '../anim';
+import {E, PressScale, Reveal, RevealScope, ViewportGate, kf, useLoop} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
 import {images} from '../data';
-import {BoxIcon, CartButton, Cta, CtaNudge, DiyaIcon, Feats, LeafIcon, Ph, rise, styles as s, useOnce} from './bits';
+import {BoxIcon, CartButton, Cta, CtaNudge, DiyaIcon, Feats, LeafIcon, Ph, Rise, styles as s, useOnce} from './bits';
 import {inr, products} from './data';
 
 const LIST_FEATS = [
@@ -28,7 +28,7 @@ function Flower({x, len, fill, sx, p}) {
     transform: [{rotate: `${kf(p.value, [[0, -4], [0.5, 4], [1, -4]], E.easeInOut)}deg`}],
   }));
   return (
-    <Animated.View style={[styles.flower, {left: x * sx - 5, height: len + 9}, a]}>
+    <Animated.View renderToHardwareTextureAndroid style={[styles.flower, {left: x * sx - 5, height: len + 9}, a]}>
       <Svg width={10} height={len + 9}>
         <Line x1={5} y1={0} x2={5} y2={len} stroke="#7A9A3A" strokeWidth={1} />
         <Circle cx={5} cy={len + 4} r={5} fill={fill} />
@@ -102,19 +102,19 @@ function Hero({width, top, count, bump, onBack, onCart, onBlessed}) {
       </GlassButton>
       <CartButton count={count} bump={bump} onPress={onCart} style={[styles.hbtnR, {top}]} />
       <View style={styles.heroCopy}>
-        <Animated.View entering={rise(0)}>
+        <Rise i={0}>
           <Text style={styles.ivamark}>IVA</Text>
           <Text style={styles.essentials}>ESSENTIALS</Text>
-        </Animated.View>
-        <Animated.View entering={rise(1)}>
+        </Rise>
+        <Rise i={1}>
           <Text style={styles.h1}>{'Rituals. Designed for\neveryday devotion.'}</Text>
-        </Animated.View>
-        <Animated.View entering={rise(2)}>
+        </Rise>
+        <Rise i={2}>
           <Text style={styles.lede}>Premium all-in-one pooja kits for modern Indian homes</Text>
-        </Animated.View>
-        <Animated.View entering={rise(3)} style={styles.heroCta}>
+        </Rise>
+        <Rise i={3} style={styles.heroCta}>
           <Cta label="Claim your Blessed Kit" onPress={onBlessed} style={styles.h44} after={<CtaNudge />} />
-        </Animated.View>
+        </Rise>
       </View>
     </View>
   );
@@ -164,15 +164,17 @@ export default function List({top, bottom, count, bump, onBack, onCart, onOpen})
     <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
       <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
         <View ref={contentRef} collapsable={false}>
-          <Hero
-            width={width}
-            top={top}
-            count={count}
-            bump={bump}
-            onBack={onBack}
-            onCart={onCart}
-            onBlessed={() => onOpen('blessed')}
-          />
+          <ViewportGate>
+            <Hero
+              width={width}
+              top={top}
+              count={count}
+              bump={bump}
+              onBack={onBack}
+              onCart={onCart}
+              onBlessed={() => onOpen('blessed')}
+            />
+          </ViewportGate>
           <View style={styles.sec}>
             <Reveal style={styles.shead}>
               <Text style={styles.h2}>Handpicked for your sacred space</Text>

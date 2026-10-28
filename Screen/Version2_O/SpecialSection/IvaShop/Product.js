@@ -8,7 +8,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, kf, useLoop} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
 import {KenBurns} from './List';
-import {BoxIcon, CartButton, Feats, GREEN, LeafIcon, Ph, QtyBox, TruckIcon, rise, styles as s} from './bits';
+import {BoxIcon, CartButton, Feats, GREEN, LeafIcon, Ph, QtyBox, TruckIcon, Rise, styles as s} from './bits';
 import {DAYS, inr} from './data';
 
 const PROD_FEATS = [
@@ -64,16 +64,16 @@ export default function Product({p, qty, top, eta, city, count, bump, onBack, on
       </View>
 
       <View style={styles.stg}>
-        <Animated.Text entering={rise(0)} style={styles.cat}>
-          IVA ESSENTIALS · {p.cat}
-        </Animated.Text>
-        <Animated.Text entering={rise(1)} style={styles.h1}>
-          {p.name}
-        </Animated.Text>
-        <Animated.Text entering={rise(2)} style={[s.muted, styles.tag]}>
-          {p.tag}
-        </Animated.Text>
-        <Animated.View entering={rise(3)} style={styles.priceRow}>
+        <Rise i={0}>
+          <Text style={styles.cat}>IVA ESSENTIALS · {p.cat}</Text>
+        </Rise>
+        <Rise i={1}>
+          <Text style={styles.h1}>{p.name}</Text>
+        </Rise>
+        <Rise i={2}>
+          <Text style={[s.muted, styles.tag]}>{p.tag}</Text>
+        </Rise>
+        <Rise i={3} style={styles.priceRow}>
           <Text style={[s.tval, styles.price]}>
             {inr(p.price)}
             <Text style={[s.muted, styles.incl]}> incl. taxes</Text>
@@ -85,7 +85,7 @@ export default function Product({p, qty, top, eta, city, count, bump, onBack, on
           ) : (
             <QtyBox qty={qty} onDec={onDec} onInc={onInc} />
           )}
-        </Animated.View>
+        </Rise>
       </View>
 
       <View style={styles.secDlv}>

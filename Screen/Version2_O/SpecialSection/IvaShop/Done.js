@@ -6,7 +6,7 @@ import Animated, {Easing, useAnimatedProps, useAnimatedStyle} from 'react-native
 import Svg, {Defs, Path, RadialGradient, Rect, Stop} from 'react-native-svg';
 import {colors, fonts} from '../theme';
 import {E, useLoop} from '../anim';
-import {CheckIcon, Cta, GREEN, fadeIn, up, styles as s, useOnce} from './bits';
+import {CheckIcon, Cta, FadeIn, GREEN, Up, styles as s, useOnce} from './bits';
 import {DAYS} from './data';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -74,8 +74,7 @@ export default function Done({orderId, totalLabel, city, eta, insets, onMore, on
   const cy = height * 0.38;
   const r = Math.hypot(Math.max(cx, width - cx), Math.max(cy, height - cy));
   return (
-    <Animated.View
-      entering={fadeIn}
+    <FadeIn
       accessibilityViewIsModal
       accessibilityLabel="Order placed"
       style={[styles.done, {paddingTop: insets.top + 46, paddingBottom: 26 + insets.bottom}]}>
@@ -90,14 +89,16 @@ export default function Done({orderId, totalLabel, city, eta, insets, onMore, on
       </Svg>
 
       <Parcel />
-      <Animated.Text entering={up(900)} style={styles.h2}>
-        Order placed
-      </Animated.Text>
-      <Animated.Text entering={up(1000)} style={[s.muted, styles.sub]}>
-        Order #{orderId} · {totalLabel}
-      </Animated.Text>
+      <Up delay={900}>
+        <Text style={styles.h2}>Order placed</Text>
+      </Up>
+      <Up delay={1000}>
+        <Text style={[s.muted, styles.sub]}>
+          Order #{orderId} · {totalLabel}
+        </Text>
+      </Up>
 
-      <Animated.View entering={up(1250)} style={styles.trk}>
+      <Up delay={1250} style={styles.trk}>
         <View style={styles.tline}>
           <TrackFill />
         </View>
@@ -110,21 +111,21 @@ export default function Done({orderId, totalLabel, city, eta, insets, onMore, on
             <Text style={[styles.tsText, i === 0 && styles.tsTextDone, i === 1 && styles.tsTextNext]}>{label}</Text>
           </View>
         ))}
-      </Animated.View>
+      </Up>
 
-      <Animated.View entering={up(1500)} style={styles.eta}>
+      <Up delay={1500} style={styles.eta}>
         <Text style={s.tlabel}>Arriving at {city}</Text>
         <Text style={styles.etaDate}>{eta}</Text>
         <Text style={[s.muted, styles.etaSub]}>in {DAYS} days · we’ll keep you posted</Text>
-      </Animated.View>
+      </Up>
 
-      <Animated.View entering={up(1900)} style={styles.dbtn}>
+      <Up delay={1900} style={styles.dbtn}>
         <Pressable onPress={onMore} accessibilityRole="button" style={styles.ghost}>
           <Text style={styles.ghostText}>Continue shopping</Text>
         </Pressable>
         <Cta label="Back to home" onPress={onHome} style={styles.h52} />
-      </Animated.View>
-    </Animated.View>
+      </Up>
+    </FadeIn>
   );
 }
 

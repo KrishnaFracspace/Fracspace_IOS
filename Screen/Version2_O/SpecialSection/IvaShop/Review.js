@@ -7,7 +7,7 @@ import Svg, {Circle, Line, Path, Text as SvgText} from 'react-native-svg';
 import {colors, fonts} from '../theme';
 import {E, kf, useLoop} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
-import {Card, Cta, EditIcon, GREEN, Ph, PinIcon, QtyBox, Ticon, rise, styles as s} from './bits';
+import {Card, Cta, EditIcon, GREEN, Ph, PinIcon, QtyBox, Ticon, Rise, styles as s} from './bits';
 import {DAYS, byId, inr} from './data';
 
 const RIDE = Easing.bezierFn(0.45, 0, 0.4, 1);
@@ -102,7 +102,7 @@ export default function Review(props) {
       keyboardShouldPersistTaps="handled"
       automaticallyAdjustKeyboardInsets
       contentContainerStyle={[styles.wrap, {paddingTop: top}]}>
-      <Animated.View entering={rise(0)} style={styles.top}>
+      <Rise i={0} style={styles.top}>
         <GlassButton label="Back" onPress={onBack} style={styles.gbtn}>
           <BackIcon />
         </GlassButton>
@@ -110,7 +110,7 @@ export default function Review(props) {
           <Text style={styles.h1}>Review order</Text>
           <Text style={[s.muted, styles.items]}>{count} item(s)</Text>
         </View>
-      </Animated.View>
+      </Rise>
 
       {count > 0 ? (
         <>
