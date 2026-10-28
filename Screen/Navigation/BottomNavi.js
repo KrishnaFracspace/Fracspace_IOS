@@ -5,6 +5,7 @@ import Svg, {Path} from 'react-native-svg';
 import { AppContext } from '../Context/AppContext';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { DarkNavBar, NavCore, navBottom } from '../Version2_O/SpecialSection/HubNavBar';
+import { markTap } from '../Version2_O/SpecialSection/perf';
 // import { CoOwnContext } from './CoOwnContext';
 
 const {width} = Dimensions.get('window');
@@ -91,6 +92,9 @@ const BottomNavi = forwardRef(({state, navigation}, ref) => {
 
     const goTo = index => {
         const tab = tabs[index];
+        if (tab.navi === 'SpecialSectionStack') {
+            markTap('Hub');
+        }
         setSelected(index);
         if (tab.navi) {
             navigation.navigate(tab.navi, {

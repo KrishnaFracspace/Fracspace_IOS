@@ -6,6 +6,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Circle, Ellipse, G, Path, Rect} from 'react-native-svg';
 import {colors, fonts, type} from './theme';
 import {E, PressScale, Reveal, Sheen, cssAngle, kf, useLoop} from './anim';
+import {useRenderCount} from './perf';
 import {ArrowCircle, MTag, Tag} from './HubBits';
 
 const CARD_ANGLE = cssAngle(160);
@@ -174,6 +175,7 @@ function CatCard({style, sheenDelay, onPress, label, children}) {
 }
 
 export default React.memo(function HubCategories({onStays, onShop, onConcerts}) {
+  useRenderCount('HubCategories');
   return (
     <View style={styles.sec}>
       <Reveal style={styles.head}>

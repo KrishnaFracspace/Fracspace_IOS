@@ -22,6 +22,7 @@ import HubCategories from './HubCategories';
 import {CartBar, FeaturedStays, IvaEssentials} from './HubRails';
 import HubConcert from './HubConcert';
 import {navBottom} from './HubNavBar';
+import {useFirstFrame, useJsFps, useRenderCount} from './perf';
 
 /**
  * `.app{animation:portal 1.1s cubic-bezier(.7,0,.2,1)}`: the screen opens as a
@@ -69,6 +70,9 @@ export default function Hub({navigation}) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
   const portal = usePortal(width, height);
+  useRenderCount('Hub');
+  useFirstFrame('Hub');
+  useJsFps('Hub', isFocused);
 
   const [slide, setSlide] = useState(0);
   const [liked, setLiked] = useState({});

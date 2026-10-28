@@ -12,6 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Path} from 'react-native-svg';
 import {colors, fonts, ls, type} from './theme';
 import {E, Nudge, PressScale, Reveal, Sheen, kf, useReducedMotion, useToggle} from './anim';
+import {useRenderCount} from './perf';
 import {ArrowIcon, Tag} from './HubBits';
 import {ivaProducts, stays} from './data';
 
@@ -140,6 +141,7 @@ function StayCard({stay, index, scrollX, width, liked, onLike, onOpen}) {
 }
 
 export const FeaturedStays = React.memo(function FeaturedStays({liked, onLike, onOpenStay, onViewAll}) {
+  useRenderCount('FeaturedStays');
   const {width} = useWindowDimensions();
   const scrollX = useSharedValue(0);
   const onScroll = useAnimatedScrollHandler(e => {
@@ -242,6 +244,7 @@ function IvaCard({product, qty, onInc, onDec, onOpen}) {
 }
 
 export const IvaEssentials = React.memo(function IvaEssentials({qty, setQty, onOpenShop}) {
+  useRenderCount('IvaEssentials');
   return (
     <View style={{paddingTop: 38}}>
       <SectionHead
@@ -277,6 +280,7 @@ export const IvaEssentials = React.memo(function IvaEssentials({qty, setQty, onO
 
 /** Floating cart bar; slides up once something is in the bag, bag jiggles on change. */
 export function CartBar({qty, jig, bottom, onPress}) {
+  useRenderCount('CartBar');
   let count = 0;
   let total = 0;
   ivaProducts.forEach(p => {

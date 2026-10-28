@@ -16,6 +16,7 @@ import {colors, fonts, ls} from './theme';
 import {E, Nudge, PressScale, kf, useLoop, useReducedMotion, useToggle} from './anim';
 import {BackIcon, Eyebrow, GlassButton} from './HubBits';
 import {heroSlides, images} from './data';
+import {useRenderCount} from './perf';
 
 export const HERO_H = 476;
 export const SLIDE_MS = 5200;
@@ -196,6 +197,7 @@ function Odometer({slide}) {
 
 export default function HubHero({slide, onSeg, onCta, onBack, scrollY, topInset}) {
   const {width} = useWindowDimensions();
+  useRenderCount('HubHero');
   // .hero-inner{animation:heropar; animation-range:0 470px}
   const par = useAnimatedStyle(() => {
     const t = interpolate(scrollY.value, [0, 470], [0, 1], Extrapolation.CLAMP);

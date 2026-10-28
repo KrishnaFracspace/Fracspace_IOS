@@ -36,6 +36,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
+import {useRenderCount} from './perf';
 
 export {useReducedMotion};
 
@@ -261,6 +262,7 @@ export function RevealScope({scrollY, contentRef, viewportH, children}) {
  * the element enters the viewport (animation-range: entry 0% entry 55%).
  */
 export function Reveal({style, children, dy = 30}) {
+  useRenderCount('Reveal');
   const ctx = useContext(RevealCtx);
   const reduced = useReducedMotion();
   const ref = useRef(null);
@@ -321,6 +323,7 @@ export function enterUp(index = 0, {step = 80, delay = 0, duration = 600, dy = 3
  * frames without being seen; they restart where CSS would when they return.
  */
 export function ViewportGate({style, children, margin = 120}) {
+  useRenderCount('ViewportGate');
   const ctx = useContext(RevealCtx);
   const ref = useRef(null);
   const top = useSharedValue(0);

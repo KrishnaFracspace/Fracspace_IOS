@@ -9,6 +9,7 @@ import {colors, fonts, type} from './theme';
 import {E, Nudge, PressScale, Reveal, Sheen, kf, useLoop} from './anim';
 import {Eyebrow, LiveDot} from './HubBits';
 import {images} from './data';
+import {useRenderCount} from './perf';
 
 // .beam: sway 5.5s ease-in-out infinite alternate, rotate -20° → 20° from the top
 function Beam({left, delay}) {
@@ -67,6 +68,7 @@ function StagePhoto() {
 }
 
 export default React.memo(function HubConcert({onOpen, onViewAll}) {
+  useRenderCount('HubConcert');
   return (
     <View style={styles.sec}>
       <Reveal style={styles.head}>
