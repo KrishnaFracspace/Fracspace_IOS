@@ -1,6 +1,6 @@
 // Stay Detail (StayDetail.dc.html): hero gallery, suites, amenities, good to
 // know, nearby map, Reserve bar with the "Room held" sheet, policy sheet.
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+import React, {forwardRef, memo, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState} from 'react';
 import {BackHandler, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   runOnJS,
@@ -34,7 +34,7 @@ const clamp01 = v => {
 };
 
 /** `.mh`: compact header that fades in between 330 and 400px of scroll. */
-function MiniHeader({scrollY, inset, stay, suiteName, totalLabel, onBack, onShare}) {
+const MiniHeader = memo(function MiniHeader({scrollY, inset, stay, suiteName, totalLabel, onBack, onShare}) {
   useRenderCount('MiniHeader');
   const [on, setOn] = useState(false);
   useAnimatedReaction(
@@ -67,10 +67,20 @@ function MiniHeader({scrollY, inset, stay, suiteName, totalLabel, onBack, onShar
       </GlassButton>
     </Animated.View>
   );
-}
+});
 
-/** `.toast`: drops in (.5s spring) with opacity .25s. */
-function Toast({show, top}) {
+/** `.toast`: drops in (.5s spring) with opacity .25s; `ref.show()` shows it for 1.8s. */
+const Toast = forwardRef(function Toast({top}, ref) {
+  const [show, setShow] = useState(false);
+  const t = useRef(null);
+  useEffect(() => () => clearTimeout(t.current), []);
+  useImperativeHandle(ref, () => ({
+    show() {
+      clearTimeout(t.current);
+      setShow(true);
+      t.current = setTimeout(() => setShow(false), 1800);
+    },
+  }));
   const y = useTo(show ? 0 : -20, 500, E.spring);
   const o = useTo(show ? 1 : 0, 250);
   const a = useAnimatedStyle(() => ({opacity: o.value, transform: [{translateY: y.value}]}));
@@ -82,7 +92,58 @@ function Toast({show, top}) {
       </Animated.View>
     </View>
   );
-}
+});
+
+/** The scrolling page; memoised so the Reserve bar and sheets don't re-render it. */
+const Page = memo(function Page({scrollY, contentRef, height, stage, stay, suite, top, barBottom, onBack, onShare, onPickSuite, onOpenPolicy}) {
+  useRenderCount('Page');
+  const onScroll = useAnimatedScrollHandler(e => {
+    scrollY.value = e.contentOffset.y;
+  });
+  return (
+    <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
+      <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
+        <View ref={contentRef} collapsable={false}>
+          <Hero scrollY={scrollY} top={top} onBack={onBack} onShare={onShare} />
+          <View style={[styles.body, {paddingBottom: 150 + barBottom - 14}]}>
+            <Reveal style={styles.titleBlock}>
+              <Text style={styles.h1}>{stay.name}</Text>
+              <View style={styles.rateRow}>
+                <StarIcon size={15} color="#F1A23B" />
+                <Text style={styles.rate}>{stay.rate}</Text>
+                <Text style={styles.addr}>{stay.address}</Text>
+              </View>
+            </Reveal>
+            <Reveal style={styles.cardWrap}>
+              <LinearGradient colors={['#17161A', '#111114']} start={CARD.start} end={CARD.end} style={styles.card}>
+                <Text style={styles.aboutTitle}>About the {stay.short}</Text>
+                <Text style={styles.about}>{stay.about}</Text>
+              </LinearGradient>
+            </Reveal>
+            <ViewportGate>
+              <Suites suite={suite} onPick={onPickSuite} />
+            </ViewportGate>
+            {stage >= 1 ? (
+              <ViewportGate>
+                <Amenities />
+              </ViewportGate>
+            ) : null}
+            {stage >= 2 ? (
+              <ViewportGate>
+                <GoodToKnow onOpenPolicy={onOpenPolicy} />
+              </ViewportGate>
+            ) : null}
+            {stage >= 3 ? (
+              <ViewportGate>
+                <Nearby stay={stay} />
+              </ViewportGate>
+            ) : null}
+          </View>
+        </View>
+      </Animated.ScrollView>
+    </RevealScope>
+  );
+});
 
 /**
  * Mounts the sections below the fold one per frame after the first paint, so
@@ -103,7 +164,7 @@ function useStage() {
 
 export default function StayDetail({navigation, route}) {
   const stayId = route?.params?.stayId;
-  const stay = stayFor(stayId);
+  const stay = useMemo(() => stayFor(stayId), [stayId]);
   const {height} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
@@ -111,31 +172,20 @@ export default function StayDetail({navigation, route}) {
   useFirstFrame('StayDetail');
   useJsFps('StayDetail', isFocused);
 
-  const [img, setImg] = useState(0);
   const [suite, setSuite] = useState('lux');
   const [phase, setPhase] = useState('idle');
   const [sheet, setSheet] = useState(false);
-  const [toast, setToast] = useState(false);
   const [policy, setPolicy] = useState(false);
   const [policyMounted, policyShown] = useLazy(policy);
   // The page's loops pause once the policy sheet has slid over it (.6s).
   const uncovered = useLinger(!policy, 600);
   const stage = useStage();
   const t1 = useRef(null);
-  const t2 = useRef(null);
-  useEffect(
-    () => () => {
-      clearTimeout(t1.current);
-      clearTimeout(t2.current);
-    },
-    [],
-  );
+  const toast = useRef(null);
+  useEffect(() => () => clearTimeout(t1.current), []);
 
   const contentRef = useRef(null);
   const scrollY = useSharedValue(0);
-  const onScroll = useAnimatedScrollHandler(e => {
-    scrollY.value = e.contentOffset.y;
-  });
 
   const cur = suites.find(s => s.id === suite);
   const total = totalFor(cur);
@@ -145,11 +195,7 @@ export default function StayDetail({navigation, route}) {
     () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Stays')),
     [navigation],
   );
-  const share = useCallback(() => {
-    clearTimeout(t2.current);
-    setToast(true);
-    t2.current = setTimeout(() => setToast(false), 1800);
-  }, []);
+  const share = useCallback(() => toast.current?.show(), []);
   const pickSuite = useCallback(id => {
     clearTimeout(t1.current);
     setSuite(id);
@@ -209,47 +255,20 @@ export default function StayDetail({navigation, route}) {
   return (
     <View style={styles.page}>
       <LoopGate active={isFocused && uncovered}>
-        <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
-          <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
-            <View ref={contentRef} collapsable={false}>
-              <Hero img={img} setImg={setImg} scrollY={scrollY} top={top} onBack={back} onShare={share} />
-              <View style={[styles.body, {paddingBottom: 150 + barBottom - 14}]}>
-                <Reveal style={styles.titleBlock}>
-                  <Text style={styles.h1}>{stay.name}</Text>
-                  <View style={styles.rateRow}>
-                    <StarIcon size={15} color="#F1A23B" />
-                    <Text style={styles.rate}>{stay.rate}</Text>
-                    <Text style={styles.addr}>{stay.address}</Text>
-                  </View>
-                </Reveal>
-                <Reveal style={styles.cardWrap}>
-                  <LinearGradient colors={['#17161A', '#111114']} start={CARD.start} end={CARD.end} style={styles.card}>
-                    <Text style={styles.aboutTitle}>About the {stay.short}</Text>
-                    <Text style={styles.about}>{stay.about}</Text>
-                  </LinearGradient>
-                </Reveal>
-                <ViewportGate>
-                  <Suites suite={suite} onPick={pickSuite} />
-                </ViewportGate>
-                {stage >= 1 ? (
-                  <ViewportGate>
-                    <Amenities />
-                  </ViewportGate>
-                ) : null}
-                {stage >= 2 ? (
-                  <ViewportGate>
-                    <GoodToKnow onOpenPolicy={openPolicy} />
-                  </ViewportGate>
-                ) : null}
-                {stage >= 3 ? (
-                  <ViewportGate>
-                    <Nearby stay={stay} />
-                  </ViewportGate>
-                ) : null}
-              </View>
-            </View>
-          </Animated.ScrollView>
-        </RevealScope>
+        <Page
+          scrollY={scrollY}
+          contentRef={contentRef}
+          height={height}
+          stage={stage}
+          stay={stay}
+          suite={suite}
+          top={top}
+          barBottom={barBottom}
+          onBack={back}
+          onShare={share}
+          onPickSuite={pickSuite}
+          onOpenPolicy={openPolicy}
+        />
         <MiniHeader
           scrollY={scrollY}
           inset={insets.top}
@@ -273,7 +292,7 @@ export default function StayDetail({navigation, route}) {
         {policyMounted ? (
           <PolicySheet open={policyShown} onClose={closePolicy} stayName={stay.name} insets={insets} />
         ) : null}
-        <Toast show={toast} top={top + 56} />
+        <Toast ref={toast} top={top + 56} />
         <Grain opacity={0.07} />
       </LoopGate>
     </View>

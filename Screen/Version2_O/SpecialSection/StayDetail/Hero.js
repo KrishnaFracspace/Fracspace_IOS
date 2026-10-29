@@ -1,6 +1,6 @@
 // `.hero`: photo gallery with Ken Burns, scroll parallax, video-tour ring,
 // odometer counter and dots (StayDetail.dc.html).
-import React, {memo, useEffect} from 'react';
+import React, {memo, useEffect, useState} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import Animated, {
   interpolateColor,
@@ -97,8 +97,9 @@ function TourRing() {
 
 const COUNT = gallery.map((g, i) => String(i + 1));
 
-function Hero({img, setImg, scrollY, top, onBack, onShare}) {
+function Hero({scrollY, top, onBack, onShare}) {
   useRenderCount('Hero');
+  const [img, setImg] = useState(0);
   const n = gallery.length;
   // `.gal` parallax: scroll 0→420px → translateY 170, scale 1.06, brightness .55.
   const par = useAnimatedStyle(() => {
