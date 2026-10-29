@@ -1,10 +1,10 @@
-// IVA Shop · list view: hero (pkb Ken Burns, swinging marigold garland,
-// flickering diya glow, staggered copy), product grid and the feature card.
+// IVA Shop · list view: hero (pkb Ken Burns, flickering diya glow,
+// staggered copy), product grid and the feature card.
 import React, {useRef} from 'react';
 import {Image, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {useAnimatedScrollHandler, useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
-import Svg, {Circle, Defs, Line, Path, RadialGradient, Stop} from 'react-native-svg';
+import Svg, {Circle, Defs, RadialGradient, Stop} from 'react-native-svg';
 import {useFirstFrame, useRenderCount} from '../perf';
 import {colors, fonts, ls} from '../theme';
 import {E, PressScale, Reveal, RevealScope, ViewportGate, kf, useLoop} from '../anim';
@@ -18,44 +18,6 @@ const LIST_FEATS = [
   {tone: 'green', Icon: LeafIcon, title: 'Authentic & pure ingredients', sub: 'Carefully sourced to preserve tradition and quality.'},
   {tone: 'moon', Icon: DiyaIcon, title: 'For daily & festive use', sub: 'Ideal for everyday devotion and special occasions.'},
 ];
-
-// Garland flowers: x, string length, petal colour (the design's 15 `<g class="f">`).
-const PETALS = ['#F2A93B', '#E8762B', '#F6C445'];
-const FLOWERS = Array.from({length: 15}, (_, k) => ({x: 14 + 26 * k, len: [12, 18, 24][k % 3], fill: PETALS[k % 3], n: k + 2}));
-
-/** One `.f`: swing ±4deg (3.6s ease-in-out) from the top of its string. */
-function Flower({x, len, fill, sx, p}) {
-  const a = useAnimatedStyle(() => ({
-    transform: [{rotate: `${kf(p.value, [[0, -4], [0.5, 4], [1, -4]], E.easeInOut)}deg`}],
-  }));
-  return (
-    <Animated.View renderToHardwareTextureAndroid style={[styles.flower, {left: x * sx - 5, height: len + 9}, a]}>
-      <Svg width={10} height={len + 9}>
-        <Line x1={5} y1={0} x2={5} y2={len} stroke="#7A9A3A" strokeWidth={1} />
-        <Circle cx={5} cy={len + 4} r={5} fill={fill} />
-        <Circle cx={5} cy={len + 4} r={2} fill="#B5531B" />
-      </Svg>
-    </Animated.View>
-  );
-}
-
-/** `.garland`: the string plus flowers; nth-child(2n) at -1.2s, (3n) at -2.1s. */
-function Garland({width}) {
-  const p0 = useLoop(3600);
-  const p2 = useLoop(3600, {delay: -1200});
-  const p3 = useLoop(3600, {delay: -2100});
-  const sx = width / 390;
-  return (
-    <View pointerEvents="none" style={styles.garland}>
-      <Svg width={width} height={46} viewBox="0 0 390 46" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
-        <Path d="M0 2 Q195 18 390 2" fill="none" stroke="#7A9A3A" strokeWidth={1.2} />
-      </Svg>
-      {FLOWERS.map(f => (
-        <Flower key={f.x} {...f} sx={sx} p={f.n % 3 === 0 ? p3 : f.n % 2 === 0 ? p2 : p0} />
-      ))}
-    </View>
-  );
-}
 
 /** `.glow`: warm diya glow, flick 2.2s ease-in-out. */
 function Glow() {
@@ -86,7 +48,7 @@ export function KenBurns({source}) {
   return <Animated.Image source={source} resizeMode="cover" style={[StyleSheet.absoluteFill, styles.fill, a]} />;
 }
 
-function Hero({width, top, count, bump, onBack, onCart, onBlessed}) {
+function Hero({top, count, bump, onBack, onCart, onBlessed}) {
   return (
     <View style={styles.hero}>
       <KenBurns source={images.blessedKit} />
@@ -96,7 +58,6 @@ function Hero({width, top, count, bump, onBack, onCart, onBlessed}) {
         locations={[0, 0.3, 0.6, 1]}
         style={StyleSheet.absoluteFill}
       />
-      <Garland width={width} />
       <Glow />
       <GlassButton label="Back to Special Section" onPress={onBack} style={[styles.hbtnL, {top}]}>
         <BackIcon />
@@ -169,7 +130,6 @@ export default function List({top, bottom, count, bump, onBack, onCart, onOpen})
         <View ref={contentRef} collapsable={false}>
           <ViewportGate>
             <Hero
-              width={width}
               top={top}
               count={count}
               bump={bump}
@@ -212,8 +172,6 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
     backgroundColor: '#120C08',
   },
-  garland: {position: 'absolute', left: 0, right: 0, top: 0, height: 46, zIndex: 2},
-  flower: {position: 'absolute', top: 0, width: 10, transformOrigin: 'top'},
   glow: {position: 'absolute', left: 150, top: 120, width: 120, height: 120},
   hbtnL: {position: 'absolute', left: 16, zIndex: 3},
   hbtnR: {position: 'absolute', right: 16, zIndex: 3},
