@@ -12,6 +12,7 @@ import {colors, fonts, ls, type} from '../theme';
 import {E, Reveal, kf, usePressScale} from '../anim';
 import {CHECK_D, FocusRing, Sweep, useShot, useTo} from './bits';
 import {inr, suites} from './data';
+import {useRenderCount} from '../perf';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -19,6 +20,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const SELPOP = [[0, 0.97], [0.6, 1.015], [1, 1]];
 
 function Suite({s, sel, onPick}) {
+  useRenderCount('Suite');
   const press = usePressScale(0.97, 450);
   const pop = useShot(sel, 550); // `selpop .55s var(--spring)` each time it becomes selected
   const v = useTo(sel ? 1 : 0, 350); // border-color / box-shadow .35s

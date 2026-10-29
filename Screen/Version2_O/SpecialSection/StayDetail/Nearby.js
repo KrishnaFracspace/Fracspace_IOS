@@ -13,6 +13,7 @@ import {E, PressScale, Reveal, kf, useLoop} from '../anim';
 import {useColor, useShot, useTo} from './bits';
 import {HOME, places} from './data';
 import {h2} from './Suites';
+import {useRenderCount} from '../perf';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const PEACH = '#F1A87A';
@@ -209,6 +210,7 @@ function MapBackdrop({w}) {
 }
 
 function Nearby({stay}) {
+  useRenderCount('Nearby');
   const [place, setPlace] = useState('kbr');
   const [n, setN] = useState(0);
   const [w, setW] = useState(MAP_W);

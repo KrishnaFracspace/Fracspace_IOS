@@ -9,6 +9,7 @@ import {colors, fonts} from '../theme';
 import {E, PressScale} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
 import {CheckIcon, CloseIcon, useShot, useTo} from './bits';
+import {useRenderCount} from '../perf';
 
 const SLIDE = Easing.bezierFn(0.32, 0.72, 0, 1);
 
@@ -42,6 +43,7 @@ function Rule({open, i, tint, bg, title, titleSize = 15, body, style, children})
 }
 
 function PolicySheet({open, onClose, stayName, insets}) {
+  useRenderCount('PolicySheet');
   const {height} = useWindowDimensions();
   const v = useTo(open ? 1 : 0, 600, SLIDE);
   const a = useAnimatedStyle(() => ({transform: [{translateY: height * (1 - v.value)}]}), [height]);

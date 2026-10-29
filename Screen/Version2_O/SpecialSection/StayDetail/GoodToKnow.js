@@ -8,6 +8,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, Reveal, kf, useLoop, usePressScale} from '../anim';
 import {ArrowRight, useShot} from './bits';
 import {h2} from './Suites';
+import {useRenderCount} from '../perf';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -104,6 +105,7 @@ function ReadPolicy({onPress}) {
 }
 
 function GoodToKnow({onOpenPolicy}) {
+  useRenderCount('GoodToKnow');
   return (
     <View style={styles.sec}>
       <Reveal>

@@ -12,6 +12,7 @@ import {colors, fonts} from '../theme';
 import {E, Reveal, kf, useLoop, usePressScale} from '../anim';
 import {FocusRing, useShot, useTo} from './bits';
 import {h2} from './Suites';
+import {useRenderCount} from '../perf';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -228,6 +229,7 @@ function Tile({id, on, onPress, label, style, row, children, after}) {
 }
 
 function Amenities() {
+  useRenderCount('Amenities');
   const [amen, setAmen] = useState('');
   const pick = k => () => setAmen(a => (a === k ? '' : k));
   return (

@@ -13,7 +13,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, LoopGate, PressScale, RevealScope, enterUp, kf, useLoop, useToggle} from '../anim';
 import {BackIcon, Grain} from '../HubBits';
 import {navBottom} from '../HubNavBar';
-import {useFirstFrame, useJsFps, useRenderCount} from '../perf';
+import {markTap, useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {SearchIcon, TicketIcon} from './icons';
 import Explore, {SearchBar} from './Explore';
 import Bookings from './Bookings';
@@ -102,7 +102,13 @@ export default function Stays({navigation}) {
   });
 
   const back = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Hub'));
-  const openStay = useCallback(stayId => navigation.navigate('StayDetail', {stayId}), [navigation]);
+  const openStay = useCallback(
+    stayId => {
+      markTap('StayDetail');
+      navigation.navigate('StayDetail', {stayId});
+    },
+    [navigation],
+  );
 
   return (
     <View style={styles.page}>

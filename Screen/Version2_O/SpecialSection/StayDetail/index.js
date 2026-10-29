@@ -24,6 +24,7 @@ import GoodToKnow from './GoodToKnow';
 import Nearby from './Nearby';
 import BookingBar from './BookingBar';
 import PolicySheet from './PolicySheet';
+import {useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {booking, inr, stayFor, suites, totalFor} from './data';
 
 const CARD = cssAngle(160);
@@ -34,6 +35,7 @@ const clamp01 = v => {
 
 /** `.mh`: compact header that fades in between 330 and 400px of scroll. */
 function MiniHeader({scrollY, inset, stay, suiteName, totalLabel, onBack, onShare}) {
+  useRenderCount('MiniHeader');
   const [on, setOn] = useState(false);
   useAnimatedReaction(
     () => scrollY.value > 330,
@@ -88,6 +90,9 @@ export default function StayDetail({navigation, route}) {
   const {height} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
+  useRenderCount('StayDetail');
+  useFirstFrame('StayDetail');
+  useJsFps('StayDetail', isFocused);
 
   const [img, setImg] = useState(0);
   const [suite, setSuite] = useState('lux');

@@ -17,6 +17,7 @@ import {E, PressScale, useLoop, useReducedMotion} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
 import {Odo, ShareIcon, useTo} from './bits';
 import {gallery} from './data';
+import {useRenderCount} from '../perf';
 
 export const HERO_H = 420;
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -97,6 +98,7 @@ function TourRing() {
 const COUNT = gallery.map((g, i) => String(i + 1));
 
 function Hero({img, setImg, scrollY, top, onBack, onShare}) {
+  useRenderCount('Hero');
   const n = gallery.length;
   // `.gal` parallax: scroll 0→420px → translateY 170, scale 1.06, brightness .55.
   const par = useAnimatedStyle(() => {
