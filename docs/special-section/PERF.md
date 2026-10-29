@@ -120,6 +120,16 @@ Then median of `PerformTraversalsStart − AnimationStart` (animation),
 `DrawStart − PerformTraversalsStart` (layout), `SyncQueued − DrawStart` (draw record),
 `FrameCompleted − IssueDrawCommandsStart` (GPU).
 
+A one-shot sequence (Review's Pay → confirm → success) is longer than the 120
+frames `framestats` keeps: dump it every ~1.8 s during the sequence, dedupe rows
+by `IntendedVsync` and list the frames over 100 ms with their time from the tap.
+That shows *where* a hitch lands; mount times alone don't (a 0.6 s JS mount
+can cost a 120 ms UI frame or a 600 ms one depending on what else commits).
+
+A pushed screen's `BackHandler` must check `isFocused`: the screen below stays
+mounted, and its handler ran before Review's own back (Stay Detail's sheet
+handler swallowed BACK on Review, which also broke the scripted cycles).
+
 ### 5. iOS (simulator)
 ```bash
 xcrun simctl list devices booted
@@ -321,3 +331,49 @@ Reanimated 3 commit cost (§2). The Room held sheet was re-measured mid page
 do. Not measured: iOS entry and policy sheet; the after leak run stopped at 2 of
 10 cycles on a missed tap. Absolute numbers need a release build (§6).
 
+## 4 · Review Booking results
+
+Device: Android CPH2643 (dev build, Metro), iOS iPhone 16 Pro simulator (dev).
+Entry: Stay Detail → Reserve (`799,2257`) → sheet "Proceed to pay" (`811,1984`);
+leave = `BACK` (the sheet stays open, so `perf-cycles.sh … 811,1984 StayReview`
+works after fix E). On Review: Edit dates `919,809`, days `407,1531` / `559,1520`,
+Apply `679,2268`, Pay `829,2256`, Back to Home `653,2249`. Payment is mocked.
+
+### Baseline (before fixes)
+| Metric | Android | iOS sim |
+|---|---|---|
+| Entry tap → frame | 0.81–1.26 s (median ~0.88 s, 10 entries) | ~0.63 s JS |
+| Review idle | 4.7 % janky, p50 22 ms, JS 59 fps | main 29 %, 91 % of it `ShadowTree::commit`; 28 % with the pay sweep removed (same baseline as Stay Detail) |
+| Calendar open, 2 picks, Apply | 4.9 % janky, p99 129 ms; each tap re-rendered all 35 days and the Total | — |
+| Pay → confirm | Confirming 585–811 ms render → frame after the 1.2 s spinner; 271 + 163 ms frames as it starts | not captured |
+| Success, first 3 s | 23 % janky, p50 42 ms, 16 slow uploads (badge ring/tick SVG props); Success 634–994 ms render → frame; 122 ms frame at the hand-off | not captured |
+| Success idle, Done → Home | 0 % janky; Review unmounts, nothing keeps running | — |
+| Memory | Home after each full flow: views 1255 → 1586 → flat; no leak seen | — |
+
+### Findings
+| # | Problem | Platform | Where | Sev | Effect | Fix (design unchanged) |
+|---|---|---|---|---|---|---|
+| A | Calendar (35 animated days) built before the first frame while closed; `Day` memo never held (new `day` object, `onPick` changed with the range); Total re-rendered on calendar taps | both | `index.js`, `Calendar.js` | Med | part of the ~0.9 s entry; 35 day renders per tap | calendar mounts on first open (`useLazy`); days take plain props, `onPick` stable via a ref; `Total` memoised |
+| B | Confirming and Success built on the frame they play | both | `index.js`, `Confirming.js`, `Success.js` | High | ~0.57 s extra wait after the spinner, hitch at the hand-off | both mount hidden during Processing (`play` false: clock at 0, `LoopGate` off, no touches); receipt made at the Pay tap |
+| C | Pay button sweep looped under the opaque overlays | both | `index.js` | Low | ~1 pt iOS main | `LoopGate` off 300 ms after Confirming starts |
+| D | Badge ring/tick draw via SVG props (Android re-rasters the Svg) | Android | `Success.js` | Low | 16 slow uploads over 1.6 s, once | not fixed (like the AC dashes) |
+| E | Stay Detail's sheet `BackHandler` ran under Review: first BACK on Review closed the hidden sheet | Android | `StayDetail/index.js` | Med | BACK did nothing visible | handler only while focused |
+
+### After fixes (`75265ac`, `759ad15`, `bcc5ddf`, `21a936e`), same devices, dev build
+| Metric | Before | After |
+|---|---|---|
+| Android entry tap → frame | 0.81–1.26 s, median ~0.88 s | 0.49–0.73 s, median ~0.53 s |
+| Android Review idle | 4.7 % janky | 4.0 % janky |
+| Day renders per calendar tap | 35 | 0–2 (first open: one 150 ms frame while the calendar builds) |
+| Android Pay flow, frames > 100 ms | 271 + 163 ms as confirm starts (after a ~0.57 s wait); 122 ms at the hand-off | **577–622 ms during the spinner**; 150–210 ms as confirm starts; none at the hand-off |
+| Android success, first 3 s | 23 % janky, p50 42 ms | 23 % janky, p50 44 ms (unchanged: one-shot keyframes, D not fixed) |
+| iOS sim Pay flow | not captured | pre-mount JS 0.37 s inside the 1.2 s spinner; main 33–35 % during confirm / success vs 29 % idle |
+| Memory, Android 2 × 10 Review cycles | — | views 1864 → 2011, then 1864 → 1864; PSS 971 → 1072, then 936 → 1008 MB: no leak |
+
+Notes: B is a trade-off the user chose to keep: the overlays now start on time
+and the hand-off is smooth, but the Processing spinner freezes for ~0.6 s on
+Android while both build. Tested alternative (not committed): pre-mount only
+Confirming → 193 + 352 ms during the spinner, 138 ms at the hand-off. The
+150–270 ms frames as the confirm starts appear in every variant (its own first
+frames). Not measured: iOS before B for the Pay flow, iOS calendar. Absolute
+numbers need a release build (§6).
