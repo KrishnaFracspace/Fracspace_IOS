@@ -13,7 +13,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Circle, Path} from 'react-native-svg';
 import {colors, fonts} from '../theme';
-import {E, PressScale, useLoop, useReducedMotion} from '../anim';
+import {E, PressScale, ViewportGate, useLoop, useReducedMotion} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
 import {Odo, ShareIcon, useTo} from './bits';
 import {gallery} from './data';
@@ -148,7 +148,9 @@ function Hero({img, setImg, scrollY, top, onBack, onShare}) {
 
       <View style={styles.foot}>
         <PressScale to={0.92} duration={400} accessibilityRole="button" accessibilityLabel="Play video tour, 45 seconds" style={styles.gpill}>
-          <TourRing />
+          <ViewportGate>
+            <TourRing />
+          </ViewportGate>
           <Text style={styles.gpillText}>Video Tour (0:45)</Text>
         </PressScale>
         <View style={[styles.gpill, styles.count]}>

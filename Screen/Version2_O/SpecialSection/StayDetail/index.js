@@ -13,7 +13,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import {useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors, fonts, ls} from '../theme';
-import {E, LoopGate, Reveal, RevealScope, ViewportGate, cssAngle} from '../anim';
+import {E, LoopGate, Reveal, RevealScope, ViewportGate, cssAngle, useLinger} from '../anim';
 import {BackIcon, GlassButton, Grain} from '../HubBits';
 import {StarIcon} from '../Stays/icons';
 import {CheckIcon, ShareIcon, useLazy, useTo} from './bits';
@@ -118,6 +118,8 @@ export default function StayDetail({navigation, route}) {
   const [toast, setToast] = useState(false);
   const [policy, setPolicy] = useState(false);
   const [policyMounted, policyShown] = useLazy(policy);
+  // The page's loops pause once the policy sheet has slid over it (.6s).
+  const uncovered = useLinger(!policy, 600);
   const stage = useStage();
   const t1 = useRef(null);
   const t2 = useRef(null);
@@ -206,7 +208,7 @@ export default function StayDetail({navigation, route}) {
 
   return (
     <View style={styles.page}>
-      <LoopGate active={isFocused}>
+      <LoopGate active={isFocused && uncovered}>
         <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
           <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
             <View ref={contentRef} collapsable={false}>
@@ -226,7 +228,9 @@ export default function StayDetail({navigation, route}) {
                     <Text style={styles.about}>{stay.about}</Text>
                   </LinearGradient>
                 </Reveal>
-                <Suites suite={suite} onPick={pickSuite} />
+                <ViewportGate>
+                  <Suites suite={suite} onPick={pickSuite} />
+                </ViewportGate>
                 {stage >= 1 ? (
                   <ViewportGate>
                     <Amenities />
