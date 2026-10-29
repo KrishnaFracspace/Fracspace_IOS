@@ -175,6 +175,15 @@ export default function StayReview({navigation, route}) {
     const id = requestAnimationFrame(() => setPrep(true));
     return () => cancelAnimationFrame(id);
   }, [phase]);
+  // The page's sweep stops once an overlay covers it (Confirming fades in over 300ms).
+  const [covered, setCovered] = useState(false);
+  useEffect(() => {
+    if (phase !== 'anim') {
+      return;
+    }
+    const id = setTimeout(() => setCovered(true), 300);
+    return () => clearTimeout(id);
+  }, [phase]);
   const t1 = useRef(null);
   const t2 = useRef(null);
   useEffect(() => () => {
@@ -370,7 +379,11 @@ export default function StayReview({navigation, route}) {
           locations={[0, 0.32]}
           style={[styles.dock, {paddingBottom: bottom}]}>
           <PressScale to={0.97} duration={450} onPress={pay} accessibilityRole="button" accessibilityState={{busy}} style={styles.pay}>
-            {busy ? null : <Sweep duration={3400} alpha={0.6} />}
+            {busy ? null : (
+              <LoopGate active={!covered}>
+                <Sweep duration={3400} alpha={0.6} />
+              </LoopGate>
+            )}
             <View>
               <Text style={styles.payK}>Total payable</Text>
               <Text style={styles.payV}>{`₹${totalLabel}`}</Text>
