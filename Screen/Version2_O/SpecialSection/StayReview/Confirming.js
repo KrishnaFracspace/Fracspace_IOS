@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, {Circle, Defs, Ellipse, G, Path, RadialGradient, Rect, Stop, Text as SvgText, TextPath} from 'react-native-svg';
 import {colors, fonts, ls} from '../theme';
-import {E, kf, useLoop, useReducedMotion} from '../anim';
+import {E, LoopGate, kf, useLoop, useReducedMotion} from '../anim';
 import {plural} from './data';
 import {useFirstFrame, useRenderCount} from '../perf';
 
@@ -282,15 +282,18 @@ function Dot({i}) {
   return <Animated.View style={[styles.dot, a]} />;
 }
 
-function Confirming({img, stayName, inShort, outShort, guestLabel, nights, stayShort}) {
+/** Built hidden (`play` false: clock at 0, loops off) so it can mount ahead of time. */
+function Confirming({play, img, stayName, inShort, outShort, guestLabel, nights, stayShort}) {
   const {width, height} = useWindowDimensions();
   const reduced = useReducedMotion();
   useRenderCount('Confirming');
   useFirstFrame('Confirming');
   const t = useSharedValue(0);
   useEffect(() => {
-    t.value = reduced ? CONFIRM_MS : withTiming(CONFIRM_MS, {duration: CONFIRM_MS, easing: Easing.linear});
-  }, [reduced, t]);
+    if (play) {
+      t.value = reduced ? CONFIRM_MS : withTiming(CONFIRM_MS, {duration: CONFIRM_MS, easing: Easing.linear});
+    }
+  }, [play, reduced, t]);
 
   const bg = useAnimatedStyle(() => ({opacity: E.ease(seg(t.value, 0, 300))}));
   const c1 = useAnimatedStyle(() => ({opacity: kf(seg(t.value, 0, 3200), [[0, 1], [0.85, 1], [1, 0]], E.ease)}));
@@ -303,7 +306,14 @@ function Confirming({img, stayName, inShort, outShort, guestLabel, nights, stayS
   const r = Math.sqrt((width / 2) ** 2 + Math.max(cy, height - cy) ** 2);
 
   return (
-    <Animated.View style={[styles.sa, bg]} accessibilityRole="alert" accessibilityLabel="Confirming your stay">
+    <Animated.View
+      pointerEvents={play ? 'auto' : 'none'}
+      accessibilityElementsHidden={!play}
+      importantForAccessibility={play ? 'auto' : 'no-hide-descendants'}
+      style={[styles.sa, bg]}
+      accessibilityRole="alert"
+      accessibilityLabel="Confirming your stay">
+      <LoopGate active={play}>
       <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
         <Defs>
           <RadialGradient id="sag" cx={width / 2} cy={cy} r={r} gradientUnits="userSpaceOnUse">
@@ -335,6 +345,7 @@ function Confirming({img, stayName, inShort, outShort, guestLabel, nights, stayS
           <Text style={styles.capSub}>{`${stayShort} · ${plural(nights, 'night', 'nights')}`}</Text>
         </Animated.View>
       </View>
+      </LoopGate>
     </Animated.View>
   );
 }

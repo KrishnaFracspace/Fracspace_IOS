@@ -165,6 +165,16 @@ export default function StayReview({navigation, route}) {
   const [calMounted, calOpen] = useLazy(cal);
   const [phase, setPhase] = useState('idle'); // idle | busy | anim | done
   const [paid, setPaid] = useState(null);
+  // Confirming and Success take ~0.6s each to build: both mount hidden during
+  // "Processing…" (Success a frame later) so neither starts on a frozen frame.
+  const [prep, setPrep] = useState(false);
+  useEffect(() => {
+    if (phase !== 'busy') {
+      return;
+    }
+    const id = requestAnimationFrame(() => setPrep(true));
+    return () => cancelAnimationFrame(id);
+  }, [phase]);
   const t1 = useRef(null);
   const t2 = useRef(null);
   useEffect(() => () => {
@@ -227,8 +237,8 @@ export default function StayReview({navigation, route}) {
       return;
     }
     setPhase('busy');
+    setPaid({at: paidLabel(new Date()), ...mockReceipt()});
     t1.current = setTimeout(() => {
-      setPaid({at: paidLabel(new Date()), ...mockReceipt()});
       setPhase('anim');
       t2.current = setTimeout(() => setPhase('done'), CONFIRM_MS);
     }, 1200);
@@ -389,8 +399,9 @@ export default function StayReview({navigation, route}) {
           />
         ) : null}
 
-        {phase === 'anim' ? (
+        {phase === 'busy' || phase === 'anim' ? (
           <Confirming
+            play={phase === 'anim'}
             img={review.img}
             stayName={review.name}
             stayShort={review.short}
@@ -400,8 +411,9 @@ export default function StayReview({navigation, route}) {
             nights={nights}
           />
         ) : null}
-        {phase === 'done' ? (
+        {prep ? (
           <Success
+            play={phase === 'done'}
             review={review}
             receipt={paid}
             inShort={short(cin)}

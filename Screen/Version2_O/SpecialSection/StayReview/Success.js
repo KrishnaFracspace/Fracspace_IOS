@@ -14,7 +14,7 @@ import Animated, {
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Circle, Defs, Path, RadialGradient, Rect, Stop} from 'react-native-svg';
 import {colors, fonts, ls} from '../theme';
-import {E, PressScale, kf, useLoop, useReducedMotion} from '../anim';
+import {E, LoopGate, PressScale, kf, useLoop, useReducedMotion} from '../anim';
 import {CHECK_IN, CHECK_OUT} from './data';
 import {useFirstFrame, useRenderCount} from '../perf';
 
@@ -152,17 +152,17 @@ function Kv({k, v, color}) {
  * Same scale trick as the Hub portal; Android fades instead (the clipped,
  * scaled layer is CPU-clipped every frame there).
  */
-function useReveal(width, height, reduced) {
+function useReveal(width, height, reduced, play) {
   const cx = width / 2;
   const cy = height * 0.94;
   const rMax = 1.5 * Math.sqrt((width * width + height * height) / 2);
   const android = Platform.OS === 'android';
-  const s = useSharedValue(reduced ? 1 : 0);
+  const s = useSharedValue(0);
   useEffect(() => {
-    if (!reduced) {
-      s.value = withTiming(1, {duration: 700, easing: E.snap});
+    if (play) {
+      s.value = reduced ? 1 : withTiming(1, {duration: 700, easing: E.snap});
     }
-  }, [reduced, s]);
+  }, [play, reduced, s]);
   const outer = useAnimatedStyle(() => {
     if (android) {
       return {opacity: s.value};
@@ -180,18 +180,19 @@ function useReveal(width, height, reduced) {
   };
 }
 
-function Success({review, receipt, inShort, outShort, nightsLabel, guestFull, totalLabel, paidAt, insets, onHome}) {
+/** Built hidden (`play` false: clock and reveal at 0, loops off) so it can mount ahead of time. */
+function Success({play, review, receipt, inShort, outShort, nightsLabel, guestFull, totalLabel, paidAt, insets, onHome}) {
   const {width, height} = useWindowDimensions();
   const reduced = useReducedMotion();
   useRenderCount('Success');
   useFirstFrame('Success');
-  const t = useSharedValue(reduced ? END : 0);
+  const t = useSharedValue(0);
   useEffect(() => {
-    if (!reduced) {
-      t.value = withTiming(END, {duration: END, easing: Easing.linear});
+    if (play) {
+      t.value = reduced ? END : withTiming(END, {duration: END, easing: Easing.linear});
     }
-  }, [reduced, t]);
-  const reveal = useReveal(width, height, reduced);
+  }, [play, reduced, t]);
+  const reveal = useReveal(width, height, reduced, play);
 
   const [copied, setCopied] = useState(false);
   const timer = useRef(null);
@@ -209,7 +210,14 @@ function Success({review, receipt, inShort, outShort, nightsLabel, guestFull, to
   const bottom = Math.max(16, insets.bottom);
 
   return (
-    <View style={styles.ok} accessibilityViewIsModal accessibilityLabel="Booking confirmed">
+    <View
+      pointerEvents={play ? 'auto' : 'none'}
+      accessibilityViewIsModal={play}
+      accessibilityElementsHidden={!play}
+      importantForAccessibility={play ? 'auto' : 'no-hide-descendants'}
+      style={styles.ok}
+      accessibilityLabel="Booking confirmed">
+      <LoopGate active={play}>
       <Animated.View style={reveal.outer}>
         <Animated.View style={[reveal.inner, styles.okBg]}>
           <Svg width={width} height={height} style={StyleSheet.absoluteFill}>
@@ -304,6 +312,7 @@ function Success({review, receipt, inShort, outShort, nightsLabel, guestFull, to
           </LinearGradient>
         </Animated.View>
       </Animated.View>
+      </LoopGate>
     </View>
   );
 }
