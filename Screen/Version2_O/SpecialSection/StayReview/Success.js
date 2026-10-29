@@ -16,6 +16,7 @@ import Svg, {Circle, Defs, Path, RadialGradient, Rect, Stop} from 'react-native-
 import {colors, fonts, ls} from '../theme';
 import {E, PressScale, kf, useLoop, useReducedMotion} from '../anim';
 import {CHECK_IN, CHECK_OUT} from './data';
+import {useFirstFrame, useRenderCount} from '../perf';
 
 const END = 2400;
 const DRAW = Easing.bezierFn(0.65, 0, 0.35, 1);
@@ -182,6 +183,8 @@ function useReveal(width, height, reduced) {
 function Success({review, receipt, inShort, outShort, nightsLabel, guestFull, totalLabel, paidAt, insets, onHome}) {
   const {width, height} = useWindowDimensions();
   const reduced = useReducedMotion();
+  useRenderCount('Success');
+  useFirstFrame('Success');
   const t = useSharedValue(reduced ? END : 0);
   useEffect(() => {
     if (!reduced) {

@@ -14,6 +14,7 @@ import Svg, {Circle, Defs, Ellipse, G, Path, RadialGradient, Rect, Stop, Text as
 import {colors, fonts, ls} from '../theme';
 import {E, kf, useLoop, useReducedMotion} from '../anim';
 import {plural} from './data';
+import {useFirstFrame, useRenderCount} from '../perf';
 
 export const CONFIRM_MS = 4200;
 
@@ -284,6 +285,8 @@ function Dot({i}) {
 function Confirming({img, stayName, inShort, outShort, guestLabel, nights, stayShort}) {
   const {width, height} = useWindowDimensions();
   const reduced = useReducedMotion();
+  useRenderCount('Confirming');
+  useFirstFrame('Confirming');
   const t = useSharedValue(0);
   useEffect(() => {
     t.value = reduced ? CONFIRM_MS : withTiming(CONFIRM_MS, {duration: CONFIRM_MS, easing: Easing.linear});

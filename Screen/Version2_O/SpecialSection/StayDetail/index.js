@@ -24,7 +24,7 @@ import GoodToKnow from './GoodToKnow';
 import Nearby from './Nearby';
 import BookingBar from './BookingBar';
 import PolicySheet from './PolicySheet';
-import {useFirstFrame, useJsFps, useRenderCount} from '../perf';
+import {markTap, useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {booking, inr, stayFor, suites, totalFor} from './data';
 
 const CARD = cssAngle(160);
@@ -220,7 +220,8 @@ export default function StayDetail({navigation, route}) {
   const openPolicy = useCallback(() => setPolicy(true), []);
   const closePolicy = useCallback(() => setPolicy(false), []);
   const pay = useCallback(
-    () =>
+    () => {
+      markTap('StayReview');
       navigation.navigate('StayReview', {
         stayId,
         suiteId: cur.id,
@@ -229,7 +230,8 @@ export default function StayDetail({navigation, route}) {
         total,
         dates: booking.dates,
         guests: booking.guests,
-      }),
+      });
+    },
     [navigation, stayId, cur, total],
   );
 

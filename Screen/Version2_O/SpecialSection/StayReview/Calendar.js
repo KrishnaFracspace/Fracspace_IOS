@@ -12,6 +12,7 @@ import {colors, fonts} from '../theme';
 import {E, PressScale} from '../anim';
 import {useShot, useTo} from '../StayDetail/bits';
 import {MONL, monthDays, plural, short} from './data';
+import {useRenderCount} from '../perf';
 
 const SLIDE = Easing.bezierFn(0.32, 0.72, 0, 1);
 const WEEK = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -39,6 +40,7 @@ function MonthNav({onPress, disabled, label, d}) {
 
 /** `.day`: band behind ranges, `.sel` gold disc with `dsel` (.7 → 1, .4s spring). */
 const Day = memo(function Day({day, onPick}) {
+  useRenderCount('Day');
   const on = useTo(day.sel ? 1 : 0, 250);
   const pop = useShot(day.sel, 400);
   const a = useAnimatedStyle(() => ({
@@ -65,6 +67,7 @@ const Day = memo(function Day({day, onPick}) {
 });
 
 function Calendar({open, view, pin, pout, today, bottom, onClose, onPick, onPrev, onNext, onApply}) {
+  useRenderCount('Calendar');
   const v = useTo(open ? 1 : 0, 550, SLIDE);
   const scrim = useTo(open ? 1 : 0, 350);
   const h = useSharedValue(800);

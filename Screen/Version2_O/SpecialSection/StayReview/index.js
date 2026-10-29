@@ -17,6 +17,7 @@ import {Odo, Sweep, useShot, useTo} from '../StayDetail/bits';
 import Calendar from './Calendar';
 import Confirming, {CONFIRM_MS} from './Confirming';
 import Success from './Success';
+import {useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {
   CHECK_IN,
   CHECK_OUT,
@@ -112,6 +113,7 @@ function Stepper({title, sub, value, min, max, onDec, onInc, noun}) {
 
 /** `.num`: the total as odometer digit columns (.5s spring), commas static. */
 function Total({label}) {
+  useRenderCount('Total');
   const chars = label.split('');
   return (
     <View style={styles.num} accessibilityLabel={`₹${label}`}>
@@ -140,6 +142,9 @@ export default function StayReview({navigation, route}) {
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
   const reduced = useReducedMotion();
+  useRenderCount('StayReview');
+  useFirstFrame('StayReview');
+  useJsFps('StayReview', isFocused);
   const params = route?.params;
   const review = useMemo(() => reviewFor(params), [params]);
   const today = useMemo(todayDate, []);
