@@ -17,6 +17,7 @@ import {useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {SearchIcon, TicketIcon} from './icons';
 import Explore, {SearchBar} from './Explore';
 import Bookings from './Bookings';
+import SearchSheet, {initialSearch} from './SearchSheet';
 
 /** `.stg` header children: `rise .8s --out`, delays .05s / .15s. */
 const rise = i => enterUp(i, {step: 100, delay: 50, duration: 800, dy: 14});
@@ -81,6 +82,9 @@ export default function Stays({navigation}) {
   const isFocused = useIsFocused();
   const [view, setView] = useState('explore');
   const [searchTop, setSearchTop] = useState(0);
+  const [search, setSearch] = useState(initialSearch);
+  const patch = useCallback(p => setSearch(s => ({...s, ...p})), []);
+  const openSearch = useCallback(step => patch({open: true, step}), [patch]);
   useRenderCount('Stays');
   useFirstFrame('Stays');
   useJsFps('Stays', isFocused);
@@ -121,7 +125,13 @@ export default function Stays({navigation}) {
               <ViewTabs view={view} setView={setView} />
 
               {view === 'explore' ? (
-                <Explore onSearchTop={setSearchTop} onOpenStay={openStay} />
+                <Explore
+                  onSearchTop={setSearchTop}
+                  onOpenStay={openStay}
+                  search={search}
+                  patch={patch}
+                  openSearch={openSearch}
+                />
               ) : (
                 <Bookings onExplore={() => setView('explore')} onOpenStay={openStay} />
               )}
@@ -129,9 +139,16 @@ export default function Stays({navigation}) {
           </Animated.ScrollView>
         </RevealScope>
         {view === 'explore' && searchTop > 0 ? (
-          <SearchBar scrollY={scrollY} top={searchTop} inset={insets.top} style={styles.searchFloat} />
+          <SearchBar
+            scrollY={scrollY}
+            top={searchTop}
+            inset={insets.top}
+            style={styles.searchFloat}
+            onPress={() => openSearch('where')}
+          />
         ) : null}
         <Grain />
+        {search.open ? <SearchSheet s={search} patch={patch} /> : null}
       </LoopGate>
     </View>
   );

@@ -1,13 +1,26 @@
 // Mock data for the Stays listing (Stays.dc.html) until the APIs are wired.
 import {images} from '../data';
 
-export const chips = [
-  {id: 'filters', label: 'Filters', icon: true},
-  {id: 'dates', label: '15–16 Oct'},
-  {id: 'guests', label: '1 guest'},
-  {id: 'price', label: 'Price'},
-  {id: 'rooms', label: 'Rooms'},
+// Search sheet mock data until the APIs are wired (images: placeholders).
+// `col` / `h` place each destination card in the two-column grid.
+export const searchCities = [
+  {city: 'Hyderabad', img: images.balcony, h: 240, col: 'L'},
+  {city: 'Munnar', img: images.hilltop, h: 180, col: 'R'},
+  {city: 'Alleppey', img: images.luxury, h: 190, col: 'L'},
+  {city: 'Goa', img: null, h: 250, col: 'R'}, // drawn art until an image arrives
 ];
+
+export const searchStays = [
+  {name: 'Dreamscape', area: 'Banjara Hills', city: 'Hyderabad'},
+  {name: 'Dreamscape OU Colony', area: 'Manikonda', city: 'Hyderabad'},
+  {name: 'Fracspace Abode – I', area: 'Hyderabad', city: 'Hyderabad'},
+  {name: 'Hilltop by Fracspace', area: 'Munnar', city: 'Munnar'},
+  {name: 'Alleppey Backwater Cottages', area: 'Alleppey', city: 'Alleppey'},
+  {name: '[Goa stay]', area: 'Goa', city: 'Goa'},
+];
+
+/** Destination capsules under the search bar, in order. */
+export const chipCities = ['Hyderabad', 'Goa', 'Munnar', 'Alleppey'];
 
 export const searchHints = ['Where to Next?', 'Try “Munnar”', 'Try “Banjara Hills”', 'Where to Next?'];
 

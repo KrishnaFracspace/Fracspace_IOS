@@ -1,7 +1,7 @@
 // "Explore stays" view of the Stays listing (Stays.dc.html, `isExplore`).
 // Returned as siblings; the search bar floats over the page (index.js) above a fixed slot here.
 import React, {memo, useEffect, useState} from 'react';
-import {Image, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
+import {Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {
   interpolate,
   interpolateColor,
@@ -15,8 +15,9 @@ import LinearGradient from 'react-native-linear-gradient';
 import {colors, fonts, ls} from '../theme';
 import {E, PressScale, RailGate, Reveal, ViewportGate, cssAngle, kf, useLoop, useToggle} from '../anim';
 import {Burst, Ripple, Tag, useShot} from './bits';
-import {CameraIcon, HEART_D, HeadsetIcon, SearchIcon, SlidersIcon, StarIcon} from './icons';
-import {chips as chipData, offers, retreats, reviews, searchHints} from './data';
+import {CalendarIcon, CameraIcon, HEART_D, HeadsetIcon, PinIcon, SearchIcon, SlidersIcon, StarIcon} from './icons';
+import {chipCities, offers, retreats, reviews, searchHints} from './data';
+import {guestLabel, whenLabel} from './SearchSheet';
 import Reels from './Reels';
 import Offers, {COUPON_W} from './Offers';
 import {useFirstFrame, useRenderCount} from '../perf';
@@ -35,7 +36,7 @@ const SEARCH_H = 86; // `.search` 66 + `.sticky` padding 10 × 2
  * It floats outside the ScrollView, so once stuck it stays still instead of chasing the scroll.
  * `top` is its slot's y in the scroll content; `inset` pads it clear of the notch.
  */
-export function SearchBar({scrollY, top, inset, style}) {
+export function SearchBar({scrollY, top, inset, style, onPress}) {
   useRenderCount('SearchBar');
   const seek = useLoop(4000);
   const roll = useLoop(10000);
@@ -67,7 +68,11 @@ export function SearchBar({scrollY, top, inset, style}) {
 
   return (
     <Animated.View pointerEvents="box-none" style={[styles.sticky, {paddingTop: inset + 10}, style, stick]}>
-      <PressScale to={0.97} accessibilityLabel="Search stays by destination, dates and guests" style={styles.search}>
+      <PressScale
+        to={0.97}
+        onPress={onPress}
+        accessibilityLabel="Search stays by destination, dates and guests"
+        style={styles.search}>
         <View style={styles.sic}>
           <Animated.View style={icon}>
             <SearchIcon size={20} color={colors.gold} />
@@ -94,7 +99,7 @@ export function SearchBar({scrollY, top, inset, style}) {
 }
 
 /** `.chip` with the `chippop` keyframes when it turns on. */
-function Chip({chip, on, onPress}) {
+function Chip({label, on, pin, aria, onPress}) {
   const v = useToggle(on, {duration: 300, easing: E.ease});
   const pop = useShot(on, 450);
   const bg = useAnimatedStyle(() => ({
@@ -104,12 +109,53 @@ function Chip({chip, on, onPress}) {
   }));
   const text = useAnimatedStyle(() => ({color: interpolateColor(v.value, [0, 1], ['#E6E0D6', colors.ink])}));
   return (
-    <PressScale to={0.92} onPress={onPress} accessibilityState={{selected: on}}>
+    <PressScale to={0.92} onPress={onPress} accessibilityState={{selected: on}} accessibilityLabel={aria}>
       <Animated.View style={[styles.chip, bg]}>
-        {chip.icon ? <SlidersIcon color={on ? colors.ink : '#E6E0D6'} /> : null}
-        <Animated.Text style={[styles.chipText, text]}>{chip.label}</Animated.Text>
+        {pin ? <PinIcon color={colors.ink} /> : null}
+        <Animated.Text style={[styles.chipText, text]}>{label}</Animated.Text>
       </Animated.View>
     </PressScale>
+  );
+}
+
+/**
+ * Capsules under the search bar: the calendar button, then (after a search)
+ * the chosen destination, dates and guests, then the other destinations.
+ */
+function Chips({search, patch, openSearch}) {
+  const ac = search.pillCity;
+  const city = c => (
+    <Chip
+      key={'c-' + c}
+      label={c}
+      on={c === ac}
+      pin={c === ac}
+      aria={c === ac ? c + ', selected' : 'Show stays in ' + c}
+      onPress={() => patch({pillCity: c === ac ? '' : c})}
+    />
+  );
+  const when = whenLabel(search);
+  const who = guestLabel(search);
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <PressScale
+        to={0.92}
+        onPress={() => openSearch('when')}
+        accessibilityLabel="Choose check-in and checkout dates"
+        style={[styles.chip, styles.calp]}>
+        <CalendarIcon />
+      </PressScale>
+      {search.applied ? (
+        <>
+          {ac ? city(ac) : null}
+          <Chip key="dates" label={when} on aria={`Dates ${when}, change`} onPress={() => openSearch('when')} />
+          <Chip key="guests" label={who} on aria={`${who}, change`} onPress={() => openSearch('who')} />
+          {chipCities.filter(c => c !== ac).map(city)}
+        </>
+      ) : (
+        chipCities.map(city)
+      )}
+    </ScrollView>
   );
 }
 
@@ -180,7 +226,8 @@ function RetreatCard({r, i, sx, vw, liked, onLike, onOpen}) {
   );
 }
 
-function Retreats({liked, onLike, onOpen}) {
+function Retreats({city, onClear, liked, onLike, onOpen}) {
+  const list = city ? retreats.filter(r => r.loc.includes(city)) : retreats;
   const {width: vw} = useWindowDimensions();
   const sx = useSharedValue(0);
   const max = useSharedValue(1);
@@ -198,6 +245,15 @@ function Retreats({liked, onLike, onOpen}) {
         <Text style={styles.h2}>Curated Retreats</Text>
         <Text style={styles.sub}>Handpicked boutique stays · Swipe to explore</Text>
       </Reveal>
+      {list.length === 0 ? (
+        <View style={styles.none}>
+          <Text style={styles.noneTitle}>Stays in {city} are coming soon</Text>
+          <Text style={styles.noneSub}>Explore our other destinations meanwhile.</Text>
+          <Pressable onPress={onClear} style={styles.noneBtn}>
+            <Text style={styles.noneBtnText}>Show all stays →</Text>
+          </Pressable>
+        </View>
+      ) : null}
       <Animated.ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -207,7 +263,7 @@ function Retreats({liked, onLike, onOpen}) {
         snapToInterval={RCARD_W + RCARD_GAP}
         decelerationRate="fast"
         contentContainerStyle={[styles.rail, {gap: RCARD_GAP}]}>
-        {retreats.map((r, i) => (
+        {list.map((r, i) => (
           <RetreatCard
             key={r.id}
             r={r}
@@ -365,7 +421,7 @@ function useStage() {
   return stage;
 }
 
-export default function Explore({onSearchTop, onOpenStay}) {
+export default function Explore({onSearchTop, onOpenStay, search, patch, openSearch}) {
   const stage = useStage();
   const {width: vw} = useWindowDimensions();
   // Scroll x of the Offers / Reviews rails, so each card loops only while in view.
@@ -377,7 +433,6 @@ export default function Explore({onSearchTop, onOpenStay}) {
   const onReviewScroll = useAnimatedScrollHandler(e => {
     reviewX.value = e.contentOffset.x;
   });
-  const [on, setOn] = useState({dates: true});
   const [liked, setLiked] = useState({});
   const [claimed, setClaimed] = useState({});
   const flip = set => id => set(s => ({...s, [id]: !s[id]}));
@@ -388,13 +443,12 @@ export default function Explore({onSearchTop, onOpenStay}) {
     <>
       <View style={styles.searchSlot} onLayout={e => onSearchTop(e.nativeEvent.layout.y)} />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        {chipData.map(c => (
-          <Chip key={c.id} chip={c} on={!!on[c.id]} onPress={() => flip(setOn)(c.id)} />
-        ))}
-      </ScrollView>
+      <Chips search={search} patch={patch} openSearch={openSearch} />
 
-      <Retreats liked={liked} onLike={flip(setLiked)} onOpen={onOpenStay} />
+      <Retreats
+        city={search.pillCity}
+        onClear={() => patch({pillCity: ''})}
+        liked={liked} onLike={flip(setLiked)} onOpen={onOpenStay} />
 
       {stage > 0 ? <ReelsSection onOpenStay={onOpenStay} /> : null}
 
@@ -521,6 +575,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   chipText: {fontFamily: fonts.semibold, fontSize: 13},
+  calp: {width: 42, paddingHorizontal: 0, justifyContent: 'center', borderColor: colors.goldA(0.35), backgroundColor: colors.goldA(0.06)},
   // sections
   rtWrap: {paddingTop: 28},
   section: {paddingTop: 34},
@@ -570,6 +625,20 @@ const styles = StyleSheet.create({
   rloc: {fontFamily: fonts.regular, fontSize: 13, color: colors.muted},
   price: {fontFamily: fonts.extrabold, fontSize: 17, color: '#fff'},
   perNight: {fontFamily: fonts.medium, fontSize: 12.5, color: colors.muted},
+  none: {
+    marginHorizontal: 20,
+    paddingVertical: 26,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    backgroundColor: colors.card,
+    borderWidth: 1,
+    borderColor: colors.whiteA(0.07),
+    alignItems: 'center',
+  },
+  noneTitle: {fontFamily: fonts.bold, fontSize: 15, color: colors.cream, textAlign: 'center'},
+  noneSub: {fontFamily: fonts.regular, fontSize: 12.5, color: colors.muted, marginTop: 6, textAlign: 'center'},
+  noneBtn: {marginTop: 12, minHeight: 44, justifyContent: 'center'},
+  noneBtnText: {fontFamily: fonts.bold, fontSize: 13, color: colors.gold},
   trackRow: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 22, paddingHorizontal: 20},
   track: {width: 56, height: 4, borderRadius: 2, backgroundColor: colors.whiteA(0.14), overflow: 'hidden'},
   thumb: {position: 'absolute', left: 0, top: 0, width: 20, height: 4, borderRadius: 2, backgroundColor: colors.gold},

@@ -140,3 +140,69 @@ export function DownloadIcon() {
     </Svg>
   );
 }
+
+// Search sheet (Stays listing · search flow).
+export function CalendarIcon({size = 18, color = colors.gold}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={1.8}>
+      <Rect x="3.5" y="5" width="17" height="15.5" rx="3" />
+      <Path d="M3.5 10h17M8 3v4M16 3v4" />
+      <Circle cx="8.5" cy="14.5" r="1" fill={color} stroke="none" />
+      <Circle cx="12" cy="14.5" r="1" fill={color} stroke="none" />
+    </Svg>
+  );
+}
+
+export function PinIcon({size = 14, color}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={2}>
+      <Path d="M12 21s-7-6.2-7-12a7 7 0 0 1 14 0c0 5.8-7 12-7 12Z" />
+      <Circle cx="12" cy="9" r="2.5" />
+    </Svg>
+  );
+}
+
+export function ChevronSideIcon({size = 18, color = '#E6E0D6', strokeWidth = 2, right = false}) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={strokeWidth}>
+      <Path d={right ? 'm9 5 7 7-7 7' : 'M15 5 8 12l7 7'} />
+    </Svg>
+  );
+}
+
+export function PencilIcon({color = '#E6E0D6'}) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={1.8}>
+      <Path d="M4 20h4L19 9l-4-4L4 16v4Z" />
+      <Path d="m13.5 6.5 4 4" />
+    </Svg>
+  );
+}
+
+export function ResetIcon({color = '#E6E0D6'}) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={2}>
+      <Path d="M4 12a8 8 0 1 0 2.3-5.7" />
+      <Path d="M4 4v4h4" />
+    </Svg>
+  );
+}
+
+export function PeopleIcon({color = colors.gold}) {
+  return (
+    <Svg width={26} height={26} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={1.8}>
+      <Circle cx="9" cy="8" r="3.2" />
+      <Path d="M3 19c.8-3.4 3.2-5 6-5s5.2 1.6 6 5" />
+      <Circle cx="16.5" cy="9" r="2.6" />
+      <Path d="M16 14c2.4.2 4.2 1.6 5 4.5" />
+    </Svg>
+  );
+}
+
+export function TickIcon({color = colors.ink}) {
+  return (
+    <Svg width={12} height={12} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={3.2}>
+      <Path d="m5 12 5 5 9-10" />
+    </Svg>
+  );
+}
