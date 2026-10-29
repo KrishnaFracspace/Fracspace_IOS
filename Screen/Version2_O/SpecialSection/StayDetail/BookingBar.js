@@ -14,7 +14,7 @@ import {Gesture, GestureDetector} from 'react-native-gesture-handler';
 import Svg, {Path} from 'react-native-svg';
 import {colors, fonts, ls} from '../theme';
 import {E, PressScale, useLoop, usePressScale} from '../anim';
-import {ArrowRight, CHECK_D, CloseIcon, Odo, Sweep, useShot, useTo} from './bits';
+import {ArrowRight, CHECK_D, CloseIcon, Odo, Sweep, useLazy, useShot, useTo} from './bits';
 import {booking} from './data';
 import {useRenderCount} from '../perf';
 
@@ -179,17 +179,20 @@ function Sheet({show, bottom, suiteName, stayShort, totalLabel, onClose, onPay})
 
 function BookingBar({bottom, phase, sheet, suiteName, stayShort, totalLabel, onReserve, onCloseSheet, onPay}) {
   useRenderCount('BookingBar');
+  const [sheetMounted, sheetShown] = useLazy(sheet);
   return (
     <>
-      <Sheet
-        show={sheet}
-        bottom={bottom + BAR_H + 12}
-        suiteName={suiteName}
-        stayShort={stayShort}
-        totalLabel={totalLabel}
-        onClose={onCloseSheet}
-        onPay={onPay}
-      />
+      {sheetMounted ? (
+        <Sheet
+          show={sheetShown}
+          bottom={bottom + BAR_H + 12}
+          suiteName={suiteName}
+          stayShort={stayShort}
+          totalLabel={totalLabel}
+          onClose={onCloseSheet}
+          onPay={onPay}
+        />
+      ) : null}
       <View style={[styles.bar, {bottom}]}>
         <View style={styles.priceCol}>
           <View style={styles.priceRow}>

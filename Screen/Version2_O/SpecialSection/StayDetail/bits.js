@@ -1,5 +1,5 @@
 // Small animated pieces and icons shared by the Stay Detail parts.
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -26,6 +26,27 @@ export function useTo(value, duration, easing = E.ease, delay = 0) {
     v.value = delay ? withDelay(delay, t) : t;
   }, [value, reduced, duration, easing, delay, v]);
   return v;
+}
+
+/**
+ * For a sheet that is mounted on its first open and kept afterwards: returns
+ * [mounted, shown], where `shown` turns true a frame after mounting so the
+ * sheet starts closed and animates open like it always does.
+ */
+export function useLazy(open) {
+  const [mounted, setMounted] = useState(open);
+  const [ready, setReady] = useState(false);
+  if (open && !mounted) {
+    setMounted(true);
+  }
+  useEffect(() => {
+    if (!mounted || ready) {
+      return;
+    }
+    const id = requestAnimationFrame(() => setReady(true));
+    return () => cancelAnimationFrame(id);
+  }, [mounted, ready]);
+  return [mounted, open && ready];
 }
 
 /**

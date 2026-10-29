@@ -16,7 +16,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, LoopGate, Reveal, RevealScope, ViewportGate, cssAngle} from '../anim';
 import {BackIcon, GlassButton, Grain} from '../HubBits';
 import {StarIcon} from '../Stays/icons';
-import {CheckIcon, ShareIcon, useTo} from './bits';
+import {CheckIcon, ShareIcon, useLazy, useTo} from './bits';
 import Hero from './Hero';
 import Suites from './Suites';
 import Amenities from './Amenities';
@@ -84,6 +84,23 @@ function Toast({show, top}) {
   );
 }
 
+/**
+ * Mounts the sections below the fold one per frame after the first paint, so
+ * opening Stay Detail paints the hero, suites and Reserve bar first.
+ */
+const DEFERRED = 3;
+function useStage() {
+  const [stage, setStage] = useState(0);
+  useEffect(() => {
+    if (stage >= DEFERRED) {
+      return;
+    }
+    const id = requestAnimationFrame(() => setStage(stage + 1));
+    return () => cancelAnimationFrame(id);
+  }, [stage]);
+  return stage;
+}
+
 export default function StayDetail({navigation, route}) {
   const stayId = route?.params?.stayId;
   const stay = stayFor(stayId);
@@ -100,6 +117,8 @@ export default function StayDetail({navigation, route}) {
   const [sheet, setSheet] = useState(false);
   const [toast, setToast] = useState(false);
   const [policy, setPolicy] = useState(false);
+  const [policyMounted, policyShown] = useLazy(policy);
+  const stage = useStage();
   const t1 = useRef(null);
   const t2 = useRef(null);
   useEffect(
@@ -208,15 +227,21 @@ export default function StayDetail({navigation, route}) {
                   </LinearGradient>
                 </Reveal>
                 <Suites suite={suite} onPick={pickSuite} />
-                <ViewportGate>
-                  <Amenities />
-                </ViewportGate>
-                <ViewportGate>
-                  <GoodToKnow onOpenPolicy={openPolicy} />
-                </ViewportGate>
-                <ViewportGate>
-                  <Nearby stay={stay} />
-                </ViewportGate>
+                {stage >= 1 ? (
+                  <ViewportGate>
+                    <Amenities />
+                  </ViewportGate>
+                ) : null}
+                {stage >= 2 ? (
+                  <ViewportGate>
+                    <GoodToKnow onOpenPolicy={openPolicy} />
+                  </ViewportGate>
+                ) : null}
+                {stage >= 3 ? (
+                  <ViewportGate>
+                    <Nearby stay={stay} />
+                  </ViewportGate>
+                ) : null}
               </View>
             </View>
           </Animated.ScrollView>
@@ -241,7 +266,9 @@ export default function StayDetail({navigation, route}) {
           onCloseSheet={closeSheet}
           onPay={pay}
         />
-        <PolicySheet open={policy} onClose={closePolicy} stayName={stay.name} insets={insets} />
+        {policyMounted ? (
+          <PolicySheet open={policyShown} onClose={closePolicy} stayName={stay.name} insets={insets} />
+        ) : null}
         <Toast show={toast} top={top + 56} />
         <Grain opacity={0.07} />
       </LoopGate>
