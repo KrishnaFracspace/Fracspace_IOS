@@ -39,28 +39,25 @@ function MonthNav({onPress, disabled, label, d}) {
 }
 
 /** `.day`: band behind ranges, `.sel` gold disc with `dsel` (.7 → 1, .4s spring). */
-const Day = memo(function Day({day, onPick}) {
+const Day = memo(function Day({n, time, off, sel, rs, re, band, today, label, onPick}) {
   useRenderCount('Day');
-  const on = useTo(day.sel ? 1 : 0, 250);
-  const pop = useShot(day.sel, 400);
+  const on = useTo(sel ? 1 : 0, 250);
+  const pop = useShot(sel, 400);
   const a = useAnimatedStyle(() => ({
     backgroundColor: interpolateColor(on.value, [0, 1], ['rgba(241,221,186,0)', colors.gold]),
     transform: [{scale: 0.7 + 0.3 * E.spring(pop.value)}],
   }));
-  if (day.blank) {
-    return <View style={styles.day} />;
-  }
   return (
     <Pressable
       style={styles.day}
-      disabled={day.off}
-      onPress={() => onPick(day.d)}
+      disabled={off}
+      onPress={() => onPick(new Date(time))}
       accessibilityRole="button"
-      accessibilityLabel={day.label}
-      accessibilityState={{disabled: day.off, selected: day.sel}}>
-      {day.band ? <View style={[styles.band, day.rs && styles.bandRs, day.re && styles.bandRe]} /> : null}
-      <Animated.View style={[styles.disc, day.today && styles.today, a]}>
-        <Text style={[styles.dayN, day.off && styles.dayOff, day.sel && styles.daySel]}>{day.n}</Text>
+      accessibilityLabel={label}
+      accessibilityState={{disabled: off, selected: sel}}>
+      {band ? <View style={[styles.band, rs && styles.bandRs, re && styles.bandRe]} /> : null}
+      <Animated.View style={[styles.disc, today && styles.today, a]}>
+        <Text style={[styles.dayN, off && styles.dayOff, sel && styles.daySel]}>{n}</Text>
       </Animated.View>
     </Pressable>
   );
@@ -111,7 +108,22 @@ function Calendar({open, view, pin, pout, today, bottom, onClose, onPick, onPrev
         <View style={styles.grid}>
           {days.map(d => (
             <View key={d.key} style={styles.cell}>
-              <Day day={d} onPick={onPick} />
+              {d.blank ? (
+                <View style={styles.day} />
+              ) : (
+                <Day
+                  n={d.n}
+                  time={d.d.getTime()}
+                  off={d.off}
+                  sel={d.sel}
+                  rs={d.rs}
+                  re={d.re}
+                  band={d.band}
+                  today={d.today}
+                  label={d.label}
+                  onPick={onPick}
+                />
+              )}
             </View>
           ))}
         </View>

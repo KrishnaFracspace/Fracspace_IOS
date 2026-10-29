@@ -2,7 +2,7 @@
 // Detail's "Proceed to pay"; back returns there, "Back to Home" opens the Home
 // tab. Payment is mocked (Proceed → 1.2s processing → confirm animation →
 // success) until stays have a booking API; see `mockReceipt`.
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {BackHandler, Image, Pressable, ScrollView, StyleSheet, Text, View} from 'react-native';
 import Animated, {Easing, useAnimatedStyle, useSharedValue, withTiming} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
@@ -13,7 +13,7 @@ import {colors, fonts, ls} from '../theme';
 import {E, LoopGate, PressScale, useLoop, useReducedMotion} from '../anim';
 import {BackIcon, GlassButton, Grain} from '../HubBits';
 import {StarIcon} from '../Stays/icons';
-import {Odo, Sweep, useShot, useTo} from '../StayDetail/bits';
+import {Odo, Sweep, useLazy, useShot, useTo} from '../StayDetail/bits';
 import Calendar from './Calendar';
 import Confirming, {CONFIRM_MS} from './Confirming';
 import Success from './Success';
@@ -112,7 +112,7 @@ function Stepper({title, sub, value, min, max, onDec, onInc, noun}) {
 }
 
 /** `.num`: the total as odometer digit columns (.5s spring), commas static. */
-function Total({label}) {
+const Total = memo(function Total({label}) {
   useRenderCount('Total');
   const chars = label.split('');
   return (
@@ -130,7 +130,7 @@ function Total({label}) {
       })}
     </View>
   );
-}
+});
 
 function Spinner() {
   const p = useLoop(700);
@@ -159,6 +159,10 @@ export default function StayReview({navigation, route}) {
   const [view, setView] = useState(new Date(first.cin.getFullYear(), first.cin.getMonth(), 1));
   const [pin, setPin] = useState(null);
   const [pout, setPout] = useState(null);
+  // Read by `pick` so it stays the same function and the day cells keep their memo.
+  const range = useRef({pin, pout});
+  range.current = {pin, pout};
+  const [calMounted, calOpen] = useLazy(cal);
   const [phase, setPhase] = useState('idle'); // idle | busy | anim | done
   const [paid, setPaid] = useState(null);
   const t1 = useRef(null);
@@ -198,17 +202,15 @@ export default function StayReview({navigation, route}) {
     setCal(true);
   }, [cin, cout]);
   const closeCal = useCallback(() => setCal(false), []);
-  const pick = useCallback(
-    d => {
-      if (!pin || pout || d <= pin) {
-        setPin(d);
-        setPout(null);
-      } else {
-        setPout(d);
-      }
-    },
-    [pin, pout],
-  );
+  const pick = useCallback(d => {
+    const {pin: from, pout: to} = range.current;
+    if (!from || to || d <= from) {
+      setPin(d);
+      setPout(null);
+    } else {
+      setPout(d);
+    }
+  }, []);
   const prevMonth = useCallback(() => setView(v => new Date(v.getFullYear(), v.getMonth() - 1, 1)), []);
   const nextMonth = useCallback(() => setView(v => new Date(v.getFullYear(), v.getMonth() + 1, 1)), []);
   const apply = useCallback(() => {
@@ -371,8 +373,9 @@ export default function StayReview({navigation, route}) {
           </PressScale>
         </LinearGradient>
 
-        <Calendar
-          open={cal}
+        {calMounted ? (
+          <Calendar
+            open={calOpen}
           view={view}
           pin={pin}
           pout={pout}
@@ -382,8 +385,9 @@ export default function StayReview({navigation, route}) {
           onPick={pick}
           onPrev={prevMonth}
           onNext={nextMonth}
-          onApply={apply}
-        />
+            onApply={apply}
+          />
+        ) : null}
 
         {phase === 'anim' ? (
           <Confirming
