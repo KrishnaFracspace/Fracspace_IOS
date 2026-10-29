@@ -7,27 +7,34 @@ re-measures. Animations and design must stay identical.
 
 ## Summary (all five sections)
 
-Dev builds on Android CPH2643 and the iPhone 16 Pro simulator; compare
-before/after only. Shared root cause: Reanimated 3.19 on Fabric commits the
+Before → after columns are dev builds on Android CPH2643 and the iPhone 16 Pro
+simulator (compare before/after only); the release column is the same code
+(`7fa2505`) as a release build (see Release-build results). Shared root cause: Reanimated 3.19 on Fabric commits the
 shadow tree for every animated frame, so the fixes cut loops that ran unseen,
 mounted less up front, and moved JS-timer motion to the UI thread.
 
-| Section | Android before → after | iOS sim before → after |
-|---|---|---|
-| 1 Hub | idle p50 61 → 48 ms (74 → 49 % janky); re-enter 1086 → ~650 ms | idle main 42 → 17 % |
-| 2 Stays | idle p50 38–65 → 15–21 ms (61–68 → 6–9 % janky); JS 6–10 → 35–47 fps; Explore mount 1.3–1.5 → ~0.42 s | idle main 38 → 28 %, JS 4.1 → 0.58 s / 15 s |
-| 3 Stay Detail | entry ~1.55 → ~0.95 s; mid-page idle 80–85 → 43–45 % janky | idle main 4.78 → 4.30 s / 15 s; scroll 58 → 45 % |
-| 4 Review Booking | entry ~0.88 → ~0.53 s; calendar tap 35 → 0–2 day renders | Pay flow pre-mount 0.37 s JS inside the spinner (no baseline) |
-| 5 IVA Shop | entry ~0.62 → ~0.35 s; list idle 31 → 19 ms, JS 31 → 59 fps | list idle main 30 → 26 % |
+| Section | Android before → after (dev) | iOS sim before → after (dev) | Release: Android / iOS sim |
+|---|---|---|---|
+| 1 Hub | idle p50 61 → 48 ms (74 → 49 % janky); re-enter 1086 → ~650 ms | idle main 42 → 17 % | idle 0.7 % janky, re-enter ~0.49 s / main 20 % |
+| 2 Stays | idle p50 38–65 → 15–21 ms (61–68 → 6–9 % janky); JS 6–10 → 35–47 fps; Explore mount 1.3–1.5 → ~0.42 s | idle main 38 → 28 %, JS 4.1 → 0.58 s / 15 s | idle 3.5 %, scroll 9.7 % janky, entry ~0.73 s / main 22 % |
+| 3 Stay Detail | entry ~1.55 → ~0.95 s; mid-page idle 80–85 → 43–45 % janky | idle main 4.78 → 4.30 s / 15 s; scroll 58 → 45 % | idle 0 %, **scroll 21 % janky**, entry ~0.78 s / main 24 % |
+| 4 Review Booking | entry ~0.88 → ~0.53 s; calendar tap 35 → 0–2 day renders | Pay flow pre-mount 0.37 s JS inside the spinner (no baseline) | idle 3.2 %, entry ~0.45 s / main 28 % |
+| 5 IVA Shop | entry ~0.62 → ~0.35 s; list idle 31 → 19 ms, JS 31 → 59 fps | list idle main 30 → 26 % | idle 0 %, entry ~0.34 s / main 23 % |
 
-No leak found in any section (Android leave/enter cycles; views flat).
+No leak found in any section (Android leave/enter cycles in dev and release;
+iOS release: Stays 2 × 10 cycles, footprint levels off).
+
+Release builds are far smoother than dev suggested: every section idles at
+0–3.5 % janky on Android. The one hotspot left is scrolling Stay Detail
+(21 % janky, 63 slow bitmap uploads over 6 swipes).
 
 Not measured anywhere:
-- **Release builds**: every number is dev (§6). Absolute frame rate, jank %,
-  memory and load times need `--mode release` / the iOS Release scheme.
 - **iOS screen timings** (entry, tab switch, view switch, sheets): the probes
-  log to Metro only, so iOS has Time Profiler CPU shares, not ms.
-- **iOS leak cycles**: Android only (IVA Shop: one iOS pass, footprint only).
+  are no-ops in release and log to Metro only in dev, so iOS has Time Profiler
+  CPU shares, not ms.
+- **iOS leak cycles** beyond Stays (Android covers all five).
+- **Release one-shot flows**: Review's Pay flow and IVA's Place order would start
+  a real payment / order in a signed-in release build.
 - **Real iOS device**: simulator CPU only.
 - Left as is by choice: Review's ~0.6 s spinner freeze on Android (§4 B), SVG
   prop draws (§4 D, §5 D), the 104–242 ms frame on each view mount.
@@ -462,3 +469,52 @@ Grid + features not mounted: mount −75 ms.
 Not measured: iOS entry and view-switch timings (no Metro log access), iOS
 leak cycles (one pass only), iOS baseline for the flow. Absolute numbers need a
 release build (§6).
+
+## Release-build results
+
+Same code as the dev "after" numbers (`7fa2505`). Android: `assembleRelease`
+(upload-key signed) on CPH2643, display at 60 Hz. iOS: Release scheme on the
+iPhone 16 Pro simulator (iOS 18.3), built with `ARCHS=arm64 ONLY_ACTIVE_ARCH=YES`
+(the x86_64 slice fails to link `GoogleAppMeasurement`). Every Android run was
+checked against a phone screenshot.
+
+How it differs from dev:
+- **Stallion OTA**: release builds call `Stallion.sync()` (`App.js:55`), and the
+  downloaded bundle replaces the branch's JS on the next cold start. Reinstall
+  (Android) or delete `Documents/StallionProd` in the sim container (iOS), then
+  never kill the app during a run. Android killed it once in the background
+  during a 1 h pause.
+- **No probes**: `perf.js` and `console.*` are stripped, so entry time here is
+  tap → end of the last frame over 50 ms within 2.5 s (`framestats`, 5–7 taps).
+  It's close to but not the same as the dev "tap → first frame" probe.
+- **Leak cycles**: `perf-android.sh` taps plus a screenshot check (`perf-cycles.sh`
+  needs the probe log).
+
+### Android (CPH2643, release)
+| Section | Idle 10 s: janky, p50 / p90 | Scroll 6 swipes: janky, p90 / p99 | Entry, median (range) | Memory, 10 cycles (PSS / native / views) |
+|---|---|---|---|---|
+| Hub | 0.7 %, 24 / 26 ms, 0 uploads; split anim 10.2, GPU 14.2, total 28.1 ms | 3.1 %, 32 / 57 ms | re-enter Home → centre 0.49 s (0.39–0.50) | 540 → 548 / 216 → 218 MB / 1029 → 876: no leak |
+| Stays | 3.5 %, 18 / 22 ms | 9.7 %, 38 / 53 ms | Hub → Stays 0.73 s (0.62–1.51); Bookings → Explore 0.59 s (0.54–2.38) | 1st 10: 599 → 746 MB; next 20 settle 668 → 665 / 271 → 275 / 1495 flat: no leak |
+| Stay Detail | top 0 %, 20 / 22 ms; mid page (Nearby) 0 %, 21 / 23 ms | **20.9 %, 57 / 97 ms, 63 slow bitmap uploads** | Stays → SD 0.78 s (0.74–0.86) | 20 cycles: 619 → 843 peak → 722 / 292 → 309 / 1696 flat: no leak |
+| Review Booking | 3.2 %, 16 / 20 ms | 1.9 %, 21 / 28 ms | Proceed → Review 0.45 s (0.41–0.48) | 705 → 749 / 304 → 347 / 1857 → 2002 (same drift as dev, which then held flat) |
+| IVA Shop | 0 %, 17 / 19 ms; split anim 5.0, GPU 9.6, total 16.8 ms | 2.4 %, 23 / 36 ms | Hub → Shop 0.34 s (0.32–0.36) | 708 → 690 / 322 → 292 / 1111 → 1224: no leak |
+
+### iOS simulator (release, 15 s idle Time Profiler)
+| Section | Main thread busy | Release vs dev after | Footprint |
+|---|---|---|---|
+| Hub | 20 % | 17 % | 236 MB |
+| Stays | 22 % | 28 % | 308 MB after 10 Hub ↔ Stays cycles; 308 on Hub; 313 after 10 more: levels off, no leak |
+| Stay Detail (top) | 24 % | 29 % | 314 MB |
+| Review Booking | 28 % (Stay Detail mounted below) | — | 304 MB |
+| IVA Shop list | 23 % | 26 % | 310 MB |
+
+Notes: on Android, release cuts idle jank from up to 49 % (dev Hub; 43–45 % on Stay Detail mid page) to 0–3.5 %, so
+most of the dev jank was dev overhead. What remains is real. The simulator's
+main thread barely changes between dev and release, because ~90 % of its
+samples are under `reanimated::` / `ShadowTree::commit` (native C++, same in
+both builds): the per-frame commit cost from §2. That makes Reanimated 4 the
+lever for iOS, not more JS work. Stay Detail scrolling is the one Android
+hotspot: slow bitmap uploads mean an SVG or image is redrawn into a bitmap
+while it scrolls (§4 Android SVG). The next step would be a framestats split
+of that scroll to find which section. Not measured: real iPhone (offline),
+release one-shot flows (see Summary), iOS entry timings.
