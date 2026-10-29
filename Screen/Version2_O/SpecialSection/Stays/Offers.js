@@ -84,6 +84,11 @@ const hover = p => {
   return {transform: [{translateY: -7 * t}, {rotate: `${-3 + 6 * t}deg`}]};
 };
 
+// Gradient stops are direct children: react-native-svg clones each one with a
+// `parent` prop, which a Fragment would reject.
+const CROWN_STOPS = [['0', '#FFE9AE'], ['0.55', '#E9B44C'], ['1', '#A86A22']];
+const TICKET_STOPS = [['0', '#C9D6FF'], ['1', '#5D74C8']];
+
 function Art({kind}) {
   const crown = kind === 'crown';
   const [w, h] = crown ? [98, 78] : [92, 72];
@@ -100,18 +105,9 @@ function Art({kind}) {
       <Svg width={w} height={h} viewBox="0 0 100 80">
         <Defs>
           <LinearGradient id={`art-${kind}`} x1="0" y1="0" x2="1" y2="1">
-            {crown ? (
-              <>
-                <Stop offset="0" stopColor="#FFE9AE" />
-                <Stop offset="0.55" stopColor="#E9B44C" />
-                <Stop offset="1" stopColor="#A86A22" />
-              </>
-            ) : (
-              <>
-                <Stop offset="0" stopColor="#C9D6FF" />
-                <Stop offset="1" stopColor="#5D74C8" />
-              </>
-            )}
+            {(crown ? CROWN_STOPS : TICKET_STOPS).map(([o, c]) => (
+              <Stop key={o} offset={o} stopColor={c} />
+            ))}
           </LinearGradient>
         </Defs>
         <G transform="rotate(-10, 50, 40)">

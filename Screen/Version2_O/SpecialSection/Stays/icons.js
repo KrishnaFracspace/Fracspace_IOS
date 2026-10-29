@@ -88,14 +88,6 @@ export function CheckIcon({color}) {
   );
 }
 
-export function LeftArrowIcon({color = '#E6E0D6'}) {
-  return (
-    <Svg width={16} height={16} viewBox="0 0 24 24" {...line} stroke={color} strokeWidth={2}>
-      <Path d="M19 12H5M11 6l-6 6 6 6" />
-    </Svg>
-  );
-}
-
 export function CameraIcon({color = colors.muted}) {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinejoin="round">

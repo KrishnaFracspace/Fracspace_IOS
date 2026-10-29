@@ -1,10 +1,9 @@
 // "See it before you stay": the stacked video-tour deck (`.deck`, `.rc`,
-// `.rc-ui`, `.thumb` in Stays.dc.html).
+// `.rc-ui` in Stays.dc.html).
 import React, {memo, useCallback, useEffect, useRef, useState} from 'react';
-import {Image, Pressable, StyleSheet, Text, View} from 'react-native';
+import {Pressable, StyleSheet, Text, View} from 'react-native';
 import Animated, {
   cancelAnimation,
-  interpolateColor,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
@@ -128,29 +127,7 @@ function BigPlay({playing, onPress}) {
   );
 }
 
-/** `.thumb` under the deck. */
-const Thumb = memo(function Thumb({reel, i, on, onPick}) {
-  const v = useToggle(on, {duration: 300, easing: E.ease});
-  const a = useAnimatedStyle(() => ({
-    borderColor: interpolateColor(v.value, [0, 1], [colors.borderStrong, colors.gold]),
-    backgroundColor: interpolateColor(v.value, [0, 1], [colors.card, '#1C1B20']),
-  }));
-  return (
-    <PressScale to={0.94} duration={400} onPress={() => onPick(i)} accessibilityLabel={`Play ${reel.title}`} style={styles.thumbWrap}>
-      <Animated.View style={[styles.thumb, a]}>
-        <Image source={reel.img} style={styles.thumbImg} />
-        <View style={styles.thumbText}>
-          <Text style={styles.thumbTitle} numberOfLines={1}>
-            {reel.title}
-          </Text>
-          <Text style={styles.thumbDur}>{reel.dur}</Text>
-        </View>
-      </Animated.View>
-    </PressScale>
-  );
-});
-
-/** The deck + thumbs. Reports the current position ("1 / 3") via onPos. */
+/** The deck. Reports the current position ("1 / 3") via onPos. */
 export default function Reels({onBook, onPos}) {
   const focused = useIsFocused();
   const [reel, setReel] = useState(0);
@@ -269,11 +246,6 @@ export default function Reels({onBook, onPos}) {
           </View>
         </View>
       </View>
-      <View style={styles.thumbs}>
-        {reels.map((v, i) => (
-          <Thumb key={v.id} reel={v} i={i} on={i === reel} onPick={goReel} />
-        ))}
-      </View>
     </View>
   );
 }
@@ -361,11 +333,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
   },
   watchText: {fontFamily: fonts.extrabold, fontSize: 13, color: colors.ink},
-  thumbs: {flexDirection: 'row', gap: 10, marginTop: 14},
-  thumbWrap: {flex: 1, minWidth: 0},
-  thumb: {flexDirection: 'row', alignItems: 'center', gap: 8, padding: 6, borderRadius: 16, borderWidth: 1.5},
-  thumbImg: {width: 34, height: 44, borderRadius: 10},
-  thumbText: {flex: 1, minWidth: 0, gap: 2},
-  thumbTitle: {fontFamily: fonts.bold, fontSize: 12, color: '#fff'},
-  thumbDur: {fontFamily: fonts.regular, fontSize: 10.5, color: colors.muted},
 });

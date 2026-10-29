@@ -14,8 +14,8 @@ import Svg, {Defs, LinearGradient as SvgGradient, Path, Rect, Stop} from 'react-
 import LinearGradient from 'react-native-linear-gradient';
 import {colors, fonts, ls} from '../theme';
 import {E, PressScale, RailGate, Reveal, ViewportGate, cssAngle, kf, useLoop, useToggle} from '../anim';
-import {Burst, Loop, Ripple, Tag, useShot} from './bits';
-import {CameraIcon, HEART_D, HeadsetIcon, LeftArrowIcon, SearchIcon, SlidersIcon, StarIcon} from './icons';
+import {Burst, Ripple, Tag, useShot} from './bits';
+import {CameraIcon, HEART_D, HeadsetIcon, SearchIcon, SlidersIcon, StarIcon} from './icons';
 import {chips as chipData, offers, retreats, reviews, searchHints} from './data';
 import Reels from './Reels';
 import Offers, {COUPON_W} from './Offers';
@@ -230,12 +230,6 @@ function Retreats({liked, onLike, onOpen}) {
   );
 }
 
-/** `@keyframes swipe` on the arrow. */
-const swipe = p => {
-  'worklet';
-  return {transform: [{translateX: kf(p, [[0, 0], [0.5, -6], [1, 0]], E.easeInOut)}]};
-};
-
 /** `@keyframes spinstar` on the review rating star. */
 function SpinStar() {
   const p = useLoop(5000);
@@ -415,9 +409,6 @@ export default function Explore({onSearchTop, onOpenStay}) {
               <Text style={styles.sub}>Curated member rates & bespoke privileges</Text>
             </View>
             <View style={styles.swipe}>
-              <Loop duration={1800} track={swipe}>
-                <LeftArrowIcon />
-              </Loop>
               <Text style={styles.swipeText}>Swipe</Text>
             </View>
           </Reveal>
