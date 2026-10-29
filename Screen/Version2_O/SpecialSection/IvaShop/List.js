@@ -1,6 +1,6 @@
 // IVA Shop · list view: hero (pkb Ken Burns, flickering diya glow,
 // staggered copy), product grid and the feature card.
-import React, {useRef} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {Image, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {useAnimatedScrollHandler, useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
@@ -123,6 +123,12 @@ export default function List({top, bottom, count, bump, onBack, onCart, onOpen})
     scrollY.value = e.contentOffset.y;
   });
   const cardW = (width - 40 - 12) / 2;
+  // The grid and the feature card mount a frame after the hero paints.
+  const [below, setBelow] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setBelow(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   return (
     <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
@@ -138,25 +144,29 @@ export default function List({top, bottom, count, bump, onBack, onCart, onOpen})
               onBlessed={() => onOpen('blessed')}
             />
           </ViewportGate>
-          <View style={styles.sec}>
-            <Reveal style={styles.shead}>
-              <Text style={styles.h2}>Handpicked for your sacred space</Text>
-              <Text style={[s.muted, styles.count]}>{products.length} products</Text>
-            </Reveal>
-            <View style={styles.pgrid}>
-              {products.map(p => (
-                <ProductCard key={p.id} p={p} width={cardW} onOpen={onOpen} />
-              ))}
-            </View>
-          </View>
-          <View style={[styles.sec, {paddingBottom: 60 + bottom}]}>
-            <Reveal style={styles.shead}>
-              <Text style={styles.h2}>A modern way to experience tradition</Text>
-            </Reveal>
-            <Reveal>
-              <Feats items={LIST_FEATS} />
-            </Reveal>
-          </View>
+          {below ? (
+            <>
+              <View style={styles.sec}>
+                <Reveal style={styles.shead}>
+                  <Text style={styles.h2}>Handpicked for your sacred space</Text>
+                  <Text style={[s.muted, styles.count]}>{products.length} products</Text>
+                </Reveal>
+                <View style={styles.pgrid}>
+                  {products.map(p => (
+                    <ProductCard key={p.id} p={p} width={cardW} onOpen={onOpen} />
+                  ))}
+                </View>
+              </View>
+              <View style={[styles.sec, {paddingBottom: 60 + bottom}]}>
+                <Reveal style={styles.shead}>
+                  <Text style={styles.h2}>A modern way to experience tradition</Text>
+                </Reveal>
+                <Reveal>
+                  <Feats items={LIST_FEATS} />
+                </Reveal>
+              </View>
+            </>
+          ) : null}
         </View>
       </Animated.ScrollView>
     </RevealScope>
