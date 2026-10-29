@@ -5,6 +5,34 @@ Each session audits the code, measures on Android and iOS, reports a table,
 then applies only the fixes the user approves (one commit per group) and
 re-measures. Animations and design must stay identical.
 
+## Summary (all five sections)
+
+Dev builds on Android CPH2643 and the iPhone 16 Pro simulator; compare
+before/after only. Shared root cause: Reanimated 3.19 on Fabric commits the
+shadow tree for every animated frame, so the fixes cut loops that ran unseen,
+mounted less up front, and moved JS-timer motion to the UI thread.
+
+| Section | Android before → after | iOS sim before → after |
+|---|---|---|
+| 1 Hub | idle p50 61 → 48 ms (74 → 49 % janky); re-enter 1086 → ~650 ms | idle main 42 → 17 % |
+| 2 Stays | idle p50 38–65 → 15–21 ms (61–68 → 6–9 % janky); JS 6–10 → 35–47 fps; Explore mount 1.3–1.5 → ~0.42 s | idle main 38 → 28 %, JS 4.1 → 0.58 s / 15 s |
+| 3 Stay Detail | entry ~1.55 → ~0.95 s; mid-page idle 80–85 → 43–45 % janky | idle main 4.78 → 4.30 s / 15 s; scroll 58 → 45 % |
+| 4 Review Booking | entry ~0.88 → ~0.53 s; calendar tap 35 → 0–2 day renders | Pay flow pre-mount 0.37 s JS inside the spinner (no baseline) |
+| 5 IVA Shop | entry ~0.62 → ~0.35 s; list idle 31 → 19 ms, JS 31 → 59 fps | list idle main 30 → 26 % |
+
+No leak found in any section (Android leave/enter cycles; views flat).
+
+Not measured anywhere:
+- **Release builds**: every number is dev (§6). Absolute frame rate, jank %,
+  memory and load times need `--mode release` / the iOS Release scheme.
+- **iOS screen timings** (entry, tab switch, view switch, sheets): the probes
+  log to Metro only, so iOS has Time Profiler CPU shares, not ms.
+- **iOS leak cycles**: Android only (IVA Shop: one iOS pass, footprint only).
+- **Real iOS device**: simulator CPU only.
+- Left as is by choice: Review's ~0.6 s spinner freeze on Android (§4 B), SVG
+  prop draws (§4 D, §5 D), the 104–242 ms frame on each view mount.
+- App-wide lever not taken: Reanimated 4 (synchronous UI-prop updates).
+
 ## Method
 
 ### 0. Read first
@@ -377,3 +405,60 @@ Confirming → 193 + 352 ms during the spinner, 138 ms at the hand-off. The
 150–270 ms frames as the confirm starts appear in every variant (its own first
 frames). Not measured: iOS before B for the Pay flow, iOS calendar. Absolute
 numbers need a release build (§6).
+
+## 5 · IVA Shop results
+
+Device: Android CPH2643 (dev build, Metro), iOS iPhone 16 Pro simulator (dev).
+Entry: Hub (scroll top) → Shop `851,1833`; leave = `BACK` (no handler on the
+list view) → `perf-cycles.sh <label> 10 851,1833 IvaList`. On the shop:
+Blessed Kit card `342,1772`, Add to cart `856,2320`, View cart `830,2296`,
+Place order `865,2274`, Back to home `661,2265`; from Home the centre tab is
+`554,2243`. Ordering is mocked (1.2 s). `go()` calls `markTap`, so every view
+switch logs tap → frame. One-shot frames per step:
+`docs/special-section/perf-oneshot.sh <label> "name x,y|BACK seconds" …`
+(tap times come from `log -t ivamark` on the monotonic clock framestats uses;
+`/proc/uptime` is boot time and does not line up).
+
+### Baseline (before fixes)
+| Metric | Android | iOS sim |
+|---|---|---|
+| Hub → Shop tap → frame | 0.59–0.79 s (median ~0.62 s, 10 entries); List mount ~0.55 s | not measured (probes log to Metro only) |
+| List idle | p50 30 ms (0 % janky by gfxinfo); animation 13.7, GPU 14.0, total 31 ms; JS ~31 fps | main 30–31 %, 83 % of it `ShadowTree::commit` |
+| List scroll (6 swipes) | 7.9 % janky, p99 97 ms | — |
+| Product / Review / Done idle | total 21.9 / 22.0 / 24.2 ms (screen floor) | — |
+| View switches | one 107–225 ms frame each (Product 0.36 s, Review 0.29 s, Done 0.29 s render → frame); Done 1.66 s after Place: 113 + 166 ms | — |
+| Android back (Review → Product → List → Hub) | one 166–242 ms frame each; back on the list 223 of 289 frames > 33 ms | — |
+| Done → Home | one 161 ms frame; the shop unmounts, no probe logs after | — |
+| Memory, 10 cycles | views 1212 → 1212; PSS 849 → 992 MB (dev growth as in §4): no leak | — |
+
+Priced on the list (swap in place, same scroll): without the garland 23.0 ms
+idle, mount ~0.40 s; glow, CTA nudge, grain and Ken Burns each < 1 ms; plain-view
+flowers or no hardware layer: no change; garland on RN `Animated` with
+`useNativeDriver` (skips the shadow-tree commit): 22.7 ms but mount +40 ms.
+Grid + features not mounted: mount −75 ms.
+
+### Findings
+| # | Problem | Platform | Where | Sev | Effect | Fix |
+|---|---|---|---|---|---|---|
+| A | Hero garland: 15 flowers each rotated by Reanimated, so every frame commits the tree | both | `List.js` | High | list idle 31 vs 23 ms, JS 31 fps; iOS main 30 vs 25 %; ~150 ms of mount | removed at the user's request (design change) |
+| B | Product grid and feature card built before the first frame | both | `List.js` | Low | ~75 ms of mount | mount a frame after the hero paints |
+| C | Address draft state in `index.js`: each keystroke re-renders the shop | both | `index.js` | Low | not measured | not fixed |
+| D | Done parcel draws via SVG props (Android re-rasters the Svg) | Android | `Done.js` | Low | once, ~1.2 s | not fixed (as §4 D) |
+| E | One 104–242 ms frame per view switch / back | both | each view's own mount | Info | one-off | none without design change |
+
+### After fixes (`25e73ad` A, `b23b0f7` B; probes `bf7d859`), same devices, dev build
+| Metric | Before | After |
+|---|---|---|
+| Android Hub → Shop tap → frame | 0.59–0.79 s, median ~0.62 s | 0.35–0.43 s, median ~0.35 s |
+| Android List mount render → frame | ~0.55 s | 0.28–0.30 s |
+| Android list idle | 31 ms total (animation 13.7, GPU 14.0), JS ~31 fps | 18.8 ms (animation 8.3, GPU 8.8), p50 22 ms, JS ~59 fps |
+| Android back to the list | 223 of 289 frames > 33 ms | 7 of 292 |
+| Android list scroll | 7.9 % janky, p99 97 ms | 8.5 % janky, p99 93 ms (unchanged) |
+| Android view switches, Place → Done, Done → Home | 107–242 ms frame each | 104–211 ms (unchanged, E); one run had 3 × ~0.5 s frames after Place, not repeated |
+| Android memory, 10 cycles | views 1212 → 1212 | views 1016 → 973, PSS 862 → 881 MB: no leak |
+| iOS sim list idle main thread | 30–31 % | 26 % |
+| iOS sim whole flow (50 s, 1 s bins) | — | main 16–30 % per second, no second above 30 %; footprint 377 → 401 MB after one pass |
+
+Not measured: iOS entry and view-switch timings (no Metro log access), iOS
+leak cycles (one pass only), iOS baseline for the flow. Absolute numbers need a
+release build (§6).
