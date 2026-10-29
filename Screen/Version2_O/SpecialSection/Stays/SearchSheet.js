@@ -1,6 +1,6 @@
 // Search flow of the Stays listing (Stays.dc.html, `.flt`): Where → When → Who.
 // The state lives in index.js so the capsules under the search bar can show it.
-import React, {useState} from 'react';
+import React, {memo, useCallback, useState} from 'react';
 import {Image, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import Animated, {Easing, FadeIn, Keyframe, interpolateColor, useAnimatedStyle} from 'react-native-reanimated';
 import Svg, {Circle, Defs, LinearGradient as SvgGradient, Path, Rect, Stop} from 'react-native-svg';
@@ -26,8 +26,6 @@ const GUESTS = [
 const DURS = ['A weekend', 'A week', 'A month'];
 
 export const initialSearch = {
-  open: false,
-  step: 'where',
   query: '',
   city: 'Hyderabad',
   mode: 'dates', // or 'flex'
@@ -85,13 +83,14 @@ const placeIn = delay =>
   })
     .duration(500)
     .delay(delay);
+const PLACE_IN = {L: placeIn(0), R: placeIn(80)};
 const dayPop = new Keyframe({
   0: {transform: [{scale: 0.7}]},
   100: {transform: [{scale: 1}], easing: E.spring},
 }).duration(300);
 
 /** `.pc2`: destination card; gold outline and tick when picked. */
-function Place({c, on, delay, onPick}) {
+const Place = memo(function Place({c, on, onPick}) {
   const v = useToggle(on, {duration: 250, easing: E.ease});
   const chk = useToggle(on, {duration: 400, easing: E.spring});
   const ring = useAnimatedStyle(() => ({
@@ -103,11 +102,11 @@ function Place({c, on, delay, onPick}) {
   }));
   const n = stayCount(c.city);
   return (
-    <Animated.View entering={placeIn(delay)}>
+    <Animated.View entering={PLACE_IN[c.col]}>
       <PressScale
         to={0.96}
         duration={450}
-        onPress={onPick}
+        onPress={() => onPick(c.city)}
         accessibilityState={{selected: on}}
         accessibilityLabel={`${c.city}, ${n} stays`}>
         <View style={[styles.pc2, {height: c.h}]}>
@@ -131,7 +130,7 @@ function Place({c, on, delay, onPick}) {
       </PressScale>
     </Animated.View>
   );
-}
+});
 
 /** Goa has no photo yet: the sunset-palm art from the design. */
 function GoaArt() {
@@ -171,13 +170,9 @@ function Where({s, patch}) {
           searchStays.some(x => x.city === c.city && (x.name + ' ' + x.area).toLowerCase().includes(q)),
       )
     : searchCities;
-  const pick = city => patch({city, query: ''});
+  const pick = useCallback(city => patch({city, query: ''}), [patch]);
   const col = side =>
-    list
-      .filter(c => c.col === side)
-      .map(c => (
-        <Place key={c.city} c={c} on={s.city === c.city} delay={side === 'R' ? 80 : 0} onPick={() => pick(c.city)} />
-      ));
+    list.filter(c => c.col === side).map(c => <Place key={c.city} c={c} on={s.city === c.city} onPick={pick} />);
   return (
     <Animated.View entering={cardIn} style={styles.fcard}>
       <View style={styles.row}>
@@ -215,42 +210,55 @@ function Pick({label, on, onPress}) {
   );
 }
 
-function Day({d, s, patch}) {
-  const dt = new Date(s.y, s.m, d);
-  const st = sameDay(dt, s.in);
-  const en = sameDay(dt, s.out);
-  const rng = !!s.in && !!s.out && !sameDay(s.in, s.out);
-  const inR = !!s.in && !!s.out && dt > s.in && dt < s.out;
-  const pick = () => {
-    const a = s.in;
-    const b = s.out;
-    if (!a || (b && !sameDay(a, b)) || dt < a) {
-      patch({in: dt, out: null});
-    } else if (sameDay(dt, a)) {
-      patch({out: null});
-    } else {
-      patch({out: dt});
-    }
-  };
+/** One calendar day; re-renders only when its own range state changes. */
+const Day = memo(function Day({d, st, en, inR, rng, label, onPick}) {
   const end = st || en;
   return (
-    <Pressable onPress={pick} accessibilityLabel={`${d} ${MONTHS_LONG[s.m]}`} style={[styles.dy, inR && styles.dyIn]}>
+    <Pressable onPress={() => onPick(d)} accessibilityLabel={label} style={[styles.dy, inR && styles.dyIn]}>
       {end && rng ? <View style={[styles.half, st ? styles.halfR : styles.halfL]} /> : null}
       {end ? <Animated.View entering={dayPop} style={styles.dyEnd} /> : null}
       <Text style={[styles.dyText, end && styles.dyTextEnd]}>{d}</Text>
     </Pressable>
   );
-}
+});
 
 function When({s, patch}) {
+  // Range picking as in the design: a new start unless extending the open one.
+  const {y, m} = s;
+  const pickDay = useCallback(
+    d =>
+      patch(x => {
+        const dt = new Date(y, m, d);
+        const a = x.in;
+        const b = x.out;
+        if (!a || (b && !sameDay(a, b)) || dt < a) {
+          return {in: dt, out: null};
+        }
+        return sameDay(dt, a) ? {out: null} : {out: dt};
+      }),
+    [patch, y, m],
+  );
   const first = new Date(s.y, s.m, 1).getDay();
   const nd = new Date(s.y, s.m + 1, 0).getDate();
   const cells = [];
   for (let k = 0; k < first; k++) {
     cells.push(<View key={'e' + k} style={styles.dy} />);
   }
+  const rng = !!s.in && !!s.out && !sameDay(s.in, s.out);
   for (let d = 1; d <= nd; d++) {
-    cells.push(<Day key={d} d={d} s={s} patch={patch} />);
+    const dt = new Date(s.y, s.m, d);
+    cells.push(
+      <Day
+        key={d}
+        d={d}
+        st={sameDay(dt, s.in)}
+        en={sameDay(dt, s.out)}
+        inR={!!s.in && !!s.out && dt > s.in && dt < s.out}
+        rng={rng}
+        label={`${d} ${MONTHS_LONG[s.m]}`}
+        onPick={pickDay}
+      />,
+    );
   }
   const shift = n => {
     const d = new Date(s.y, s.m + n, 1);
@@ -266,13 +274,13 @@ function When({s, patch}) {
       <View style={styles.row}>
         <Text style={styles.fh}>When?</Text>
         <View style={styles.dfx}>
-          {['dates', 'flex'].map(m => (
+          {['dates', 'flex'].map(mode => (
             <Pressable
-              key={m}
-              onPress={() => patch({mode: m})}
-              accessibilityState={{selected: s.mode === m}}
-              style={[styles.dfxBtn, s.mode === m && styles.dfxOn]}>
-              <Text style={[styles.dfxText, s.mode === m && styles.dfxTextOn]}>{m === 'dates' ? 'Dates' : 'Flexible'}</Text>
+              key={mode}
+              onPress={() => patch({mode})}
+              accessibilityState={{selected: s.mode === mode}}
+              style={[styles.dfxBtn, s.mode === mode && styles.dfxOn]}>
+              <Text style={[styles.dfxText, s.mode === mode && styles.dfxTextOn]}>{mode === 'dates' ? 'Dates' : 'Flexible'}</Text>
             </Pressable>
           ))}
         </View>
@@ -392,16 +400,27 @@ function Summary({label, value, right, onPress, icon}) {
   );
 }
 
-export default function SearchSheet({s, patch}) {
+/**
+ * Edits its own copy of the search (`init`, opened at `step`) so a tap
+ * re-renders only the sheet; `onClose` gets the copy back.
+ */
+export default function SearchSheet({init, step: initStep, onClose}) {
   const insets = useSafeAreaInsets();
-  const close = () => patch({open: false});
+  const [s, setS] = useState(() => ({...init, step: initStep}));
+  // Accepts a patch object or a function of the current state.
+  const patch = useCallback(p => setS(x => ({...x, ...(typeof p === 'function' ? p(x) : p)})), []);
+  const done = extra => {
+    const {step, ...rest} = {...s, ...extra};
+    onClose(rest);
+  };
+  const close = () => done({});
   const next = () => {
     if (s.step === 'where') {
       patch({step: 'when'});
     } else if (s.step === 'when') {
       patch({step: 'who'});
     } else {
-      patch({open: false, applied: true, pillCity: s.city || ''});
+      done({applied: true, pillCity: s.city || ''});
     }
   };
   const reset = () => {

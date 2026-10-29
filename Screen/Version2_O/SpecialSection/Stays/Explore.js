@@ -421,7 +421,7 @@ function useStage() {
   return stage;
 }
 
-export default function Explore({onSearchTop, onOpenStay, search, patch, openSearch}) {
+export default memo(function Explore({onSearchTop, onOpenStay, search, patch, openSearch}) {
   const stage = useStage();
   const {width: vw} = useWindowDimensions();
   // Scroll x of the Offers / Reviews rails, so each card loops only while in view.
@@ -512,7 +512,7 @@ export default function Explore({onSearchTop, onOpenStay, search, patch, openSea
       ) : null}
     </>
   );
-}
+});
 
 const CONC_DIR = cssAngle(160);
 

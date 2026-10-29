@@ -82,9 +82,15 @@ export default function Stays({navigation}) {
   const isFocused = useIsFocused();
   const [view, setView] = useState('explore');
   const [searchTop, setSearchTop] = useState(0);
+  // Applied search choices (the capsules read them). The sheet edits its own
+  // copy and hands it back on close, so its taps re-render only the sheet.
   const [search, setSearch] = useState(initialSearch);
+  const [sheetStep, setSheetStep] = useState(null); // open at this step, or closed
   const patch = useCallback(p => setSearch(s => ({...s, ...p})), []);
-  const openSearch = useCallback(step => patch({open: true, step}), [patch]);
+  const closeSheet = useCallback(next => {
+    setSearch(next);
+    setSheetStep(null);
+  }, []);
   useRenderCount('Stays');
   useFirstFrame('Stays');
   useJsFps('Stays', isFocused);
@@ -100,7 +106,7 @@ export default function Stays({navigation}) {
 
   return (
     <View style={styles.page}>
-      <LoopGate active={isFocused}>
+      <LoopGate active={isFocused && !sheetStep}>
         <RevealScope scrollY={scrollY} contentRef={contentRef} viewportH={height}>
           <Animated.ScrollView onScroll={onScroll} scrollEventThrottle={16} showsVerticalScrollIndicator={false}>
             <View ref={contentRef} collapsable={false} style={{paddingBottom: navBottom(insets) + 94}}>
@@ -130,7 +136,7 @@ export default function Stays({navigation}) {
                   onOpenStay={openStay}
                   search={search}
                   patch={patch}
-                  openSearch={openSearch}
+                  openSearch={setSheetStep}
                 />
               ) : (
                 <Bookings onExplore={() => setView('explore')} onOpenStay={openStay} />
@@ -144,12 +150,12 @@ export default function Stays({navigation}) {
             top={searchTop}
             inset={insets.top}
             style={styles.searchFloat}
-            onPress={() => openSearch('where')}
+            onPress={() => setSheetStep('where')}
           />
         ) : null}
         <Grain />
-        {search.open ? <SearchSheet s={search} patch={patch} /> : null}
       </LoopGate>
+      {sheetStep ? <SearchSheet init={search} step={sheetStep} onClose={closeSheet} /> : null}
     </View>
   );
 }
