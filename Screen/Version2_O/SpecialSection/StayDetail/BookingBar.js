@@ -1,6 +1,6 @@
 // `.bar` (odometer price + Reserve button with idle / loading / done) and the
 // `.sheet` "Room held" summary above it, which can be dragged down to close.
-import React, {memo, useEffect} from 'react';
+import React, {memo, useEffect, useMemo} from 'react';
 import {Pressable, StyleSheet, Text, View} from 'react-native';
 import Animated, {
   interpolateColor,
@@ -124,20 +124,24 @@ function Sheet({show, bottom, suiteName, stayShort, totalLabel, onClose, onPay})
     }
   }, [show, drag]);
 
-  const pan = Gesture.Pan()
-    .enabled(show)
-    .activeOffsetY([-8, 8])
-    .onChange(e => {
-      const y = drag.value + e.changeY;
-      drag.value = y;
-    })
-    .onEnd(e => {
-      if (drag.value > 60 || e.velocityY > 600) {
-        runOnJS(onClose)();
-      } else {
-        drag.value = withTiming(0, {duration: 450, easing: E.spring});
-      }
-    });
+  const pan = useMemo(
+    () =>
+      Gesture.Pan()
+        .enabled(show)
+        .activeOffsetY([-8, 8])
+        .onChange(e => {
+          const y = drag.value + e.changeY;
+          drag.value = y;
+        })
+        .onEnd(e => {
+          if (drag.value > 60 || e.velocityY > 600) {
+            runOnJS(onClose)();
+          } else {
+            drag.value = withTiming(0, {duration: 450, easing: E.spring});
+          }
+        }),
+    [show, onClose, drag],
+  );
 
   const a = useAnimatedStyle(() => {
     const d = drag.value < 0 ? drag.value * 0.2 : drag.value;
