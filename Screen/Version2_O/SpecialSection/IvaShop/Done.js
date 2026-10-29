@@ -4,6 +4,7 @@ import React from 'react';
 import {Pressable, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {Easing, useAnimatedProps, useAnimatedStyle} from 'react-native-reanimated';
 import Svg, {Defs, Path, RadialGradient, Rect, Stop} from 'react-native-svg';
+import {useFirstFrame, useRenderCount} from '../perf';
 import {colors, fonts} from '../theme';
 import {E, useLoop} from '../anim';
 import {CheckIcon, Cta, FadeIn, GREEN, Up, styles as s, useOnce} from './bits';
@@ -69,6 +70,8 @@ function TrackFill() {
 const STEPS = ['Placed', 'Packed', 'Shipped', 'Delivered'];
 
 export default function Done({orderId, totalLabel, city, eta, insets, onMore, onHome}) {
+  useRenderCount('IvaDone');
+  useFirstFrame('IvaDone');
   const {width, height} = useWindowDimensions();
   const cx = width / 2;
   const cy = height * 0.38;

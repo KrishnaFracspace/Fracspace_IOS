@@ -4,6 +4,7 @@ import React from 'react';
 import {ScrollView, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {useAnimatedStyle} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
+import {useFirstFrame, useRenderCount} from '../perf';
 import {colors, fonts, ls} from '../theme';
 import {E, kf, useLoop} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
@@ -46,6 +47,8 @@ function InsideItem({item, k, width}) {
 }
 
 export default function Product({p, qty, top, eta, city, count, bump, onBack, onCart, onDec, onInc}) {
+  useRenderCount('IvaProduct');
+  useFirstFrame('IvaProduct');
   const {width} = useWindowDimensions();
   return (
     <ScrollView showsVerticalScrollIndicator={false}>

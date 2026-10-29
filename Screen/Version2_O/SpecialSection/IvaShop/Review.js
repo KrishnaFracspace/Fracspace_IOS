@@ -4,6 +4,7 @@ import React, {useState} from 'react';
 import {Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View} from 'react-native';
 import Animated, {Easing, useAnimatedStyle} from 'react-native-reanimated';
 import Svg, {Circle, Line, Path, Text as SvgText} from 'react-native-svg';
+import {useFirstFrame, useRenderCount} from '../perf';
 import {colors, fonts} from '../theme';
 import {E, kf, useLoop} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
@@ -93,6 +94,8 @@ function CartLine({id, qty, first, onDec, onInc}) {
 }
 
 export default function Review(props) {
+  useRenderCount('IvaReview');
+  useFirstFrame('IvaReview');
   const {top, lines, count, subLabel, addr, editing, draft, setDraft, eta} = props;
   const {onBack, onDec, onInc, onToggleAddr, onSaveAddr, onBrowse} = props;
   const set = k => v => setDraft(d => ({...d, [k]: v}));

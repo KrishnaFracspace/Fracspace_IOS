@@ -5,6 +5,7 @@ import {Image, StyleSheet, Text, View, useWindowDimensions} from 'react-native';
 import Animated, {useAnimatedScrollHandler, useAnimatedStyle, useSharedValue} from 'react-native-reanimated';
 import LinearGradient from 'react-native-linear-gradient';
 import Svg, {Circle, Defs, Line, Path, RadialGradient, Stop} from 'react-native-svg';
+import {useFirstFrame, useRenderCount} from '../perf';
 import {colors, fonts, ls} from '../theme';
 import {E, PressScale, Reveal, RevealScope, ViewportGate, kf, useLoop} from '../anim';
 import {BackIcon, GlassButton} from '../HubBits';
@@ -152,6 +153,8 @@ function ProductCard({p, width, onOpen}) {
 }
 
 export default function List({top, bottom, count, bump, onBack, onCart, onOpen}) {
+  useRenderCount('IvaList');
+  useFirstFrame('IvaList');
   const {width, height} = useWindowDimensions();
   const contentRef = useRef(null);
   const scrollY = useSharedValue(0);

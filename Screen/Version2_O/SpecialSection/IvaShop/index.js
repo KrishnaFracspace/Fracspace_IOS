@@ -11,6 +11,7 @@ import {useIsFocused} from '@react-navigation/native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {colors} from '../theme';
 import {LoopGate} from '../anim';
+import {markTap, useFirstFrame, useJsFps, useRenderCount} from '../perf';
 import {Grain} from '../HubBits';
 import List from './List';
 import Product from './Product';
@@ -50,6 +51,9 @@ export default function IvaShop({navigation}) {
   const {width, height} = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isFocused = useIsFocused();
+  useRenderCount('IvaShop');
+  useFirstFrame('IvaShop');
+  useJsFps('IvaShop', isFocused);
   const eta = useMemo(etaLabel, []);
 
   const [v, setV] = useState('list'); // list | prod | review | done
@@ -78,6 +82,7 @@ export default function IvaShop({navigation}) {
   const subLabel = inr(sub);
 
   const go = useCallback((next, isBack = false) => {
+    markTap(`iva:${next}`);
     setBack(isBack);
     setV(next);
   }, []);
