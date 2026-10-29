@@ -62,6 +62,10 @@ commit for transform/opacity); that is an app-wide upgrade, not a per-screen fix
   edit, reload (`r` in Metro) and re-enter before measuring.
 - JS fps follows the main thread (rAF is driven by the UI frame clock), so a low
   JS fps with few renders means the main thread is the bottleneck.
+- To price one part of a screen, swap that file for its old version in place
+  (`git show <rev>:<file> > <file>`, Fast Refresh, measure, `git checkout <file>`)
+  at the same scroll. Rendering `null` for a section moves everything under it,
+  so the same swipes land somewhere else and the numbers don't compare.
 
 ### 4. Android (`docs/special-section/perf-android.sh`)
 App open on the screen under test, signed in, Metro running:
@@ -98,6 +102,19 @@ Frame phase split (which part of the main thread is slow):
 ```bash
 adb shell dumpsys gfxinfo com.fracspace reset; sleep 6; adb shell dumpsys gfxinfo com.fracspace framestats
 ```
+
+For the leak check (and entry timings) prefer `perf-cycles.sh`: it confirms
+each entry in logcat and stops on a missed tap, where `perf-android.sh` carries
+on tapping whatever screen it ended up on (twice it left the app on Stay Detail):
+
+```bash
+docs/special-section/perf-cycles.sh sd-after 10 639,1580 StayDetail
+```
+
+Android SVG: animating an SVG prop (`useAnimatedProps` on a `Path`/`Circle`)
+redraws that whole `Svg` to a bitmap and re-uploads it every frame, which shows
+as "Slow bitmap uploads" in `gfxinfo` while idle. A fade or a move belongs on an
+`Animated.View` around a small `Svg` of just that shape (Stay Detail amenities).
 
 Then median of `PerformTraversalsStart − AnimationStart` (animation),
 `DrawStart − PerformTraversalsStart` (layout), `SyncQueued − DrawStart` (draw record),
@@ -247,4 +264,60 @@ Notes: entry timing is noisy because Hub's own focus work runs on the same JS
 thread and several taps missed; the tab switch is the cleaner measure of the same
 mount. Not measured: iOS entry and tab-switch timings (no Metro log access from
 the session). Absolute numbers need a release build (see §6).
+
+## 3 · Stay Detail results
+
+Device: Android CPH2643 (dev build, Metro), iOS iPhone 16 Pro simulator (dev).
+Entry: a Stays retreat card (`639,1580` at the scroll used), leave = `BACK`.
+"Mid page" = five slow 300 dp swipes from the top (Amenities, Good to know and
+the map on screen).
+
+### Baseline (before fixes)
+| Metric | Android | iOS sim |
+|---|---|---|
+| Entry tap → frame | 1.46–2.49 s (median ~1.55 s, 20 entries) | not measured (probes log to Metro only) |
+| Idle, top of page | p50 20 ms, 0–7 % janky, JS 60 fps | main 4.78 s of 15 s (32 %); 4.1 s `ShadowTree` commit; JS 0.25 s |
+| Idle, mid page | p50 65 ms, 83–85 % janky, JS 25 fps, no renders; animation 20 ms, draw 5.7, GPU 15.8 ms | — |
+| Scroll (6 swipes) | p50 26–31 / p90 77–97 ms, 22–29 % janky; 0–73 slow bitmap uploads | main 8.7 s (58 %); JS 2.3 s |
+| Room held sheet (top of page) | 1.2 % janky, p99 46 ms; each open/close re-rendered the screen, Nearby, gates | main 7.6 s (50 %); JS 1.6 s |
+| Suite pick | 2 % janky, p99 61 ms, JS 36–41 fps; re-rendered screen, 3 Suites, Nearby | — |
+| Policy sheet open/close (mid page) | p50 69 ms, 90 % janky, JS 21–24 fps | — |
+| Memory, 20 cycles | views 1768 → 1768; PSS +102 MB then +8 MB: **no leak** | — |
+
+Experiment: rendering `null` for Amenities, Good to know and Nearby took entry
+from ~1.6 s to ~0.7 s; the policy sheet alone was worth little.
+
+### Findings
+| # | Problem | Platform | Where | Sev | Effect | Fix (design unchanged) |
+|---|---|---|---|---|---|---|
+| A | Amenities, Good to know, Nearby and both sheets built before the first frame | both | `index.js`, `BookingBar.js` | High | ~0.9 s of the ~1.6 s entry | lower sections mount one per frame after first paint; sheets mount on first open (`useLazy`, a frame before they slide in) |
+| B1 | Tour ring and Guest Choice sheen looped off-screen; every page loop ran under the full-screen policy sheet | both | `Hero.js`, `index.js` | High | policy sheet 90 % janky | `ViewportGate` on both; `LoopGate` off once the sheet has covered the page (`useLinger(!policy, 600)`) |
+| B2 | Amenity icons faded / moved shapes through SVG props: whole icon redrawn and re-uploaded each frame on Android | Android | `Amenities.js` | High | 204 slow uploads / 8 s idle mid page | each shape on its own small `Svg` inside an `Animated.View`; only the AC dashes still animate an SVG prop |
+| — | Amenity tiles toggled on tap (user: no use) | both | `Amenities.js` | — | 4 press handlers, 4 focus rings, 4 extra glows | removed on request: static tiles, subtitle "4 included" |
+| C | `stayFor()` built a new object each render (Nearby memo never held); photo index and toast state on the screen | both | `index.js`, `Hero.js` | Med | every tap re-rendered the page | memoised stay, `Page`, `MiniHeader`; Hero owns its index, Toast its state |
+| D | Sheet pan gesture rebuilt every render | both | `BookingBar.js` | Low | — | `useMemo` |
+
+Not fixed: the AC's moving dashes (a stroke-dash animation, still an SVG prop);
+the 1200 px photos (Hub #7); iOS shadows over translucent backgrounds (bar).
+
+### After fixes (`671e7f6`, `eec4329`, `0b1f9f1`, `ad5955f`, `16d018d`), same devices, dev build
+| Metric | Before | After |
+|---|---|---|
+| Android entry tap → frame | 1.46–2.49 s, median ~1.55 s | 0.67–1.16 s, median ~0.95 s |
+| Android idle, top | 0–7 % janky, p50 20 ms | 0 % janky, p50 21 ms |
+| Android idle, mid page | 80–85 % janky, p50 65 ms, 204 slow uploads / 8 s | 43–45 % janky, p50 53 ms, ~80 slow uploads / 8 s |
+| Android policy sheet open/close | 90 % janky, p50 69 ms, JS 21–24 fps | 34 % janky, p50 46 ms, JS 31–37 fps; 0 frames drawn while it is open |
+| Android scroll (warm) | 22–29 % janky, p90 77–97 ms | 25–27 % janky, p90 61 ms |
+| Renders per Reserve / sheet tap | screen, Nearby, MiniHeader, 4 Reveal, 3 gates | screen, BookingBar |
+| iOS sim idle, top (15 s) | main 4.78 s, JS 0.25 s | main 4.30 s, JS 0.01 s |
+| iOS sim scroll (15 s) | main 8.7 s (58 %), JS 2.3 s | main 6.7 s (45 %), JS 0.74 s (one more swipe than baseline) |
+| Memory, Android cycles | views 1768 flat | views 1752 → 2405 → 2073 (no steady rise); PSS 967 → 1159 → 1057 MB: no leak seen |
+
+Notes: the mid-page row is the same scroll for both (A/B by swapping
+`Amenities.js` in place: 80 % → 45 %, 204 → 78 uploads). Mid page is still
+main-thread bound (JS 24 fps with no renders) by the loops there and by the
+Reanimated 3 commit cost (§2). The Room held sheet was re-measured mid page
+(43 % janky), so it doesn't compare with its top-of-page baseline; its renders
+do. Not measured: iOS entry and policy sheet; the after leak run stopped at 2 of
+10 cycles on a missed tap. Absolute numbers need a release build (§6).
 
