@@ -236,8 +236,9 @@ export default function StayDetail({navigation, route}) {
   );
 
   // Android back closes the policy, then the sheet, before leaving the screen.
+  // Only while focused: the sheet stays open under Review Booking.
   useEffect(() => {
-    if (!policy && !sheet) {
+    if (!isFocused || (!policy && !sheet)) {
       return;
     }
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
@@ -249,7 +250,7 @@ export default function StayDetail({navigation, route}) {
       return true;
     });
     return () => sub.remove();
-  }, [policy, sheet]);
+  }, [isFocused, policy, sheet]);
 
   const top = Math.max(20, insets.top + 8);
   const barBottom = Math.max(14, insets.bottom - 18);
