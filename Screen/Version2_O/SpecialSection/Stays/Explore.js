@@ -408,9 +408,6 @@ export default function Explore({onSearchTop, onOpenStay}) {
               </View>
               <Text style={styles.sub}>Curated member rates & bespoke privileges</Text>
             </View>
-            <View style={styles.swipe}>
-              <Text style={styles.swipeText}>Swipe</Text>
-            </View>
           </Reveal>
           <Animated.ScrollView
             horizontal
@@ -577,9 +574,6 @@ const styles = StyleSheet.create({
   track: {width: 56, height: 4, borderRadius: 2, backgroundColor: colors.whiteA(0.14), overflow: 'hidden'},
   thumb: {position: 'absolute', left: 0, top: 0, width: 20, height: 4, borderRadius: 2, backgroundColor: colors.gold},
   trackText: {fontFamily: fonts.regular, fontSize: 12, color: colors.muted},
-  // offers
-  swipe: {flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44},
-  swipeText: {fontFamily: fonts.semibold, fontSize: 12, color: '#E6E0D6'},
   // reviews
   review: {
     width: REVIEW_W,
